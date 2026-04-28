@@ -20,9 +20,13 @@ const INITIAL_SOUND: SoundSettings = {
 const PICK_DELAY_MS = 650;
 
 function buildNewsLines(selections: Selections) {
-  return [selections.who, selections.when, selections.where, selections.what, `${selections.action}！`].filter(
-    (word): word is string => Boolean(word),
-  );
+  return [
+    selections.who,
+    selections.when,
+    selections.where,
+    selections.what,
+    selections.action ? `${selections.action}！` : undefined,
+  ].filter((word): word is string => Boolean(word));
 }
 
 function toSpeechText(lines: string[]) {

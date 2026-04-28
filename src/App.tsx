@@ -19,6 +19,17 @@ const INITIAL_SOUND: SoundSettings = {
 
 const PICK_DELAY_MS = 650;
 
+const ACTION_POLITE_MAP: Record<string, string> = {
+  たべた: 'たべました',
+  ふっとばした: 'ふっとばしました',
+  かくした: 'かくしました',
+  おどらせた: 'おどらせました',
+  こちょこちょした: 'こちょこちょしました',
+  ころがした: 'ころがしました',
+  'ぎゅーした': 'ぎゅーしました',
+  もってかえった: 'もってかえりました',
+};
+
 function buildNewsLines(selections: Selections) {
   return [
     selections.who,
@@ -29,9 +40,36 @@ function buildNewsLines(selections: Selections) {
   ].filter((word): word is string => Boolean(word));
 }
 
-function toSpeechText(lines: string[]) {
-  const main = lines.map((line) => line.replace('！', '')).join('、');
-  return `ニュースです！${main}しました！`;
+function toPoliteAction(action?: string) {
+  if (!action) return '';
+  const normalized = action.replace(/[！!]/g, '').trim();
+
+  if (!normalized) return '';
+  if (normalized.endsWith('しました') || normalized.endsWith('ました')) {
+    return normalized;
+  }
+
+  if (ACTION_POLITE_MAP[normalized]) {
+    return ACTION_POLITE_MAP[normalized];
+  }
+
+  if (normalized.endsWith('した')) {
+    return `${normalized.slice(0, -2)}しました`;
+  }
+
+  return normalized;
+}
+
+function toSpeechText(selections: Selections) {
+  const parts = [
+    selections.who,
+    selections.when,
+    selections.where,
+    selections.what,
+    toPoliteAction(selections.action),
+  ].filter((word): word is string => Boolean(word));
+
+  return parts.length > 0 ? `ニュースです！${parts.join('、')}！` : 'ニュースです！';
 }
 
 function pickReaction() {
@@ -56,7 +94,7 @@ export default function App() {
   const { speak, isSupported } = useSpeech();
 
   const lines = useMemo(() => buildNewsLines(selections), [selections]);
-  const speechText = useMemo(() => toSpeechText(lines), [lines]);
+  const speechText = useMemo(() => toSpeechText(selections), [selections]);
 
   const startGame = () => {
     setSelections({});

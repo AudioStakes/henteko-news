@@ -1,0 +1,190 @@
+:root {
+  font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Noto Sans JP', system-ui, sans-serif;
+  color: #2d1f00;
+  background: linear-gradient(180deg, #fff4b5 0%, #ffefde 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.screen {
+  width: min(100%, 480px);
+  background: #fffdf7;
+  border-radius: 24px;
+  padding: 20px;
+  border: 4px solid #ffd84d;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.15);
+  text-align: center;
+}
+
+h1,
+h2,
+p {
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2rem, 7vw, 2.8rem);
+  line-height: 1.2;
+}
+
+h2 {
+  font-size: clamp(1.8rem, 6vw, 2.4rem);
+  margin-top: 10px;
+}
+
+.logo {
+  font-size: 2.5rem;
+}
+
+.subtitle {
+  margin-top: 10px;
+  font-size: 1.2rem;
+}
+
+.step {
+  font-weight: 700;
+  color: #8a5a00;
+}
+
+.word-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.word-card,
+button {
+  font: inherit;
+}
+
+.word-card {
+  padding: 16px 12px;
+  border-radius: 16px;
+  border: 3px solid #ffc266;
+  background: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.word-card:active {
+  transform: scale(0.98);
+}
+
+.button-stack {
+  margin-top: 20px;
+  display: grid;
+  gap: 12px;
+}
+
+button {
+  padding: 14px 16px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.big {
+  font-size: 1.3rem;
+  padding: 16px;
+}
+
+.primary {
+  background: #ff7f50;
+  color: #fff;
+}
+
+.secondary {
+  background: #5fb5ff;
+  color: #fff;
+}
+
+.ghost {
+  background: #fff;
+  border: 2px solid #ffd84d;
+}
+
+.picked-screen {
+  display: grid;
+  gap: 14px;
+  min-height: 260px;
+  place-items: center;
+}
+
+.picked-label {
+  font-size: 1.2rem;
+  color: #8a5a00;
+}
+
+.picked-word {
+  font-size: clamp(2rem, 10vw, 3rem);
+  font-weight: 800;
+}
+
+.picked-sub {
+  font-size: 1.8rem;
+}
+
+.news-board {
+  margin-top: 14px;
+  padding: 16px;
+  border: 3px dashed #292929;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.news-board p {
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.reaction {
+  margin-top: 14px;
+  font-size: 1.3rem;
+  min-height: 2.2rem;
+  color: #7a00a9;
+  font-weight: 700;
+}
+
+.option-group {
+  margin-top: 16px;
+  text-align: left;
+}
+
+.option-group p {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.option-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.option {
+  background: #fff;
+  border: 2px solid #ffd84d;
+}
+
+.option.active {
+  background: #ffd84d;
+}

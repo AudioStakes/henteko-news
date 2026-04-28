@@ -23,7 +23,12 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
           return response;
         })
-        .catch(() => caches.match('/index.html'));
+        .catch((error) => {
+          if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+            return caches.match('/index.html');
+          }
+          throw error;
+        });
     }),
   );
 });

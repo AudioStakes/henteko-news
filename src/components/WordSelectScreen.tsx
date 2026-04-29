@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Category } from '../types/game';
 import { toCardWord } from '../utils/words';
-import { playChoiceSound } from '../utils/soundEffects';
+import { playChoiceSound, primeChoiceSound } from '../utils/soundEffects';
 import { CharacterImage } from './CharacterImage';
 
 type WordSelectScreenProps = {
@@ -39,6 +39,12 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
       // keep game flow even when sound playback is unavailable
     });
     window.setTimeout(() => onSelect(word), 320);
+  };
+
+  const handlePressStart = () => {
+    void primeChoiceSound().catch(() => {
+      // iOS Safari may reject unlock attempts; try again on actual tap.
+    });
   };
 
   useLayoutEffect(() => {
@@ -93,6 +99,8 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
               className={`choice-card${isPicked ? ' is-selected' : ''}`}
               disabled={Boolean(pickedWord)}
               onClick={() => handlePick(word)}
+              onPointerDown={handlePressStart}
+              onTouchStart={handlePressStart}
               ref={(element) => {
                 buttonRefs.current[index] = element;
               }}

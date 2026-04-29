@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Category } from '../types/game';
 import { toCardWord } from '../utils/words';
-import { AlienAnnouncer } from './AlienAnnouncer';
-import selectStudio from '../assets/select-studio.svg';
+import { CharacterImage } from './CharacterImage';
 
 type WordSelectScreenProps = {
   category: Category;
@@ -31,18 +30,16 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
   return (
     <section className="screen select-screen">
       <div className="hero hero-select">
-        <img className="hero-bg" src={selectStudio} alt="" />
-        <AlienAnnouncer className="alien-select" />
+        <CharacterImage variant="select" className="select-character" />
         <div className="speech speech-select">{category.label}</div>
       </div>
       <div className="choice-grid">
-        {shuffledWords.map((word, index) => {
-          const colors = ['yellow', 'green', 'purple', 'blue-line', 'orange-line', 'teal'];
+        {shuffledWords.map((word) => {
           const isPicked = pickedWord === word;
           return (
             <button
               key={word}
-              className={`choice-card ${colors[index % colors.length]}${isPicked ? ' picked' : ''}`}
+              className={`choice-card${isPicked ? ' is-selected' : ''}`}
               disabled={Boolean(pickedWord)}
               onClick={() => handlePick(word)}
             >

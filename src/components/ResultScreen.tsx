@@ -1,4 +1,4 @@
-import { AlienAnnouncer } from './AlienAnnouncer';
+import { CharacterImage } from './CharacterImage';
 
 type ResultScreenProps = {
   lines: string[];
@@ -11,10 +11,10 @@ export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: 
   return (
     <section className="screen result-screen">
       <article className="result-bubble" aria-label="かんせいニュース">
-        {lines.map((line) => <p key={line}>{line}</p>)}
+        {lines.map((line) => <p className="result-text" key={line}>{line}</p>)}
       </article>
       <div className="result-bottom">
-        <AlienAnnouncer className="alien-result" />
+        <CharacterImage variant="result" className="result-character" />
         <p className="reaction">{reaction}</p>
       </div>
       <div className="action-stack compact">

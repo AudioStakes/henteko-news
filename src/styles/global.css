@@ -27,6 +27,10 @@ h1,h2,p { margin:0; }
 .button-stack{margin-top:16px;display:grid;gap:12px}
 button{padding:16px 18px;border-radius:999px;border:3px solid #ffffff70;color:#fff;cursor:pointer;font-size:clamp(1.5rem,6vw,2rem);font-weight:900;text-shadow:0 2px 0 #00000024}
 .primary{background:#ff8b2a}.secondary{background:#3d98ff}.big{padding:18px}
+.option-group{margin-top:16px;display:grid;gap:12px}
+.option-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.option{background:#fff;color:#2d1f00;border:3px solid #ffd56a;text-shadow:none}
+.option.active{background:#ff8b2a;color:#fff;border-color:#ff8b2a;text-shadow:0 2px 0 #00000024}
 .reaction{font-size:clamp(1.8rem,7vw,2.7rem);font-weight:900;color:#5b36cf}
 .result-caster-row{margin-top:10px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
 .result-buttons button{font-size:clamp(1.25rem,5.2vw,1.8rem)}

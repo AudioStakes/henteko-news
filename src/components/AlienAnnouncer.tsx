@@ -1,10 +1,8 @@
-type AlienAnnouncerProps = {
-  variant?: 'home' | 'select' | 'result';
-};
+type AlienAnnouncerProps = {};
 
-export function AlienAnnouncer({ variant = 'home' }: AlienAnnouncerProps) {
+export function AlienAnnouncer({}: AlienAnnouncerProps) {
   return (
-    <div className={`alien alien-${variant}`} aria-hidden="true">
+    <div className="alien" aria-hidden="true">
       <div className="antenna left" />
       <div className="antenna right" />
       <div className="head">

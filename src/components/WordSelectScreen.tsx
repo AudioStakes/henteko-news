@@ -26,7 +26,7 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
       <h2>{category.label}</h2>
       <div className="word-grid">
         {shuffledWords.map((word) => (
-          <button key={toCardWord(word)} className="word-card" onClick={() => onSelect(word)}>
+          <button key={word} className="word-card" onClick={() => onSelect(word)}>
             {toCardWord(word)}
           </button>
         ))}

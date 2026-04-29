@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type SpeakOptions = {
   rate: number;
@@ -8,8 +8,16 @@ type SpeakOptions = {
 
 const DEFAULT_LANG = 'ja-JP';
 
+function pickJapaneseVoice(voices: SpeechSynthesisVoice[]) {
+  return (
+    voices.find((voice) => voice.lang === DEFAULT_LANG) ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith('ja')) ??
+    null
+  );
+}
+
 export function useSpeech() {
-  const [voicesReady, setVoicesReady] = useState(false);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const onEndRef = useRef<(() => void) | undefined>(undefined);
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
@@ -18,24 +26,17 @@ export function useSpeech() {
     if (!isSupported) return;
 
     const loadVoices = () => {
-      window.speechSynthesis.getVoices();
-      setVoicesReady(true);
+      setVoices(window.speechSynthesis.getVoices());
     };
 
     loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
 
     return () => {
-      window.speechSynthesis.onvoiceschanged = null;
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
       window.speechSynthesis.cancel();
     };
   }, [isSupported]);
-
-  const jaVoice = useMemo(() => {
-    if (!isSupported || !voicesReady) return null;
-    const voices = window.speechSynthesis.getVoices();
-    return voices.find((voice) => voice.lang.toLowerCase().startsWith('ja')) ?? null;
-  }, [isSupported, voicesReady]);
 
   const speak = useCallback(
     (text: string, options: SpeakOptions) => {
@@ -45,10 +46,10 @@ export function useSpeech() {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = options.rate;
       utterance.pitch = options.pitch;
-      utterance.lang = jaVoice?.lang ?? DEFAULT_LANG;
-      if (jaVoice) {
-        utterance.voice = jaVoice;
-      }
+      utterance.lang = DEFAULT_LANG;
+
+      const jaVoice = pickJapaneseVoice(voices.length > 0 ? voices : window.speechSynthesis.getVoices());
+      if (jaVoice) utterance.voice = jaVoice;
 
       onEndRef.current = options.onEnd;
       utterance.onend = () => onEndRef.current?.();
@@ -57,7 +58,7 @@ export function useSpeech() {
       window.speechSynthesis.speak(utterance);
       return true;
     },
-    [isSupported, jaVoice],
+    [isSupported, voices],
   );
 
   return {

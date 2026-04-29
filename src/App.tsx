@@ -14,7 +14,7 @@ type Screen = 'start' | 'sound' | 'select' | 'picked' | 'result';
 const INITIAL_SOUND: SoundSettings = {
   enabled: true,
   speed: 'normal',
-  pitch: 'high',
+  pitch: 'normal',
 };
 
 const PICK_DELAY_MS = 650;
@@ -76,11 +76,22 @@ function pickReaction() {
   return REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
 }
 
-function getVoiceConfig(sound: SoundSettings) {
+function normalizeSoundSettings(sound: SoundSettings): SoundSettings {
+  const speed = sound.speed === 'slow' || sound.speed === 'normal' || sound.speed === 'fast' ? sound.speed : 'normal';
+  const pitch = sound.pitch === 'low' || sound.pitch === 'normal' || sound.pitch === 'high' ? sound.pitch : 'normal';
+
   return {
-    rate: sound.speed === 'slow' ? 0.8 : 0.9,
-    pitch: sound.pitch === 'high' ? 1.25 : 1,
+    enabled: Boolean(sound.enabled),
+    speed,
+    pitch,
   };
+}
+
+function getVoiceConfig(sound: SoundSettings) {
+  const rate = sound.speed === 'slow' ? 0.75 : sound.speed === 'fast' ? 1.1 : 0.9;
+  const pitch = sound.pitch === 'low' ? 0.85 : sound.pitch === 'high' ? 1.25 : 1.0;
+
+  return { rate, pitch };
 }
 
 export default function App() {
@@ -90,6 +101,17 @@ export default function App() {
   const [pickedWord, setPickedWord] = useState('');
   const [reaction, setReaction] = useState('');
   const [soundSettings, setSoundSettings] = useLocalStorage<SoundSettings>('henteko-news-sound', INITIAL_SOUND);
+
+  useEffect(() => {
+    const normalized = normalizeSoundSettings(soundSettings);
+    if (
+      normalized.enabled !== soundSettings.enabled ||
+      normalized.speed !== soundSettings.speed ||
+      normalized.pitch !== soundSettings.pitch
+    ) {
+      setSoundSettings(normalized);
+    }
+  }, [soundSettings, setSoundSettings]);
 
   const { speak, isSupported } = useSpeech();
 

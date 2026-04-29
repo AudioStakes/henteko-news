@@ -27,16 +27,14 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
   );
   const [pickedWord, setPickedWord] = useState('');
 
-  const handlePick = async (word: string) => {
+  const handlePick = (word: string) => {
     if (pickedWord) return;
 
-    try {
-      await playChoiceSound();
-    } catch (_error) {
-      // keep game flow even when sound playback is unavailable
-    }
-
     setPickedWord(word);
+
+    void playChoiceSound().catch((_error) => {
+      // keep game flow even when sound playback is unavailable
+    });
     window.setTimeout(() => onSelect(word), 320);
   };
 

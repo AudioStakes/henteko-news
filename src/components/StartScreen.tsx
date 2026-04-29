@@ -9,7 +9,6 @@ export function StartScreen({ onStart, onOpenSound }: StartScreenProps) {
   return (
     <section className="screen home-screen">
       <div className="hero hero-home">
-        <div className="speech speech-home">ニュースです！</div>
         <CharacterImage variant="home" className="home-character" />
       </div>
       <div className="action-stack" aria-label="メニュー">

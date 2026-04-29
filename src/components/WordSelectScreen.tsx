@@ -8,6 +8,8 @@ type WordSelectScreenProps = {
   onSelect: (word: string) => void;
 };
 
+const MAX_CHOICES = 6;
+
 function shuffleWords(words: string[]) {
   const shuffled = [...words];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -18,7 +20,10 @@ function shuffleWords(words: string[]) {
 }
 
 export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) {
-  const shuffledWords = useMemo(() => shuffleWords(category.words), [category]);
+  const shuffledWords = useMemo(
+    () => shuffleWords(category.words).slice(0, MAX_CHOICES),
+    [category],
+  );
   const [pickedWord, setPickedWord] = useState('');
 
   const handlePick = (word: string) => {
@@ -31,7 +36,7 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
     <section className="screen select-screen">
       <div className="hero hero-select">
         <CharacterImage variant="select" className="select-character" />
-        <div className="speech speech-select">{category.label}</div>
+        <div className="speech speech-select speech-select--from-alien">{category.label}</div>
       </div>
       <div className="choice-grid">
         {shuffledWords.map((word) => {

@@ -115,7 +115,7 @@ export default function App() {
         {screen === 'result' && (
           <ResultScreen
             lines={lines}
-            reaction={reaction || (isSupported ? 'よみあげちゅう…' : 'おとはつかえないけど、たのしい！')}
+            reaction={reaction || (isSupported ? '' : 'おとはつかえないけど、たのしい！')}
             onReplayVoice={speakNews}
             onRestartGame={startGame}
           />

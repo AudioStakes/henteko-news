@@ -1,5 +1,5 @@
 import { AlienAnnouncer } from './AlienAnnouncer';
-import { AppHeader } from './AppHeader';
+import homeStudio from '../assets/home-studio.webp';
 
 type StartScreenProps = {
   onStart: () => void;
@@ -8,15 +8,14 @@ type StartScreenProps = {
 
 export function StartScreen({ onStart, onOpenSound }: StartScreenProps) {
   return (
-    <section className="screen start-screen">
-      <AppHeader />
-      <div className="studio-panel">
-        <p className="speech-balloon small">ニュースです！</p>
-        <AlienAnnouncer variant="home" />
+    <section className="screen home-screen">
+      <div className="hero hero-home">
+        <img className="hero-bg" src={homeStudio} alt="" />
+        <AlienAnnouncer className="alien-home" alt="へんてこニュースの宇宙人キャスター" />
       </div>
-      <div className="button-stack home-buttons">
-        <button className="primary big" onClick={onStart}>つくる</button>
-        <button className="secondary big" onClick={onOpenSound}>おと</button>
+      <div className="action-stack" aria-label="メニュー">
+        <button className="action-btn orange" onClick={onStart}><span>つくる</span></button>
+        <button className="action-btn blue quiet" onClick={onOpenSound}><span>こえ</span></button>
       </div>
     </section>
   );

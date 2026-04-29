@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PickedScreen } from './components/PickedScreen';
+import { AppHeader } from './components/AppHeader';
 import { ResultScreen } from './components/ResultScreen';
 import { SoundScreen } from './components/SoundScreen';
 import { StartScreen } from './components/StartScreen';
@@ -10,15 +10,13 @@ import { useSpeech } from './hooks/useSpeech';
 import { buildNewsLines, toSpeechText } from './utils/speechText';
 import type { Selections, SoundSettings } from './types/game';
 
-type Screen = 'start' | 'sound' | 'select' | 'picked' | 'result';
+type Screen = 'start' | 'sound' | 'select' | 'result';
 
 const INITIAL_SOUND: SoundSettings = {
   enabled: true,
   speed: 'normal',
   pitch: 'normal',
 };
-
-const PICK_DELAY_MS = 650;
 
 function pickReaction() {
   return REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
@@ -46,7 +44,6 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('start');
   const [step, setStep] = useState(0);
   const [selections, setSelections] = useState<Selections>({});
-  const [pickedWord, setPickedWord] = useState('');
   const [reaction, setReaction] = useState('');
   const [soundSettings, setSoundSettings] = useLocalStorage<SoundSettings>('henteko-news-sound', INITIAL_SOUND);
 
@@ -76,17 +73,11 @@ export default function App() {
   const handleSelectWord = (word: string) => {
     const category = CATEGORIES[step];
     setSelections((prev) => ({ ...prev, [category.key]: word }));
-    setPickedWord(word);
-    setScreen('picked');
-
-    window.setTimeout(() => {
-      if (step === CATEGORIES.length - 1) {
-        setScreen('result');
-      } else {
-        setStep((prev) => prev + 1);
-        setScreen('select');
-      }
-    }, PICK_DELAY_MS);
+    if (step === CATEGORIES.length - 1) {
+      setScreen('result');
+    } else {
+      setStep((prev) => prev + 1);
+    }
   };
 
   const speakNews = () => {
@@ -110,28 +101,26 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen]);
 
-  if (screen === 'start') {
-    return <StartScreen onStart={startGame} onOpenSound={() => setScreen('sound')} />;
-  }
-
-  if (screen === 'sound') {
-    return <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={() => setScreen('start')} />;
-  }
-
-  if (screen === 'select') {
-    return <WordSelectScreen category={CATEGORIES[step]} onSelect={handleSelectWord} />;
-  }
-
-  if (screen === 'picked') {
-    return <PickedScreen word={pickedWord} />;
-  }
-
   return (
-    <ResultScreen
-      lines={lines}
-      reaction={reaction || (isSupported ? 'よみあげちゅう…' : 'おとはつかえないけど、たのしい！')}
-      onReplayVoice={speakNews}
-      onRestartGame={startGame}
-    />
+    <div className="viewport">
+      <main className="app-shell">
+        <AppHeader />
+        {screen === 'start' && <StartScreen onStart={startGame} onOpenSound={() => setScreen('sound')} />}
+        {screen === 'sound' && (
+          <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={() => setScreen('start')} />
+        )}
+        {screen === 'select' && (
+          <WordSelectScreen key={CATEGORIES[step].key} category={CATEGORIES[step]} onSelect={handleSelectWord} />
+        )}
+        {screen === 'result' && (
+          <ResultScreen
+            lines={lines}
+            reaction={reaction || (isSupported ? 'よみあげちゅう…' : 'おとはつかえないけど、たのしい！')}
+            onReplayVoice={speakNews}
+            onRestartGame={startGame}
+          />
+        )}
+      </main>
+    </div>
   );
 }

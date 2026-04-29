@@ -1,5 +1,4 @@
 import { AlienAnnouncer } from './AlienAnnouncer';
-import { AppHeader } from './AppHeader';
 
 type ResultScreenProps = {
   lines: string[];
@@ -11,17 +10,16 @@ type ResultScreenProps = {
 export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: ResultScreenProps) {
   return (
     <section className="screen result-screen">
-      <AppHeader />
-      <article className="speech-balloon result" aria-label="かんせいニュース">
+      <article className="result-bubble" aria-label="かんせいニュース">
         {lines.map((line) => <p key={line}>{line}</p>)}
       </article>
-      <div className="result-caster-row">
-        <AlienAnnouncer variant="result" />
+      <div className="result-bottom">
+        <AlienAnnouncer className="alien-result" />
         <p className="reaction">{reaction}</p>
       </div>
-      <div className="button-stack result-buttons">
-        <button className="primary" onClick={onReplayVoice}>もういっかいきく！</button>
-        <button className="secondary" onClick={onRestartGame}>もういっかいつくる！</button>
+      <div className="action-stack compact">
+        <button className="action-btn orange small" onClick={onReplayVoice}><span>もういっかいきく！</span></button>
+        <button className="action-btn blue small" onClick={onRestartGame}><span>もういっかいつくる！</span></button>
       </div>
     </section>
   );

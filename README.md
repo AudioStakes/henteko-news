@@ -16,7 +16,6 @@
 - TypeScript
 - Plain CSS
 - Web Speech API
-- PWA（manifest + Service Worker）
 
 ## ローカル起動
 
@@ -38,12 +37,6 @@ Netlify の新規サイト作成時は、以下を指定してください。
 
 - **Build command**: `npm run build`
 - **Publish directory**: `dist`
-
-## PWAとして遊ぶ
-
-- manifest / アイコン / Service Worker を設定済みです。
-- スマホで「ホーム画面に追加」すると、アプリとして起動できます。
-- 2回目以降の読み込み安定化のため、アプリ本体の静的ファイルをキャッシュします。
 
 ## 注意事項
 

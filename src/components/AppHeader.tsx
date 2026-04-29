@@ -1,8 +1,8 @@
 export function AppHeader() {
   return (
-    <header className="app-header" aria-label="へんてこニュース ヘッダー">
+    <header className="app-header" aria-label="へんてこニュース">
       <span className="star">★</span>
-      <h1>
+      <h1 className="logo">
         <span className="c1">へ</span>
         <span className="c2">ん</span>
         <span className="c3">て</span>

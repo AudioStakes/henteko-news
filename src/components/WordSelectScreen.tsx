@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Category } from '../types/game';
 import { toCardWord } from '../utils/words';
+import { playChoiceSound } from '../utils/soundEffects';
 import { CharacterImage } from './CharacterImage';
 
 type WordSelectScreenProps = {
@@ -26,10 +27,17 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
   );
   const [pickedWord, setPickedWord] = useState('');
 
-  const handlePick = (word: string) => {
+  const handlePick = async (word: string) => {
     if (pickedWord) return;
+
+    try {
+      await playChoiceSound();
+    } catch (_error) {
+      // keep game flow even when sound playback is unavailable
+    }
+
     setPickedWord(word);
-    window.setTimeout(() => onSelect(word), 220);
+    window.setTimeout(() => onSelect(word), 320);
   };
 
   return (

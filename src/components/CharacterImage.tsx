@@ -9,15 +9,16 @@ const characterSrc: Record<CharacterVariant, string> = {
 type CharacterImageProps = {
   variant: CharacterVariant;
   className?: string;
+  alt?: string;
 };
 
-export function CharacterImage({ variant, className = '' }: CharacterImageProps) {
+export function CharacterImage({ variant, className = '', alt }: CharacterImageProps) {
   return (
     <img
       className={`character character--${variant} ${className}`.trim()}
       src={characterSrc[variant]}
-      alt=""
-      aria-hidden="true"
+      alt={alt ?? ''}
+      aria-hidden={alt ? undefined : true}
     />
   );
 }

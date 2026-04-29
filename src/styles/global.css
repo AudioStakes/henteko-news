@@ -10,6 +10,7 @@ html, body { height: 100%; margin: 0; }
 body { background: #efe3bf; }
 #root { min-height: 100svh; }
 button { border: 0; font: inherit; cursor: pointer; }
+button:disabled { cursor: default; }
 p { margin: 0; }
 
 .viewport { min-height: 100svh; display: grid; }

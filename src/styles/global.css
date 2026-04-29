@@ -70,11 +70,29 @@ p { margin: 0; }
 .choice-grid { min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
 .choice-card {
   background: rgba(255,255,255,.93); border: 4px solid #f2c842; border-radius: 20px;
+  color: var(--ink, #2f1700);
+  -webkit-text-fill-color: var(--ink, #2f1700);
   font-size: clamp(22px, 6.8vw, 38px); line-height: 1.1; font-weight: 900;
   word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; padding: 10px 8px;
-  transition: transform 160ms ease;
+  transition:
+    transform 180ms cubic-bezier(.2, 1.4, .35, 1),
+    box-shadow 180ms ease,
+    filter 180ms ease;
 }
-.choice-card.is-selected { transform: scale(1.08); }
+
+@keyframes choice-pop {
+  0% { transform: scale(1) rotate(0deg); }
+  45% { transform: scale(1.18) rotate(-2deg); }
+  75% { transform: scale(0.98) rotate(1deg); }
+  100% { transform: scale(1.08) rotate(0deg); }
+}
+
+.choice-card.is-selected {
+  animation: choice-pop 260ms ease-out both;
+  box-shadow: 0 10px 0 rgba(95, 68, 0, .18);
+  filter: brightness(1.08);
+  z-index: 3;
+}
 
 .result-bubble {
   --result-line-count: 5;

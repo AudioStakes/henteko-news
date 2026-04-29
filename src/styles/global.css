@@ -69,7 +69,7 @@ p { margin: 0; }
 
 .sound-screen { grid-template-rows: 1fr; }
 .sound-card { min-height: 0; background: rgba(255,255,255,.72); border: 4px solid #f2c842; border-radius: 22px; display: grid; align-content: center; gap: 10px; padding: 16px; }
-.sound-card h1 { text-align: center; font-size: clamp(32px, 9vw, 44px); }
+.sound-card h1 { margin: 0; text-align: center; font-size: clamp(32px, 9vw, 44px); }
 .sound-list,.sound-row { display: grid; gap: 8px; }
 .sound-row.two { grid-template-columns: repeat(2, minmax(0,1fr)); }
 .sound-row.three { grid-template-columns: repeat(3, minmax(0,1fr)); }

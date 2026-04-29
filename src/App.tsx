@@ -7,6 +7,7 @@ import { WordSelectScreen } from './components/WordSelectScreen';
 import { CATEGORIES, REACTIONS } from './data/words';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSpeech } from './hooks/useSpeech';
+import { buildNewsLines, toSpeechText } from './utils/speechText';
 import type { Selections, SoundSettings } from './types/game';
 
 type Screen = 'start' | 'sound' | 'select' | 'picked' | 'result';
@@ -18,59 +19,6 @@ const INITIAL_SOUND: SoundSettings = {
 };
 
 const PICK_DELAY_MS = 650;
-
-const ACTION_POLITE_MAP: Record<string, string> = {
-  たべた: 'たべました',
-  ふっとばした: 'ふっとばしました',
-  かくした: 'かくしました',
-  おどらせた: 'おどらせました',
-  こちょこちょした: 'こちょこちょしました',
-  ころがした: 'ころがしました',
-  'ぎゅーした': 'ぎゅーしました',
-  もってかえった: 'もってかえりました',
-};
-
-function buildNewsLines(selections: Selections) {
-  return [
-    selections.who,
-    selections.when,
-    selections.where,
-    selections.what,
-    selections.action ? `${selections.action}！` : undefined,
-  ].filter((word): word is string => Boolean(word));
-}
-
-function toPoliteAction(action?: string) {
-  if (!action) return '';
-  const normalized = action.replace(/[！!]/g, '').trim();
-
-  if (!normalized) return '';
-  if (normalized.endsWith('しました') || normalized.endsWith('ました')) {
-    return normalized;
-  }
-
-  if (ACTION_POLITE_MAP[normalized]) {
-    return ACTION_POLITE_MAP[normalized];
-  }
-
-  if (normalized.endsWith('した')) {
-    return `${normalized.slice(0, -2)}しました`;
-  }
-
-  return normalized;
-}
-
-function toSpeechText(selections: Selections) {
-  const parts = [
-    selections.who,
-    selections.when,
-    selections.where,
-    selections.what,
-    toPoliteAction(selections.action),
-  ].filter((word): word is string => Boolean(word));
-
-  return parts.length > 0 ? `ニュースです！${parts.join('、')}！` : 'ニュースです！';
-}
 
 function pickReaction() {
   return REACTIONS[Math.floor(Math.random() * REACTIONS.length)];
@@ -184,7 +132,6 @@ export default function App() {
       reaction={reaction || (isSupported ? 'よみあげちゅう…' : 'おとはつかえないけど、たのしい！')}
       onReplayVoice={speakNews}
       onRestartGame={startGame}
-      onGoHome={() => setScreen('start')}
     />
   );
 }

@@ -8,28 +8,36 @@ type SpeakOptions = {
 
 const DEFAULT_LANG = 'ja-JP';
 
+let speechWarmedUp = false;
+let cachedJapaneseVoice: SpeechSynthesisVoice | null = null;
+
 function pickJapaneseVoice(voices: SpeechSynthesisVoice[]) {
-  return (
+  cachedJapaneseVoice =
     voices.find((voice) => voice.lang === DEFAULT_LANG) ??
     voices.find((voice) => voice.lang.toLowerCase().startsWith('ja')) ??
-    null
-  );
+    null;
+
+  return cachedJapaneseVoice;
 }
 
 export function useSpeech() {
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const onEndRef = useRef<(() => void) | undefined>(undefined);
 
-  const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  const isSupported =
+    typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 
   useEffect(() => {
     if (!isSupported) return;
 
     const loadVoices = () => {
-      setVoices(window.speechSynthesis.getVoices());
+      const loaded = window.speechSynthesis.getVoices();
+      setVoices(loaded);
+      pickJapaneseVoice(loaded);
     };
 
     loadVoices();
+    window.speechSynthesis.getVoices();
     window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
 
     return () => {
@@ -38,25 +46,51 @@ export function useSpeech() {
     };
   }, [isSupported]);
 
+  const warmup = useCallback(() => {
+    if (!isSupported || speechWarmedUp) return;
+
+    speechWarmedUp = true;
+    try {
+      window.speechSynthesis.cancel();
+      const loaded = window.speechSynthesis.getVoices();
+      if (loaded.length > 0) pickJapaneseVoice(loaded);
+
+      const utterance = new SpeechSynthesisUtterance('。');
+      utterance.lang = DEFAULT_LANG;
+      utterance.volume = 0.01;
+      utterance.rate = 1;
+      utterance.pitch = 1;
+      if (cachedJapaneseVoice) utterance.voice = cachedJapaneseVoice;
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      // 読み上げに失敗してもアプリを壊さない
+    }
+  }, [isSupported]);
+
   const speak = useCallback(
     (text: string, options: SpeakOptions) => {
       if (!isSupported) return false;
 
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = options.rate;
-      utterance.pitch = options.pitch;
-      utterance.lang = DEFAULT_LANG;
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = options.rate;
+        utterance.pitch = options.pitch;
+        utterance.lang = DEFAULT_LANG;
 
-      const jaVoice = pickJapaneseVoice(voices.length > 0 ? voices : window.speechSynthesis.getVoices());
-      if (jaVoice) utterance.voice = jaVoice;
+        const fallbackVoices = voices.length > 0 ? voices : window.speechSynthesis.getVoices();
+        const jaVoice = cachedJapaneseVoice ?? pickJapaneseVoice(fallbackVoices);
+        if (jaVoice) utterance.voice = jaVoice;
 
-      onEndRef.current = options.onEnd;
-      utterance.onend = () => onEndRef.current?.();
-      utterance.onerror = () => onEndRef.current?.();
+        onEndRef.current = options.onEnd;
+        utterance.onend = () => onEndRef.current?.();
+        utterance.onerror = () => onEndRef.current?.();
 
-      window.speechSynthesis.speak(utterance);
-      return true;
+        window.speechSynthesis.speak(utterance);
+        return true;
+      } catch {
+        return false;
+      }
     },
     [isSupported, voices],
   );
@@ -64,6 +98,7 @@ export function useSpeech() {
   return {
     isSupported,
     speak,
+    warmup,
     cancel: () => {
       if (isSupported) window.speechSynthesis.cancel();
     },

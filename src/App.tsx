@@ -8,6 +8,8 @@ import { CATEGORIES, REACTIONS } from './data/words';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSpeech } from './hooks/useSpeech';
 import { buildNewsLines, toSpeechText } from './utils/speechText';
+import { preloadImagesWhenIdle } from './utils/preload';
+import { NEXT_SCREEN_IMAGE_URLS } from './assets/imageUrls';
 import type { Selections, SoundSettings } from './types/game';
 
 type Screen = 'start' | 'sound' | 'select' | 'result';
@@ -58,12 +60,17 @@ export default function App() {
     }
   }, [soundSettings, setSoundSettings]);
 
-  const { speak, isSupported } = useSpeech();
+  const { speak, isSupported, warmup } = useSpeech();
 
   const lines = useMemo(() => buildNewsLines(selections), [selections]);
+  useEffect(() => {
+    preloadImagesWhenIdle(NEXT_SCREEN_IMAGE_URLS);
+  }, []);
+
   const speechText = useMemo(() => toSpeechText(selections), [selections]);
 
   const startGame = () => {
+    warmup();
     setSelections({});
     setStep(0);
     setScreen('select');
@@ -71,6 +78,7 @@ export default function App() {
   };
 
   const handleSelectWord = (word: string) => {
+    warmup();
     const category = CATEGORIES[step];
     setSelections((prev) => ({ ...prev, [category.key]: word }));
     if (step === CATEGORIES.length - 1) {

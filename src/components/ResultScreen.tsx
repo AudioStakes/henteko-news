@@ -8,12 +8,15 @@ type ResultScreenProps = {
   onRestartGame: () => void;
 };
 
+const MIN_FONT_SIZE = 20;
+const MAX_FONT_SIZE = 48;
+
 function getInitialFontSize(lines: string[]) {
   const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
   const lineCount = Math.max(lines.length, 1);
-  const widthLimited = 48 - Math.max(0, longest - 6) * 2.8;
-  const heightLimited = 48 - Math.max(0, lineCount - 3) * 4.5;
-  return Math.max(20, Math.min(48, Math.min(widthLimited, heightLimited)));
+  const widthLimited = MAX_FONT_SIZE - Math.max(0, longest - 6) * 2.8;
+  const heightLimited = MAX_FONT_SIZE - Math.max(0, lineCount - 3) * 4.5;
+  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.min(widthLimited, heightLimited)));
 }
 
 export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: ResultScreenProps) {
@@ -32,7 +35,7 @@ export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: 
       let fittedSize = nextSize;
 
       while (
-        fittedSize > 18 &&
+        fittedSize > MIN_FONT_SIZE &&
         textNodes.some((node) => Math.ceil(node.scrollWidth) > Math.ceil(node.clientWidth))
       ) {
         fittedSize -= 1;
@@ -44,9 +47,14 @@ export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: 
 
     fitText();
 
-    const resizeObserver = new ResizeObserver(() => fitText());
-    resizeObserver.observe(bubble);
-    return () => resizeObserver.disconnect();
+    if (typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver(() => fitText());
+      resizeObserver.observe(bubble);
+      return () => resizeObserver.disconnect();
+    }
+
+    window.addEventListener('resize', fitText);
+    return () => window.removeEventListener('resize', fitText);
   }, [lines]);
 
   return (

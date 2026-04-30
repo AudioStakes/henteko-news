@@ -1,4 +1,15 @@
 import type { SoundSettings } from '../types/game';
+import { playChoiceSound, primeChoiceSound } from '../utils/soundEffects';
+
+const SPEED_OPTIONS = [
+  { value: 'slow', label: 'ゆっくり' },
+  { value: 'normal', label: 'ふつう' },
+  { value: 'fast', label: 'はやい' },
+  { value: 'veryFast', label: 'すごくはやい' },
+] as const satisfies ReadonlyArray<{
+  value: SoundSettings['speed'];
+  label: string;
+}>;
 
 type SoundScreenProps = {
   settings: SoundSettings;
@@ -7,6 +18,19 @@ type SoundScreenProps = {
 };
 
 export function SoundScreen({ settings, onUpdate, onBack }: SoundScreenProps) {
+  const handlePressStart = () => {
+    void primeChoiceSound().catch(() => {
+      // iOS Safari may reject unlock attempts; try again on actual tap.
+    });
+  };
+
+  const withClickSound = (callback: () => void) => () => {
+    void playChoiceSound().catch(() => {
+      // Keep controls responsive even when sound playback fails.
+    });
+    callback();
+  };
+
   return (
     <section className="screen sound-screen">
       <div className="sound-card">
@@ -14,31 +38,54 @@ export function SoundScreen({ settings, onUpdate, onBack }: SoundScreenProps) {
 
         <div className="sound-list" aria-label="よみあげ">
           <p className="sound-label">よみあげ</p>
-          <div className="sound-row two">
-            <button aria-pressed={settings.enabled} className={settings.enabled ? 'choice-card yellow active' : 'choice-card yellow'} onClick={() => onUpdate({ ...settings, enabled: true })}>オン</button>
-            <button aria-pressed={!settings.enabled} className={!settings.enabled ? 'choice-card green active' : 'choice-card green'} onClick={() => onUpdate({ ...settings, enabled: false })}>オフ</button>
+          <div className="sound-row two sound-toggle">
+            <button
+              aria-pressed={settings.enabled}
+              className={settings.enabled ? 'sound-choice active' : 'sound-choice'}
+              onClick={withClickSound(() => onUpdate({ ...settings, enabled: true }))}
+              onPointerDown={handlePressStart}
+              onTouchStart={handlePressStart}
+            >
+              オン
+            </button>
+            <button
+              aria-pressed={!settings.enabled}
+              className={!settings.enabled ? 'sound-choice active sound-choice-off' : 'sound-choice'}
+              onClick={withClickSound(() => onUpdate({ ...settings, enabled: false }))}
+              onPointerDown={handlePressStart}
+              onTouchStart={handlePressStart}
+            >
+              オフ
+            </button>
           </div>
         </div>
 
         <div className="sound-list" aria-label="はやさ">
           <p className="sound-label">はやさ</p>
-          <div className="sound-row three">
-            <button aria-pressed={settings.speed === 'slow'} className={settings.speed === 'slow' ? 'choice-card yellow active' : 'choice-card yellow'} onClick={() => onUpdate({ ...settings, speed: 'slow' })}>ゆっくり</button>
-            <button aria-pressed={settings.speed === 'normal'} className={settings.speed === 'normal' ? 'choice-card green active' : 'choice-card green'} onClick={() => onUpdate({ ...settings, speed: 'normal' })}>ふつう</button>
-            <button aria-pressed={settings.speed === 'fast'} className={settings.speed === 'fast' ? 'choice-card blue-line active' : 'choice-card blue-line'} onClick={() => onUpdate({ ...settings, speed: 'fast' })}>はやい</button>
+          <div className="sound-row one">
+            {SPEED_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                aria-pressed={settings.speed === option.value}
+                className={settings.speed === option.value ? 'sound-choice active' : 'sound-choice'}
+                onClick={withClickSound(() => onUpdate({ ...settings, speed: option.value }))}
+                onPointerDown={handlePressStart}
+                onTouchStart={handlePressStart}
+              >
+                <span className="sound-choice-main">{option.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="sound-list" aria-label="こえのたかさ">
-          <p className="sound-label">こえのたかさ</p>
-          <div className="sound-row three">
-            <button aria-pressed={settings.pitch === 'low'} className={settings.pitch === 'low' ? 'choice-card purple active' : 'choice-card purple'} onClick={() => onUpdate({ ...settings, pitch: 'low' })}>ひくい</button>
-            <button aria-pressed={settings.pitch === 'normal'} className={settings.pitch === 'normal' ? 'choice-card orange-line active' : 'choice-card orange-line'} onClick={() => onUpdate({ ...settings, pitch: 'normal' })}>ふつう</button>
-            <button aria-pressed={settings.pitch === 'high'} className={settings.pitch === 'high' ? 'choice-card teal active' : 'choice-card teal'} onClick={() => onUpdate({ ...settings, pitch: 'high' })}>たかめ</button>
-          </div>
-        </div>
-
-        <button className="action-btn orange small" onClick={onBack}><span>けってい</span></button>
+        <button
+          className="action-btn orange small sound-confirm"
+          onClick={withClickSound(onBack)}
+          onPointerDown={handlePressStart}
+          onTouchStart={handlePressStart}
+        >
+          <span>けってい</span>
+        </button>
       </div>
     </section>
   );

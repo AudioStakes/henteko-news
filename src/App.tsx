@@ -17,7 +17,6 @@ type Screen = 'start' | 'sound' | 'select' | 'result';
 const INITIAL_SOUND: SoundSettings = {
   enabled: true,
   speed: 'normal',
-  pitch: 'normal',
 };
 
 function pickReaction() {
@@ -25,19 +24,25 @@ function pickReaction() {
 }
 
 function normalizeSoundSettings(sound: SoundSettings): SoundSettings {
-  const speed = sound.speed === 'slow' || sound.speed === 'normal' || sound.speed === 'fast' ? sound.speed : 'normal';
-  const pitch = sound.pitch === 'low' || sound.pitch === 'normal' || sound.pitch === 'high' ? sound.pitch : 'normal';
+  const speed =
+    sound.speed === 'slow' ||
+    sound.speed === 'normal' ||
+    sound.speed === 'fast' ||
+    sound.speed === 'veryFast'
+      ? sound.speed
+      : 'normal';
 
   return {
     enabled: Boolean(sound.enabled),
     speed,
-    pitch,
   };
 }
 
 function getVoiceConfig(sound: SoundSettings) {
-  const rate = sound.speed === 'slow' ? 0.75 : sound.speed === 'fast' ? 1.1 : 0.9;
-  const pitch = sound.pitch === 'low' ? 0.85 : sound.pitch === 'high' ? 1.25 : 1.0;
+  const rate =
+    sound.speed === 'slow' ? 0.75 : sound.speed === 'fast' ? 1.1 : sound.speed === 'veryFast' ? 1.3 : 0.9;
+  const pitch =
+    sound.speed === 'slow' ? 0.85 : sound.speed === 'fast' ? 1.25 : sound.speed === 'veryFast' ? 1.45 : 1.0;
 
   return { rate, pitch };
 }
@@ -51,16 +56,12 @@ export default function App() {
 
   useEffect(() => {
     const normalized = normalizeSoundSettings(soundSettings);
-    if (
-      normalized.enabled !== soundSettings.enabled ||
-      normalized.speed !== soundSettings.speed ||
-      normalized.pitch !== soundSettings.pitch
-    ) {
+    if (normalized.enabled !== soundSettings.enabled || normalized.speed !== soundSettings.speed) {
       setSoundSettings(normalized);
     }
   }, [soundSettings, setSoundSettings]);
 
-  const { speak, isSupported, warmup } = useSpeech();
+  const { speak, isSupported, warmup, cancel } = useSpeech();
 
   const lines = useMemo(() => buildNewsLines(selections), [selections]);
   useEffect(() => {
@@ -70,6 +71,7 @@ export default function App() {
   const speechText = useMemo(() => toSpeechText(selections), [selections]);
 
   const startGame = () => {
+    cancel();
     warmup();
     setSelections({});
     setStep(0);
@@ -113,9 +115,9 @@ export default function App() {
     <div className="viewport">
       <main className="app-shell">
         <AppHeader />
-        {screen === 'start' && <StartScreen onStart={startGame} onOpenSound={() => setScreen('sound')} />}
+        {screen === 'start' && <StartScreen onStart={startGame} />}
         {screen === 'sound' && (
-          <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={() => setScreen('start')} />
+          <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={() => setScreen('result')} />
         )}
         {screen === 'select' && (
           <WordSelectScreen key={CATEGORIES[step].key} category={CATEGORIES[step]} onSelect={handleSelectWord} />
@@ -125,6 +127,7 @@ export default function App() {
             lines={lines}
             reaction={reaction || (isSupported ? '' : 'おとはつかえないけど、たのしい！')}
             onReplayVoice={speakNews}
+            onOpenSound={() => setScreen('sound')}
             onRestartGame={startGame}
           />
         )}

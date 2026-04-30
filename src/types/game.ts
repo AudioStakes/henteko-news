@@ -8,11 +8,9 @@ export type Category = {
 
 export type Selections = Partial<Record<CategoryKey, string>>;
 
-export type SoundSpeed = 'slow' | 'normal' | 'fast';
-export type SoundPitch = 'low' | 'normal' | 'high';
+export type SoundSpeed = 'slow' | 'normal' | 'fast' | 'veryFast';
 
 export type SoundSettings = {
   enabled: boolean;
   speed: SoundSpeed;
-  pitch: SoundPitch;
 };

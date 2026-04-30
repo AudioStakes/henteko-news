@@ -1,10 +1,12 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { CharacterImage } from './CharacterImage';
+import { playChoiceSound, primeChoiceSound } from '../utils/soundEffects';
 
 type ResultScreenProps = {
   lines: string[];
   reaction: string;
   onReplayVoice: () => void;
+  onOpenSound: () => void;
   onRestartGame: () => void;
 };
 
@@ -19,9 +21,22 @@ function getInitialFontSize(lines: string[]) {
   return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.min(widthLimited, heightLimited)));
 }
 
-export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: ResultScreenProps) {
+export function ResultScreen({ lines, reaction, onReplayVoice, onOpenSound, onRestartGame }: ResultScreenProps) {
   const bubbleRef = useRef<HTMLElement | null>(null);
   const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
+
+  const handlePressStart = () => {
+    void primeChoiceSound().catch(() => {
+      // iOS Safari may reject unlock attempts; try again on actual tap.
+    });
+  };
+
+  const withClickSound = (callback: () => void) => () => {
+    void playChoiceSound().catch(() => {
+      // Keep the button action available even when sound playback fails.
+    });
+    callback();
+  };
 
   useLayoutEffect(() => {
     const bubble = bubbleRef.current;
@@ -70,13 +85,41 @@ export function ResultScreen({ lines, reaction, onReplayVoice, onRestartGame }: 
       >
         {lines.map((line) => <p className="result-text" key={line}>{line}</p>)}
       </article>
+
       <div className="result-bottom">
         <CharacterImage variant="result" className="result-character" />
         <p className="reaction">{reaction}</p>
       </div>
-      <div className="action-stack compact">
-        <button className="action-btn orange small" onClick={onReplayVoice}><span>もういっかいきく！</span></button>
-        <button className="action-btn blue small" onClick={onRestartGame}><span>もういっかいつくる！</span></button>
+
+      <div className="action-stack compact result-actions">
+        <button
+          className="action-btn result-action replay"
+          onClick={withClickSound(onReplayVoice)}
+          onPointerDown={handlePressStart}
+          onTouchStart={handlePressStart}
+        >
+          <span className="action-icon" aria-hidden="true">↻</span>
+          <span>もう1かいきく</span>
+        </button>
+
+        <button
+          className="action-btn result-action sound"
+          onClick={withClickSound(onOpenSound)}
+          onPointerDown={handlePressStart}
+          onTouchStart={handlePressStart}
+        >
+          <span className="action-icon" aria-hidden="true">🔊</span>
+          <span>こえ</span>
+        </button>
+
+        <button
+          className="action-btn result-action next"
+          onClick={withClickSound(onRestartGame)}
+          onPointerDown={handlePressStart}
+          onTouchStart={handlePressStart}
+        >
+          <span>ニュースをつくる</span>
+        </button>
       </div>
     </section>
   );

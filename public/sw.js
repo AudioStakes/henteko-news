@@ -1,7 +1,5 @@
-const CACHE_NAME = 'henteko-news-v2';
+const CACHE_NAME = 'henteko-news-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
   '/assets/bg-studio.webp',
   '/assets/header-logo.webp',
   '/robots.txt',
@@ -24,6 +22,36 @@ self.addEventListener('fetch', (event) => {
   const request = event.request;
   if (request.method !== 'GET') return;
 
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
+
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put('/index.html', responseClone);
+          });
+
+          return response;
+        })
+        .catch(() => {
+          return caches.match('/index.html').then(
+            (fallback) =>
+              fallback ||
+              new Response('Offline', {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: { 'Content-Type': 'text/plain' },
+              }),
+          );
+        }),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
@@ -40,18 +68,6 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          if (request.mode === 'navigate') {
-            return caches.match('/index.html').then(
-              (fallback) =>
-                fallback ||
-                new Response('Offline', {
-                  status: 503,
-                  statusText: 'Service Unavailable',
-                  headers: { 'Content-Type': 'text/plain' },
-                }),
-            );
-          }
-
           return new Response('Offline', {
             status: 503,
             statusText: 'Service Unavailable',

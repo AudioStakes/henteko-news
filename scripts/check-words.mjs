@@ -38,9 +38,17 @@ function loadProjectCompilerOptions() {
 function compileTsModule(filePath) {
   const projectCompilerOptions = loadProjectCompilerOptions();
   const compilerOptions = {
-    ...projectCompilerOptions,
-    target: projectCompilerOptions.target ?? ts.ScriptTarget.ES2020,
+    target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.CommonJS,
+    moduleResolution: ts.ModuleResolutionKind.Node10,
+    esModuleInterop: true,
+    skipLibCheck: true,
+    strict: true,
+    noEmit: false,
+    isolatedModules: false,
+    declaration: false,
+    declarationMap: false,
+    sourceMap: false,
   };
   const program = ts.createProgram([filePath], compilerOptions);
   const sourceFile = program.getSourceFile(filePath);

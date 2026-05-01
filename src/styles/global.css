@@ -490,17 +490,14 @@ p {
 }
 
 .words-audio-check__status {
-  font-size: clamp(16px, 4.2vw, 20px);
-  line-height: 1.5;
-  font-weight: 900;
-}
-
-.words-audio-check__status {
   display: grid;
   gap: 8px;
   padding: 14px 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.8);
+  font-size: clamp(16px, 4.2vw, 20px);
+  line-height: 1.5;
+  font-weight: 900;
 }
 
 .words-audio-check__error {

@@ -49,10 +49,6 @@ export function WordsAudioCheckScreen() {
   const resumeIndexRef = useRef(0);
 
   useEffect(() => {
-    indexRef.current = currentIndex;
-  }, [currentIndex]);
-
-  useEffect(() => {
     return () => {
       window.speechSynthesis.cancel();
     };
@@ -61,7 +57,9 @@ export function WordsAudioCheckScreen() {
   const stopPlayback = () => {
     const currentResumeIndex = indexRef.current >= 0 ? indexRef.current : 0;
     resumeIndexRef.current = currentResumeIndex;
+    indexRef.current = -1;
     utteranceRef.current = null;
+    setCurrentIndex(-1);
     setIsPlaying(false);
     window.speechSynthesis.cancel();
   };
@@ -75,11 +73,13 @@ export function WordsAudioCheckScreen() {
     stopPlayback();
     setError("");
     resumeIndexRef.current = startIndex;
+    indexRef.current = startIndex;
     setCurrentIndex(startIndex);
     setIsPlaying(true);
 
     const speakNext = (index: number) => {
       if (index >= queue.length) {
+        indexRef.current = -1;
         utteranceRef.current = null;
         setCurrentIndex(queue.length - 1);
         setIsPlaying(false);
@@ -89,6 +89,7 @@ export function WordsAudioCheckScreen() {
 
       const item = queue[index];
       resumeIndexRef.current = index;
+      indexRef.current = index;
       setCurrentIndex(index);
 
       const utterance = new SpeechSynthesisUtterance(item.speechText);
@@ -103,6 +104,7 @@ export function WordsAudioCheckScreen() {
       };
 
       utterance.onerror = () => {
+        indexRef.current = -1;
         utteranceRef.current = null;
         setIsPlaying(false);
         setError("よみあげが とちゅうで とまりました。もういちど はじめてください。");

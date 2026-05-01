@@ -8,6 +8,7 @@ type SpeakOptions = {
 };
 
 const DEFAULT_LANG = "ja-JP";
+const DEBUG_SPEECH = import.meta.env.DEV;
 
 let speechWarmedUp = false;
 
@@ -19,6 +20,8 @@ function splitSpeechText(text: string) {
 }
 
 function logSpeechState(label: string) {
+  if (!DEBUG_SPEECH) return;
+
   const synth = window.speechSynthesis;
   const voices = synth.getVoices().map((voice) => ({
     name: voice.name,
@@ -38,12 +41,21 @@ function logSpeechState(label: string) {
   });
 }
 
+function pickJapaneseVoice(voices: SpeechSynthesisVoice[]) {
+  return (
+    voices.find((voice) => voice.lang === DEFAULT_LANG) ??
+    voices.find((voice) => voice.lang.toLowerCase().startsWith("ja")) ??
+    null
+  );
+}
+
 export function useSpeech() {
   const onEndRef = useRef<(() => void) | undefined>(undefined);
   const requestIdRef = useRef(0);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isSpeakingRef = useRef(false);
   const startWatchdogRef = useRef<number | null>(null);
+  const preferredVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -54,11 +66,10 @@ export function useSpeech() {
     if (!isSupported) return;
 
     const loadVoices = () => {
-      window.speechSynthesis.getVoices();
+      preferredVoiceRef.current = pickJapaneseVoice(window.speechSynthesis.getVoices());
     };
 
     loadVoices();
-    window.speechSynthesis.getVoices();
     window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
 
     return () => {
@@ -80,6 +91,7 @@ export function useSpeech() {
 
       const utterance = new SpeechSynthesisUtterance("。");
       utterance.lang = DEFAULT_LANG;
+      utterance.voice = preferredVoiceRef.current;
       utterance.volume = 0.01;
       utterance.rate = 1;
       utterance.pitch = 1;
@@ -126,6 +138,7 @@ export function useSpeech() {
           utterance.rate = options.rate;
           utterance.pitch = options.pitch;
           utterance.lang = DEFAULT_LANG;
+          utterance.voice = preferredVoiceRef.current;
           utterance.volume = 1;
 
           if (startWatchdogRef.current !== null) {
@@ -134,7 +147,9 @@ export function useSpeech() {
           startWatchdogRef.current = window.setTimeout(() => {
             if (requestId !== requestIdRef.current) return;
             if (activeUtteranceRef.current !== utterance) return;
-            console.warn("speechSynthesis start timeout", { text: parts[index] });
+            if (DEBUG_SPEECH) {
+              console.warn("speechSynthesis start timeout", { text: parts[index] });
+            }
             activeUtteranceRef.current = null;
             isSpeakingRef.current = false;
             window.speechSynthesis.cancel();
@@ -166,12 +181,14 @@ export function useSpeech() {
               window.clearTimeout(startWatchdogRef.current);
               startWatchdogRef.current = null;
             }
-            console.error("speechSynthesis error", {
-              error: event.error,
-              charIndex: event.charIndex,
-              elapsedTime: event.elapsedTime,
-              text: parts[index],
-            });
+            if (DEBUG_SPEECH) {
+              console.error("speechSynthesis error", {
+                error: event.error,
+                charIndex: event.charIndex,
+                elapsedTime: event.elapsedTime,
+                text: parts[index],
+              });
+            }
             logSpeechState(`utterance-onerror-${index}`);
             options.onError?.("error");
           };

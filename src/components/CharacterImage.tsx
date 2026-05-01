@@ -1,13 +1,12 @@
-import hiyokoHome from "../assets/hiyoko.webp";
-import hiyokoResult from "../assets/hiyoko.webp";
+import hiyokoImage from "../assets/hiyoko.webp";
 import hiyokoSelect from "../assets/hiyoko_question.webp";
 
 type CharacterVariant = "home" | "select" | "result";
 
 const characterSrc: Record<CharacterVariant, string> = {
-  home: hiyokoHome,
+  home: hiyokoImage,
   select: hiyokoSelect,
-  result: hiyokoResult,
+  result: hiyokoImage,
 };
 
 type CharacterImageProps = {

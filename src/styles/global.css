@@ -262,42 +262,10 @@ p {
   line-height: 1;
 }
 
-.trust-pill {
-  width: fit-content;
-  max-width: 100%;
-  min-height: 42px;
-  margin: 0 auto;
-  padding: 7px 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  overflow: hidden;
-  border: 2px solid rgba(255, 171, 55, 0.9);
-  border-radius: var(--radius-pill);
-  background: var(--surface-white-90);
-  color: rgba(47, 23, 0, 0.92);
-  font-size: clamp(13px, 4cqw, 19px);
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.trust-pill__icon--heart {
-  color: var(--color-orange-deep);
-}
-
-.trust-pill__icon--shield {
-  color: var(--color-green);
-}
-
 @media (max-height: 700px) {
   .action-btn {
     min-height: clamp(52px, 12svh, 70px);
     font-size: clamp(20px, 8cqw, 34px);
-  }
-
-  .trust-pill {
-    font-size: clamp(12px, 3.8cqw, 16px);
   }
 }
 

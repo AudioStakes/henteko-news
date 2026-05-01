@@ -1,4 +1,4 @@
-const VERSION = "2026-05-01";
+const VERSION = "0.0.0";
 const STATIC_CACHE = `henteko-static-${VERSION}`;
 const HTML_CACHE = `henteko-html-${VERSION}`;
 const STATIC_ASSETS = [

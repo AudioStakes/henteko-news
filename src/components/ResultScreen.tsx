@@ -33,14 +33,15 @@ export function ResultScreen({
   const { primeOnPressStart, withClickSound } = useButtonSound();
   const bubbleRef = useRef<HTMLElement | null>(null);
   const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
-  useFitText(
-    [bubbleRef.current],
-    MIN_FONT_SIZE,
-    MAX_FONT_SIZE,
-    ".result-text",
-    () => getInitialFontSize(lines),
+  useFitText({
+    root: bubbleRef.current,
+    minFontSize: MIN_FONT_SIZE,
+    maxFontSize: MAX_FONT_SIZE,
+    targetsSelector: ".result-text",
+    getInitialFontSize: () => getInitialFontSize(lines),
     setFontSize,
-  );
+    watchDeps: [lines],
+  });
   const lineKeyCount = new Map<string, number>();
   const keyedLines = lines.map((line) => {
     const seen = (lineKeyCount.get(line) ?? 0) + 1;

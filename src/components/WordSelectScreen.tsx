@@ -30,8 +30,13 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
     [category],
   );
   const [pickedId, setPickedId] = useState("");
-  const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  useFitText(buttonRefs.current, 18, 38);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  useFitText({
+    root: gridRef.current,
+    minFontSize: 18,
+    maxFontSize: 38,
+    targetsSelector: ".choice-card",
+  });
 
   const handlePick = (id: string, option: WordOption) => {
     if (pickedId) return;
@@ -45,8 +50,8 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
         <CharacterImage variant="select" className="select-character" />
         <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
       </div>
-      <div className="choice-grid">
-        {shuffledWords.map((choice, index) => (
+      <div className="choice-grid" ref={gridRef}>
+        {shuffledWords.map((choice) => (
           <button
             key={choice.id}
             type="button"
@@ -54,9 +59,6 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
             disabled={Boolean(pickedId)}
             onClick={withClickSound(() => handlePick(choice.id, choice.option))}
             onPointerDown={primeOnPressStart}
-            ref={(element) => {
-              buttonRefs.current[index] = element;
-            }}
           >
             {toCardWord(choice.option.display)}
           </button>

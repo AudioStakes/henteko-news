@@ -8,7 +8,6 @@ type SpeakOptions = {
 };
 
 const DEFAULT_LANG = "ja-JP";
-const DEBUG_SPEECH = import.meta.env.DEV;
 const START_WATCHDOG_TIMEOUT_MS = 1500;
 const speechWarmupState = { warmed: false };
 
@@ -28,6 +27,7 @@ function pickJapaneseVoice(voices: SpeechSynthesisVoice[]) {
 
 export function useSpeech() {
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const isSpeakingRef = useRef(false);
   const requestIdRef = useRef(0);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const startWatchdogRef = useRef<number | null>(null);
@@ -36,6 +36,11 @@ export function useSpeech() {
     typeof window !== "undefined" &&
     "speechSynthesis" in window &&
     "SpeechSynthesisUtterance" in window;
+
+  const setSpeaking = useCallback((next: boolean) => {
+    isSpeakingRef.current = next;
+    setIsSpeaking(next);
+  }, []);
 
   useEffect(() => {
     if (!isSupported) return;
@@ -47,6 +52,7 @@ export function useSpeech() {
       if (startWatchdogRef.current !== null) window.clearTimeout(startWatchdogRef.current);
       window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
       window.speechSynthesis.cancel();
+      isSpeakingRef.current = false;
     };
   }, [isSupported]);
 
@@ -54,11 +60,11 @@ export function useSpeech() {
     if (!isSupported) return;
     requestIdRef.current += 1;
     activeUtteranceRef.current = null;
-    setIsSpeaking(false);
+    setSpeaking(false);
     if (startWatchdogRef.current !== null) window.clearTimeout(startWatchdogRef.current);
     startWatchdogRef.current = null;
     window.speechSynthesis.cancel();
-  }, [isSupported]);
+  }, [isSupported, setSpeaking]);
 
   const warmup = useCallback(() => {
     if (!isSupported || speechWarmupState.warmed) return;
@@ -76,18 +82,19 @@ export function useSpeech() {
 
   const speak = useCallback(
     (text: string, options: SpeakOptions) => {
-      if (!isSupported || isSpeaking) return false;
+      if (!isSupported || isSpeakingRef.current) return false;
       try {
         requestIdRef.current += 1;
         const requestId = requestIdRef.current;
         const parts = splitSpeechText(text);
+        if (parts.length === 0) return false;
         let index = 0;
-        setIsSpeaking(true);
+        setSpeaking(true);
         const speakNext = () => {
           if (requestId !== requestIdRef.current) return;
           if (index >= parts.length) {
             activeUtteranceRef.current = null;
-            setIsSpeaking(false);
+            setSpeaking(false);
             options.onEnd?.();
             return;
           }
@@ -103,7 +110,7 @@ export function useSpeech() {
             if (requestId !== requestIdRef.current || activeUtteranceRef.current !== utterance)
               return;
             activeUtteranceRef.current = null;
-            setIsSpeaking(false);
+            setSpeaking(false);
             window.speechSynthesis.cancel();
             options.onError?.("timeout");
           }, START_WATCHDOG_TIMEOUT_MS);
@@ -119,24 +126,24 @@ export function useSpeech() {
             speakNext();
           };
           utterance.onerror = () => {
+            if (requestId !== requestIdRef.current) return;
             activeUtteranceRef.current = null;
-            setIsSpeaking(false);
+            setSpeaking(false);
             if (startWatchdogRef.current !== null) window.clearTimeout(startWatchdogRef.current);
             startWatchdogRef.current = null;
             options.onError?.("error");
           };
           window.speechSynthesis.resume();
-          if (DEBUG_SPEECH) void 0;
           window.speechSynthesis.speak(utterance);
         };
         speakNext();
         return true;
       } catch {
-        setIsSpeaking(false);
+        setSpeaking(false);
         return false;
       }
     },
-    [isSupported, isSpeaking],
+    [isSupported, setSpeaking],
   );
 
   return { isSupported, isSpeaking, speak, warmup, cancel };

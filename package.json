@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/sync-sw-version.mjs && tsc -b && vite build",
+    "build": "VITE_APP_VERSION=$npm_package_version tsc -b && vite build",
     "preview": "vite preview",
     "lint": "biome check .",
     "format": "biome format --write .",

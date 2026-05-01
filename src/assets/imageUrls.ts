@@ -1,4 +1,4 @@
-import alienSelect from './alien-select.webp';
-import alienResult from './alien-result.webp';
+import hiyokoResult from "./hiyoko.webp";
+import hiyokoSelect from "./hiyoko_question.webp";
 
-export const NEXT_SCREEN_IMAGE_URLS = [alienSelect, alienResult];
+export const NEXT_SCREEN_IMAGE_URLS = [hiyokoSelect, hiyokoResult];

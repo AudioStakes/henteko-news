@@ -23,7 +23,7 @@ export async function primeChoiceSound(): Promise<void> {
     return;
   }
 
-  if (context.state === 'suspended') {
+  if (context.state === "suspended") {
     try {
       await context.resume();
     } catch {
@@ -59,7 +59,7 @@ export async function playChoiceSound(): Promise<void> {
     return;
   }
 
-  if (context.state === 'suspended') {
+  if (context.state === "suspended") {
     try {
       await context.resume();
     } catch {
@@ -93,7 +93,7 @@ export async function playChoiceSound(): Promise<void> {
   oscillator.onended = cleanup;
 
   try {
-    oscillator.type = 'triangle';
+    oscillator.type = "triangle";
     oscillator.frequency.setValueAtTime(620, now);
     oscillator.frequency.exponentialRampToValueAtTime(960, now + 0.08);
     oscillator.frequency.exponentialRampToValueAtTime(740, now + 0.18);

@@ -1,28 +1,32 @@
-const CACHE_NAME = 'henteko-news-v3';
+const CACHE_NAME = "henteko-news-v3";
 const ASSETS = [
-  '/assets/bg-studio.webp',
-  '/assets/header-logo.webp',
-  '/robots.txt',
-  '/sitemap.xml',
+  "/assets/bg-studio.webp",
+  "/assets/header-logo.webp",
+  "/robots.txt",
+  "/sitemap.xml",
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))),
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+      ),
   );
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const request = event.request;
-  if (request.method !== 'GET') return;
+  if (request.method !== "GET") return;
 
-  if (request.mode === 'navigate') {
+  if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((response) => {
@@ -32,19 +36,19 @@ self.addEventListener('fetch', (event) => {
 
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put('/index.html', responseClone);
+            cache.put("/index.html", responseClone);
           });
 
           return response;
         })
         .catch(() => {
-          return caches.match('/index.html').then(
+          return caches.match("/index.html").then(
             (fallback) =>
               fallback ||
-              new Response('Offline', {
+              new Response("Offline", {
                 status: 503,
-                statusText: 'Service Unavailable',
-                headers: { 'Content-Type': 'text/plain' },
+                statusText: "Service Unavailable",
+                headers: { "Content-Type": "text/plain" },
               }),
           );
         }),
@@ -58,7 +62,8 @@ self.addEventListener('fetch', (event) => {
 
       return fetch(request)
         .then((response) => {
-          if (!response || response.status !== 200 || request.url.startsWith('chrome-extension://')) return response;
+          if (!response || response.status !== 200 || request.url.startsWith("chrome-extension://"))
+            return response;
 
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -68,10 +73,10 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => {
-          return new Response('Offline', {
+          return new Response("Offline", {
             status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'text/plain' },
+            statusText: "Service Unavailable",
+            headers: { "Content-Type": "text/plain" },
           });
         });
     }),

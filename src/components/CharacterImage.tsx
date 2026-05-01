@@ -1,13 +1,13 @@
-import alienHome from '../assets/alien-home.webp';
-import alienSelect from '../assets/alien-select.webp';
-import alienResult from '../assets/alien-result.webp';
+import hiyokoHome from "../assets/hiyoko.webp";
+import hiyokoResult from "../assets/hiyoko.webp";
+import hiyokoSelect from "../assets/hiyoko_question.webp";
 
-type CharacterVariant = 'home' | 'select' | 'result';
+type CharacterVariant = "home" | "select" | "result";
 
 const characterSrc: Record<CharacterVariant, string> = {
-  home: alienHome,
-  select: alienSelect,
-  result: alienResult,
+  home: hiyokoHome,
+  select: hiyokoSelect,
+  result: hiyokoResult,
 };
 
 type CharacterImageProps = {
@@ -16,18 +16,22 @@ type CharacterImageProps = {
   alt?: string;
 };
 
-export function CharacterImage({ variant, className = '', alt }: CharacterImageProps) {
-  const loading = variant === 'home' ? undefined : 'eager';
+export function CharacterImage({ variant, className = "", alt }: CharacterImageProps) {
+  const loading = variant === "home" ? undefined : "eager";
+  const fetchPriorityProps = { fetchpriority: variant === "home" ? "high" : "auto" } as Record<
+    string,
+    string
+  >;
 
   return (
     <img
       className={`character character--${variant} ${className}`.trim()}
       src={characterSrc[variant]}
-      alt={alt ?? ''}
+      alt={alt ?? ""}
       aria-hidden={alt ? undefined : true}
       decoding="async"
-      fetchPriority={variant === 'home' ? 'high' : 'auto'}
       loading={loading}
+      {...fetchPriorityProps}
     />
   );
 }

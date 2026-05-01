@@ -5,6 +5,7 @@ import { playChoiceSound, primeChoiceSound } from '../utils/soundEffects';
 type ResultScreenProps = {
   lines: string[];
   reaction: string;
+  speechError: string;
   onReplayVoice: () => void;
   onOpenSound: () => void;
   onRestartGame: () => void;
@@ -21,7 +22,14 @@ function getInitialFontSize(lines: string[]) {
   return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.min(widthLimited, heightLimited)));
 }
 
-export function ResultScreen({ lines, reaction, onReplayVoice, onOpenSound, onRestartGame }: ResultScreenProps) {
+export function ResultScreen({
+  lines,
+  reaction,
+  speechError,
+  onReplayVoice,
+  onOpenSound,
+  onRestartGame,
+}: ResultScreenProps) {
   const bubbleRef = useRef<HTMLElement | null>(null);
   const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
 
@@ -88,7 +96,10 @@ export function ResultScreen({ lines, reaction, onReplayVoice, onOpenSound, onRe
 
       <div className="result-bottom">
         <CharacterImage variant="result" className="result-character" />
-        <p className="reaction">{reaction}</p>
+        <div className="result-sidecopy">
+          {speechError ? <p className="speech-error">{speechError}</p> : null}
+          <p className="reaction">{reaction}</p>
+        </div>
       </div>
 
       <div className="action-stack compact result-actions">

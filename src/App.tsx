@@ -4,6 +4,7 @@ import { ResultScreen } from './components/ResultScreen';
 import { SoundScreen } from './components/SoundScreen';
 import { StartScreen } from './components/StartScreen';
 import { WordSelectScreen } from './components/WordSelectScreen';
+import { WordsAudioCheckScreen } from './components/WordsAudioCheckScreen';
 import { CATEGORIES, REACTIONS } from './data/words';
 import { useLocalStorage } from './hooks/useLocalStorage';
 import { useSpeech } from './hooks/useSpeech';
@@ -48,10 +49,12 @@ function getVoiceConfig(sound: SoundSettings) {
 }
 
 export default function App() {
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
   const [screen, setScreen] = useState<Screen>('start');
   const [step, setStep] = useState(0);
   const [selections, setSelections] = useState<Selections>({});
   const [reaction, setReaction] = useState('');
+  const [speechError, setSpeechError] = useState('');
   const [soundSettings, setSoundSettings] = useLocalStorage<SoundSettings>('henteko-news-sound', INITIAL_SOUND);
 
   useEffect(() => {
@@ -68,7 +71,39 @@ export default function App() {
     preloadImagesWhenIdle(NEXT_SCREEN_IMAGE_URLS);
   }, []);
 
-  const speechText = useMemo(() => toSpeechText(selections), [selections]);
+  if (pathname === '/words-audio-check') {
+    return (
+      <div className="viewport">
+        <main className="app-shell">
+          <AppHeader />
+          <WordsAudioCheckScreen />
+        </main>
+      </div>
+    );
+  }
+
+  const showSpeechUnavailable = () => {
+    setSpeechError('よみあげの おとが でません。ブラウザを さいきどうすると なおるかも。');
+  };
+
+  const speakNews = (nextSelections: Selections = selections) => {
+    const nextLines = buildNewsLines(nextSelections);
+    if (!soundSettings.enabled || nextLines.length !== 5) return;
+
+    setSpeechError('');
+    const text = toSpeechText(nextSelections);
+    const { rate, pitch } = getVoiceConfig(soundSettings);
+    const ok = speak(text, {
+      rate,
+      pitch,
+      onEnd: () => setReaction(pickReaction()),
+      onError: () => showSpeechUnavailable(),
+    });
+
+    if (!ok) {
+      showSpeechUnavailable();
+    }
+  };
 
   const startGame = () => {
     cancel();
@@ -77,39 +112,21 @@ export default function App() {
     setStep(0);
     setScreen('select');
     setReaction('');
+    setSpeechError('');
   };
 
   const handleSelectWord = (word: string) => {
     warmup();
     const category = CATEGORIES[step];
-    setSelections((prev) => ({ ...prev, [category.key]: word }));
+    const nextSelections = { ...selections, [category.key]: word };
+    setSelections(nextSelections);
     if (step === CATEGORIES.length - 1) {
       setScreen('result');
+      speakNews(nextSelections);
     } else {
       setStep((prev) => prev + 1);
     }
   };
-
-  const speakNews = () => {
-    if (!soundSettings.enabled || lines.length !== 5) return;
-    const { rate, pitch } = getVoiceConfig(soundSettings);
-    const ok = speak(speechText, {
-      rate,
-      pitch,
-      onEnd: () => setReaction(pickReaction()),
-    });
-
-    if (!ok) {
-      setReaction('おとがつかえないけど、ニュースはバッチリ！');
-    }
-  };
-
-  useEffect(() => {
-    if (screen === 'result' && soundSettings.enabled) {
-      speakNews();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen]);
 
   return (
     <div className="viewport">
@@ -126,6 +143,7 @@ export default function App() {
           <ResultScreen
             lines={lines}
             reaction={reaction || (isSupported ? '' : 'おとはつかえないけど、たのしい！')}
+            speechError={speechError}
             onReplayVoice={speakNews}
             onOpenSound={() => setScreen('sound')}
             onRestartGame={startGame}

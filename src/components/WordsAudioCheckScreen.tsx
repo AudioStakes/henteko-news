@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { CATEGORIES } from '../data/words';
-import { toPoliteAction } from '../utils/speechText';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CATEGORIES } from "../data/words";
+import { toPoliteAction } from "../utils/speechText";
 
 type QueueItem = {
   categoryKey: string;
@@ -9,7 +9,7 @@ type QueueItem = {
   speechText: string;
 };
 
-const DEFAULT_LANG = 'ja-JP';
+const DEFAULT_LANG = "ja-JP";
 
 function buildQueue(): QueueItem[] {
   return CATEGORIES.flatMap((category) =>
@@ -17,17 +17,17 @@ function buildQueue(): QueueItem[] {
       categoryKey: category.key,
       categoryLabel: category.label,
       displayText: word,
-      speechText: category.key === 'action' ? toPoliteAction(word) : word,
+      speechText: category.key === "action" ? toPoliteAction(word) : word,
     })),
   );
 }
 
 const CATEGORY_BUTTON_LABELS: Record<string, string> = {
-  who: 'だれが',
-  when: 'いつ',
-  where: 'どこで',
-  what: 'なにを',
-  action: 'どうした',
+  who: "だれが",
+  when: "いつ",
+  where: "どこで",
+  what: "なにを",
+  action: "どうした",
 };
 
 export function WordsAudioCheckScreen() {
@@ -36,14 +36,14 @@ export function WordsAudioCheckScreen() {
     () =>
       CATEGORIES.map((category) => ({
         key: category.key,
-        label: CATEGORY_BUTTON_LABELS[category.key] ?? category.label.replace('？', ''),
+        label: CATEGORY_BUTTON_LABELS[category.key] ?? category.label.replace("？", ""),
         startIndex: queue.findIndex((item) => item.categoryKey === category.key),
       })),
     [queue],
   );
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const indexRef = useRef(-1);
   const resumeIndexRef = useRef(0);
@@ -67,13 +67,13 @@ export function WordsAudioCheckScreen() {
   };
 
   const playFrom = (startIndex: number) => {
-    if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
-      setError('このブラウザでは よみあげが つかえません。');
+    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
+      setError("このブラウザでは よみあげが つかえません。");
       return;
     }
 
     stopPlayback();
-    setError('');
+    setError("");
     resumeIndexRef.current = startIndex;
     setCurrentIndex(startIndex);
     setIsPlaying(true);
@@ -105,7 +105,7 @@ export function WordsAudioCheckScreen() {
       utterance.onerror = () => {
         utteranceRef.current = null;
         setIsPlaying(false);
-        setError('よみあげが とちゅうで とまりました。もういちど はじめてください。');
+        setError("よみあげが とちゅうで とまりました。もういちど はじめてください。");
       };
 
       window.speechSynthesis.resume();
@@ -122,13 +122,21 @@ export function WordsAudioCheckScreen() {
       <div className="sound-card words-audio-check">
         <h1>おんせい かくにん</h1>
         <div className="words-audio-check__status">
-          <p>しんこう: {currentIndex >= 0 ? `${currentIndex + 1} / ${queue.length}` : `0 / ${queue.length}`}</p>
-          <p>カテゴリ: {currentItem?.categoryLabel ?? 'まだ さいせいしていません'}</p>
-          <p>いまのことば: {currentItem?.displayText ?? '「かいし」を おしてください'}</p>
+          <p>
+            しんこう:{" "}
+            {currentIndex >= 0 ? `${currentIndex + 1} / ${queue.length}` : `0 / ${queue.length}`}
+          </p>
+          <p>カテゴリ: {currentItem?.categoryLabel ?? "まだ さいせいしていません"}</p>
+          <p>いまのことば: {currentItem?.displayText ?? "「かいし」を おしてください"}</p>
         </div>
         {error && <p className="speech-error words-audio-check__error">{error}</p>}
         <div className="action-stack">
-          <button type="button" className="action-btn orange small" onClick={() => playFrom(0)} disabled={isPlaying}>
+          <button
+            type="button"
+            className="action-btn orange small"
+            onClick={() => playFrom(0)}
+            disabled={isPlaying}
+          >
             さいしょから かいし
           </button>
           <button
@@ -139,7 +147,12 @@ export function WordsAudioCheckScreen() {
           >
             とまったところから さいかい
           </button>
-          <button type="button" className="action-btn blue small" onClick={stopPlayback} disabled={!isPlaying}>
+          <button
+            type="button"
+            className="action-btn blue small"
+            onClick={stopPlayback}
+            disabled={!isPlaying}
+          >
             ていし
           </button>
         </div>

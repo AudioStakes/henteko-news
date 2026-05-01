@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from "react";
 
 type SpeakOptions = {
   rate: number;
   pitch: number;
   onEnd?: () => void;
-  onError?: (reason: 'timeout' | 'error') => void;
+  onError?: (reason: "timeout" | "error") => void;
 };
 
-const DEFAULT_LANG = 'ja-JP';
+const DEFAULT_LANG = "ja-JP";
 
 let speechWarmedUp = false;
 
@@ -46,7 +46,9 @@ export function useSpeech() {
   const startWatchdogRef = useRef<number | null>(null);
 
   const isSupported =
-    typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+    typeof window !== "undefined" &&
+    "speechSynthesis" in window &&
+    "SpeechSynthesisUtterance" in window;
 
   useEffect(() => {
     if (!isSupported) return;
@@ -57,13 +59,13 @@ export function useSpeech() {
 
     loadVoices();
     window.speechSynthesis.getVoices();
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
 
     return () => {
       if (startWatchdogRef.current !== null) {
         window.clearTimeout(startWatchdogRef.current);
       }
-      window.speechSynthesis.removeEventListener('voiceschanged', loadVoices);
+      window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
       window.speechSynthesis.cancel();
     };
   }, [isSupported]);
@@ -73,18 +75,18 @@ export function useSpeech() {
 
     speechWarmedUp = true;
     try {
-      logSpeechState('warmup-before');
+      logSpeechState("warmup-before");
       window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance('。');
+      const utterance = new SpeechSynthesisUtterance("。");
       utterance.lang = DEFAULT_LANG;
       utterance.volume = 0.01;
       utterance.rate = 1;
       utterance.pitch = 1;
-      utterance.onstart = () => logSpeechState('warmup-onstart');
-      utterance.onend = () => logSpeechState('warmup-onend');
+      utterance.onstart = () => logSpeechState("warmup-onstart");
+      utterance.onend = () => logSpeechState("warmup-onend");
       utterance.onerror = (event) => {
-        console.error('speechSynthesis warmup error', {
+        console.error("speechSynthesis warmup error", {
           error: event.error,
           charIndex: event.charIndex,
           elapsedTime: event.elapsedTime,
@@ -106,7 +108,7 @@ export function useSpeech() {
         const requestId = requestIdRef.current;
         onEndRef.current = options.onEnd;
         const parts = splitSpeechText(text);
-        logSpeechState('speak-before');
+        logSpeechState("speak-before");
         let index = 0;
 
         const speakNext = () => {
@@ -132,11 +134,11 @@ export function useSpeech() {
           startWatchdogRef.current = window.setTimeout(() => {
             if (requestId !== requestIdRef.current) return;
             if (activeUtteranceRef.current !== utterance) return;
-            console.warn('speechSynthesis start timeout', { text: parts[index] });
+            console.warn("speechSynthesis start timeout", { text: parts[index] });
             activeUtteranceRef.current = null;
             isSpeakingRef.current = false;
             window.speechSynthesis.cancel();
-            options.onError?.('timeout');
+            options.onError?.("timeout");
           }, 1500);
 
           utterance.onstart = () => {
@@ -164,14 +166,14 @@ export function useSpeech() {
               window.clearTimeout(startWatchdogRef.current);
               startWatchdogRef.current = null;
             }
-            console.error('speechSynthesis error', {
+            console.error("speechSynthesis error", {
               error: event.error,
               charIndex: event.charIndex,
               elapsedTime: event.elapsedTime,
               text: parts[index],
             });
             logSpeechState(`utterance-onerror-${index}`);
-            options.onError?.('error');
+            options.onError?.("error");
           };
 
           window.speechSynthesis.resume();

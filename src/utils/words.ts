@@ -1,4 +1,4 @@
-const PARTICLES = ['が', 'を', 'で'];
+const PARTICLES = ["が", "を", "で"];
 
 export function toCardWord(word: string) {
   const normalized = word.trim();

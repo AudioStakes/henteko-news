@@ -1,8 +1,8 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { Category } from '../types/game';
-import { toCardWord } from '../utils/words';
-import { playChoiceSound, primeChoiceSound } from '../utils/soundEffects';
-import { CharacterImage } from './CharacterImage';
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { Category } from "../types/game";
+import { playChoiceSound, primeChoiceSound } from "../utils/soundEffects";
+import { toCardWord } from "../utils/words";
+import { CharacterImage } from "./CharacterImage";
 
 type WordSelectScreenProps = {
   category: Category;
@@ -27,7 +27,7 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
     () => shuffleWords(category.words).slice(0, MAX_CHOICES),
     [category],
   );
-  const [pickedWord, setPickedWord] = useState('');
+  const [pickedWord, setPickedWord] = useState("");
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const handlePick = (word: string) => {
@@ -76,13 +76,13 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
       if (button) resizeObserver.observe(button);
     });
 
-    window.addEventListener('resize', fitChoices);
+    window.addEventListener("resize", fitChoices);
 
     return () => {
       resizeObserver.disconnect();
-      window.removeEventListener('resize', fitChoices);
+      window.removeEventListener("resize", fitChoices);
     };
-  }, [shuffledWords]);
+  }, []);
 
   return (
     <section className="screen select-screen">
@@ -96,7 +96,8 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
           return (
             <button
               key={word}
-              className={`choice-card${isPicked ? ' is-selected' : ''}`}
+              type="button"
+              className={`choice-card${isPicked ? " is-selected" : ""}`}
               disabled={Boolean(pickedWord)}
               onClick={() => handlePick(word)}
               onPointerDown={handlePressStart}

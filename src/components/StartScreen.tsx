@@ -1,5 +1,5 @@
-import { CharacterImage } from './CharacterImage';
-import { playChoiceSound, primeChoiceSound } from '../utils/soundEffects';
+import { playChoiceSound, primeChoiceSound } from "../utils/soundEffects";
+import { CharacterImage } from "./CharacterImage";
 
 type StartScreenProps = {
   onStart: () => void;
@@ -24,8 +24,9 @@ export function StartScreen({ onStart }: StartScreenProps) {
       <div className="hero hero-home">
         <CharacterImage variant="home" className="home-character" />
       </div>
-      <div className="action-stack" aria-label="メニュー">
+      <div className="action-stack">
         <button
+          type="button"
           className="action-btn orange"
           onClick={handleStart}
           onPointerDown={handlePressStart}

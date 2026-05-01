@@ -29,6 +29,15 @@ npm install
 npm run dev
 ```
 
+コード品質チェック:
+
+```bash
+npm run lint
+npm run format
+npm run check
+npm run typecheck
+```
+
 ビルド確認:
 
 ```bash

@@ -57,7 +57,7 @@ Netlify の新規サイト作成時は、以下を指定してください。
 
 - Service Worker は same-origin のみを対象に、`/assets/` を cache-first、ナビゲーションを network-first で処理します。オフライン時は直近の `index.html` キャッシュにフォールバックします。
 - 画像は `public/_headers` で `max-age=86400`（1日）を設定しています。
-- Service Worker の `VERSION` は `npm run build` 実行時に `package.json` の `version` と同期されます（`scripts/sync-sw-version.mjs`）。
+- Service Worker は `src/main.tsx` から `/sw.js?v=<package.json version>` で登録し、URL クエリのバージョンをキャッシュキーに使います。
 - 頻繁に更新する画像は `hiyoko-v2.webp` のようにファイル名へバージョンを付ける運用がおすすめです。
 - OGP画像（`ogp.png`）は将来追加予定です。現状は既存アイコンをOGPの参照先にしています。
 
@@ -69,3 +69,8 @@ Netlify の新規サイト作成時は、以下を指定してください。
 - 個人情報の取得なし
 - カメラ不使用
 - マイク不使用
+
+
+## 開発者向け: 読み上げ確認
+
+- `/words-audio-check` で全カテゴリ単語の読み上げを順次確認できます。

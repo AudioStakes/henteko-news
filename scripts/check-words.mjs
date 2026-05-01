@@ -1,45 +1,72 @@
-import fs from "node:fs";
-import vm from "node:vm";
+import ts from "typescript";
 
-function loadActionWords() {
-  let source = fs.readFileSync("src/data/actions.ts", "utf8");
-  source = source.replace(/export type[\s\S]*?};\n\n/, "");
-  source = source.replace(/export const ACTION_POLITE_MAP[\s\S]*/, "");
-  source = source.replace(/export const /g, "const ");
-  source = source.replace(/: ActionWord\[]/g, "");
-  source += "\nmodule.exports = { ACTION_WORDS };";
-  const sandbox = { module: { exports: {} } };
-  vm.runInNewContext(source, sandbox);
-  return sandbox.module.exports.ACTION_WORDS;
-}
-
-function loadCategories(actionWords) {
-  let source = fs.readFileSync("src/data/words.ts", "utf8");
-  source = source.replace(/import[^;]+;\n/g, "");
-  source = source.replace(/export const /g, "const ");
-  source = source.replace(/: ActionWord\[]/g, "");
-  source = source.replace(/: Category\[]/g, "");
-  source = source.replace(/words: ACTION_WORDS/g, "words: __ACTION_WORDS__");
-  source += "\nmodule.exports = { CATEGORIES };";
-  const sandbox = { __ACTION_WORDS__: actionWords, module: { exports: {} } };
-  vm.runInNewContext(source, sandbox);
-  return sandbox.module.exports.CATEGORIES;
-}
-
-const CATEGORIES = loadCategories(loadActionWords());
 const MAX_LEN = 30;
+
+function compileTsModule(filePath) {
+  const program = ts.createProgram([filePath], {
+    target: ts.ScriptTarget.ES2020,
+    module: ts.ModuleKind.CommonJS,
+  });
+  const sourceFile = program.getSourceFile(filePath);
+  if (!sourceFile) throw new Error(`Could not load ${filePath}`);
+  const diagnostics = ts.getPreEmitDiagnostics(program);
+  if (diagnostics.length > 0) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, ts.sys));
+  let output = "";
+  program.emit(sourceFile, (name, text) => {
+    if (name.endsWith(".js")) output = text;
+  });
+  if (!output) throw new Error(`No JS output produced for ${filePath}`);
+  return output;
+}
+
+function evaluateCommonJs(code, requireImpl = () => ({})) {
+  const module = { exports: {} };
+  const fn = new Function("module", "exports", "require", code);
+  fn(module, module.exports, requireImpl);
+  return module.exports;
+}
+
+const actionExports = evaluateCommonJs(compileTsModule("src/data/actions.ts"));
+const wordsExports = evaluateCommonJs(compileTsModule("src/data/words.ts"), (specifier) => {
+  if (specifier === "./actions") return actionExports;
+  throw new Error(`Unsupported import in words.ts: ${specifier}`);
+});
+const CATEGORIES = wordsExports.CATEGORIES;
+
 let hasError = false;
+let errorCount = 0;
+let warnCount = 0;
 for (const category of CATEGORIES) {
   const seen = new Set();
   for (const rawWord of category.words) {
     const word = typeof rawWord === "string" ? { display: rawWord, speech: rawWord } : rawWord;
     const display = word.display;
-    if (!display) { console.error(`[error] ${category.key}: empty display`); hasError = true; continue; }
-    if (display !== display.trim()) { console.error(`[error] ${category.key}: leading/trailing spaces: "${display}"`); hasError = true; }
-    if (display.length > MAX_LEN) console.warn(`[warn] ${category.key}: long display (${display.length}) ${display}`);
-    if (seen.has(display)) console.warn(`[warn] ${category.key}: duplicate display ${display}`);
+    if (!display) {
+      console.error(`[error] ${category.key}: empty display`);
+      hasError = true;
+      errorCount += 1;
+      continue;
+    }
+    if (display !== display.trim()) {
+      console.error(`[error] ${category.key}: leading/trailing spaces: "${display}"`);
+      hasError = true;
+      errorCount += 1;
+    }
+    if (display.length > MAX_LEN) {
+      console.warn(`[warn] ${category.key}: long display (${display.length}) ${display}`);
+      warnCount += 1;
+    }
+    if (seen.has(display)) {
+      console.warn(`[warn] ${category.key}: duplicate display ${display}`);
+      warnCount += 1;
+    }
     seen.add(display);
-    if (category.key === "action" && !(word.speech ?? "").trim()) { console.error(`[error] action speech empty: ${display}`); hasError = true; }
+    if (category.key === "action" && !(word.speech ?? "").trim()) {
+      console.error(`[error] action speech empty: ${display}`);
+      hasError = true;
+      errorCount += 1;
+    }
   }
 }
+console.log(`[summary] errors=${errorCount}, warnings=${warnCount}`);
 if (hasError) process.exit(1);

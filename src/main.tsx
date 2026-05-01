@@ -5,7 +5,8 @@ import "./styles/global.css";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js").catch(() => {
+    const version = import.meta.env.VITE_APP_VERSION || "dev";
+    navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(version)}`).catch(() => {
       // ignore registration errors
     });
   });

@@ -33,13 +33,21 @@ export function ResultScreen({
   const { primeOnPressStart, withClickSound } = useButtonSound();
   const bubbleRef = useRef<HTMLElement | null>(null);
   const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
-  useFitText([bubbleRef.current], {
-    minFontSize: MIN_FONT_SIZE,
-    maxFontSize: MAX_FONT_SIZE,
-    selectors: ".result-text",
-    getInitialFontSize: () => getInitialFontSize(lines),
+  useFitText(
+    [bubbleRef.current],
+    MIN_FONT_SIZE,
+    MAX_FONT_SIZE,
+    ".result-text",
+    () => getInitialFontSize(lines),
     setFontSize,
+  );
+  const lineKeyCount = new Map<string, number>();
+  const keyedLines = lines.map((line) => {
+    const seen = (lineKeyCount.get(line) ?? 0) + 1;
+    lineKeyCount.set(line, seen);
+    return { line, key: `${line}-${seen}` };
   });
+
   return (
     <section className="screen result-screen">
       <article
@@ -51,9 +59,9 @@ export function ResultScreen({
           ["--result-font-size" as string]: `${fontSize}px`,
         }}
       >
-        {lines.map((line) => (
-          <p className="result-text" key={line + Math.random().toString(36).slice(2, 6)}>
-            {line}
+        {keyedLines.map((item) => (
+          <p className="result-text" key={item.key}>
+            {item.line}
           </p>
         ))}
       </article>

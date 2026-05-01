@@ -31,7 +31,7 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
   );
   const [pickedId, setPickedId] = useState("");
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  useFitText(buttonRefs.current, { minFontSize: 18, maxFontSize: 38 });
+  useFitText(buttonRefs.current, 18, 38);
 
   const handlePick = (id: string, option: WordOption) => {
     if (pickedId) return;

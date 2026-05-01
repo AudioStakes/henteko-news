@@ -1,116 +1,47 @@
-import ts from "typescript";
+import { compareJapanese, readTsConstArray } from "./words-utils.mjs";
 
 const MAX_LEN = 30;
+const groups = [
+  { key: "who", file: "src/data/words/who.ts", name: "WHO_WORDS", type: "string" },
+  { key: "when", file: "src/data/words/when.ts", name: "WHEN_WORDS", type: "string" },
+  { key: "where", file: "src/data/words/where.ts", name: "WHERE_WORDS", type: "string" },
+  { key: "what", file: "src/data/words/what.ts", name: "WHAT_WORDS", type: "string" },
+  { key: "action", file: "src/data/words/action.ts", name: "ACTION_WORDS", type: "action" },
+  { key: "reaction", file: "src/data/words/reaction.ts", name: "REACTIONS", type: "string" },
+];
 
-const formatHost = {
-  getCanonicalFileName: (fileName) => fileName,
-  getCurrentDirectory: () => ts.sys.getCurrentDirectory(),
-  getNewLine: () => ts.sys.newLine,
-};
-
-function loadProjectCompilerOptions() {
-  const configPath =
-    ts.findConfigFile(ts.sys.getCurrentDirectory(), ts.sys.fileExists, "tsconfig.app.json") ??
-    ts.findConfigFile(ts.sys.getCurrentDirectory(), ts.sys.fileExists, "tsconfig.json");
-
-  if (!configPath) {
-    throw new Error("Could not find tsconfig.app.json or tsconfig.json");
+let errors = 0;
+let warnings = 0;
+for (const group of groups) {
+  const items = await readTsConstArray(group.file, group.name);
+  const displays = items.map((item) => (typeof item === "string" ? item : item.display));
+  const sorted = [...displays].sort(compareJapanese);
+  if (JSON.stringify(displays) !== JSON.stringify(sorted)) {
+    console.error(`[error] ${group.key}: words are not sorted`);
+    errors += 1;
   }
-
-  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
-  if (configFile.error) {
-    throw new Error(ts.formatDiagnosticsWithColorAndContext([configFile.error], formatHost));
-  }
-
-  const parsedConfig = ts.parseJsonConfigFileContent(
-    configFile.config,
-    ts.sys,
-    ts.getDirectoryPath(configPath),
-  );
-
-  if (parsedConfig.errors.length > 0) {
-    throw new Error(ts.formatDiagnosticsWithColorAndContext(parsedConfig.errors, formatHost));
-  }
-
-  return parsedConfig.options;
-}
-
-function compileTsModule(filePath) {
-  const projectCompilerOptions = loadProjectCompilerOptions();
-  const compilerOptions = {
-    target: ts.ScriptTarget.ES2020,
-    module: ts.ModuleKind.CommonJS,
-    moduleResolution: ts.ModuleResolutionKind.Node10,
-    esModuleInterop: true,
-    skipLibCheck: true,
-    strict: true,
-    noEmit: false,
-    isolatedModules: false,
-    declaration: false,
-    declarationMap: false,
-    sourceMap: false,
-  };
-  const program = ts.createProgram([filePath], compilerOptions);
-  const sourceFile = program.getSourceFile(filePath);
-  if (!sourceFile) throw new Error(`Could not load ${filePath}`);
-  const diagnostics = ts.getPreEmitDiagnostics(program);
-  if (diagnostics.length > 0) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, formatHost));
-  let output = "";
-  program.emit(sourceFile, (name, text) => {
-    if (name.endsWith(".js")) output = text;
-  });
-  if (!output) throw new Error(`No JS output produced for ${filePath}`);
-  return output;
-}
-
-function evaluateCommonJs(code, requireImpl = () => ({})) {
-  const module = { exports: {} };
-  const fn = new Function("module", "exports", "require", code);
-  fn(module, module.exports, requireImpl);
-  return module.exports;
-}
-
-const actionExports = evaluateCommonJs(compileTsModule("src/data/actions.ts"));
-const wordsExports = evaluateCommonJs(compileTsModule("src/data/words.ts"), (specifier) => {
-  if (specifier === "./actions") return actionExports;
-  throw new Error(`Unsupported import in words.ts: ${specifier}`);
-});
-const CATEGORIES = wordsExports.CATEGORIES;
-
-let hasError = false;
-let errorCount = 0;
-let warnCount = 0;
-for (const category of CATEGORIES) {
   const seen = new Set();
-  for (const rawWord of category.words) {
-    const word = typeof rawWord === "string" ? { display: rawWord, speech: rawWord } : rawWord;
-    const display = word.display;
+  for (const item of items) {
+    const display = typeof item === "string" ? item : item.display;
     if (!display) {
-      console.error(`[error] ${category.key}: empty display`);
-      hasError = true;
-      errorCount += 1;
-      continue;
+      console.error(`[error] ${group.key}: display empty`); errors++; continue;
     }
     if (display !== display.trim()) {
-      console.error(`[error] ${category.key}: leading/trailing spaces: "${display}"`);
-      hasError = true;
-      errorCount += 1;
-    }
-    if (display.length > MAX_LEN) {
-      console.warn(`[warn] ${category.key}: long display (${display.length}) ${display}`);
-      warnCount += 1;
+      console.error(`[error] ${group.key}: display has leading/trailing spaces: "${display}"`); errors++;
     }
     if (seen.has(display)) {
-      console.warn(`[warn] ${category.key}: duplicate display ${display}`);
-      warnCount += 1;
+      console.error(`[error] ${group.key}: duplicate display "${display}"`); errors++;
     }
     seen.add(display);
-    if (category.key === "action" && !(word.speech ?? "").trim()) {
-      console.error(`[error] action speech empty: ${display}`);
-      hasError = true;
-      errorCount += 1;
+    if (display.length > MAX_LEN) {
+      console.warn(`[warn] ${group.key}: long display (${display.length}) ${display}`); warnings++;
+    }
+    if (group.type === "action") {
+      const speech = item.speech ?? "";
+      if (!speech.trim()) { console.error(`[error] action: speech empty for "${display}"`); errors++; }
+      if (speech !== speech.trim()) { console.error(`[error] action: speech has leading/trailing spaces for "${display}"`); errors++; }
     }
   }
 }
-console.log(`[summary] errors=${errorCount}, warnings=${warnCount}`);
-if (hasError) process.exit(1);
+console.log(`check:words completed: ${groups.length} groups checked, ${errors} errors, ${warnings} warnings`);
+if (errors > 0) process.exit(1);

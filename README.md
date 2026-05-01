@@ -74,3 +74,12 @@ Netlify の新規サイト作成時は、以下を指定してください。
 ## 開発者向け: 読み上げ確認
 
 - `/words-audio-check` で全カテゴリ単語の読み上げを順次確認できます。
+
+## 開発者向け: 単語データ更新ルール
+
+- 単語は `src/data/words/` 配下のカテゴリ別ファイルに追加します。
+- 追加後は `npm run sort:words` を実行します。
+- 続けて `npm run check:words` を実行します。
+- 単語配列は sort 済み・重複なしを維持してください。
+- action は `display` と `speech` を両方指定してください。
+- reaction は `src/data/words/reaction.ts` に追加してください。

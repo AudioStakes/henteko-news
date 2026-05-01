@@ -11,7 +11,8 @@
     "format": "biome format --write .",
     "check": "biome check --write .",
     "typecheck": "tsc -b --noEmit",
-    "check:words": "node scripts/check-words.mjs"
+    "check:words": "node scripts/check-words.mjs",
+    "sort:words": "node scripts/sort-words.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

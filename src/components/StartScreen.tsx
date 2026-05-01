@@ -22,6 +22,12 @@ export function StartScreen({ onStart }: StartScreenProps) {
   return (
     <section className="screen home-screen">
       <div className="hero hero-home">
+        <div className="speech speech-home speech-home--guide">
+          <span>
+            ことばを<span className="speech-home__highlight">5つ</span>えらぶと、
+          </span>
+          <span>ニュースになるよ！</span>
+        </div>
         <CharacterImage variant="home" className="home-character" />
       </div>
       <div className="action-stack">
@@ -32,8 +38,20 @@ export function StartScreen({ onStart }: StartScreenProps) {
           onPointerDown={handlePressStart}
           onTouchStart={handlePressStart}
         >
-          <span>ニュースをつくる</span>
+          <span className="action-btn__label">ニュースをつくる</span>
+          <span className="action-btn__star" aria-hidden="true">
+            ⭐
+          </span>
         </button>
+        <p className="trust-pill">
+          <span className="trust-pill__icon trust-pill__icon--heart" aria-hidden="true">
+            ♡
+          </span>
+          <span>無料・ログインなし・広告なし</span>
+          <span className="trust-pill__icon trust-pill__icon--shield" aria-hidden="true">
+            🛡️
+          </span>
+        </p>
       </div>
     </section>
   );

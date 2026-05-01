@@ -5,8 +5,14 @@ import type { Category, WordOption } from "../types/game";
 import { toWordOption } from "../utils/wordOption";
 import { toCardWord } from "../utils/words";
 import { CharacterImage } from "./CharacterImage";
+import { StepIndicator } from "./StepIndicator";
 
-type WordSelectScreenProps = { category: Category; onSelect: (word: WordOption) => void };
+type WordSelectScreenProps = {
+  category: Category;
+  onSelect: (word: WordOption) => void;
+  currentStep: number;
+  totalSteps: number;
+};
 const MAX_CHOICES = 6;
 function shuffleWords(words: Array<{ id: string; option: WordOption }>) {
   const shuffled = [...words];
@@ -17,7 +23,12 @@ function shuffleWords(words: Array<{ id: string; option: WordOption }>) {
   return shuffled;
 }
 
-export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) {
+export function WordSelectScreen({
+  category,
+  onSelect,
+  currentStep,
+  totalSteps,
+}: WordSelectScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
   const shuffledWords = useMemo(
     () =>
@@ -46,6 +57,7 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
 
   return (
     <section className="screen select-screen">
+      <StepIndicator current={currentStep} total={totalSteps} />
       <div className="hero hero-select">
         <CharacterImage variant="select" className="select-character" />
         <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>

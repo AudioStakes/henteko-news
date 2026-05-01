@@ -74,7 +74,7 @@ p {
   gap: 10px;
 }
 .home-screen {
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr) auto;
 }
 .select-screen {
   grid-template-rows: auto 1fr;
@@ -91,6 +91,7 @@ p {
 .hero-home {
   display: grid;
   place-items: end center;
+  padding-top: 10px;
 }
 .hero-select {
   height: clamp(168px, 27svh, 220px);
@@ -101,8 +102,8 @@ p {
 }
 .home-character {
   width: min(80%, 420px);
-  height: clamp(400px, 60svh, 700px);
-  bottom: 60px;
+  height: clamp(360px, 54svh, 700px);
+  bottom: 40px;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -129,6 +130,39 @@ p {
   right: 8px;
   padding: 10px 16px;
   font-size: clamp(24px, 7vw, 34px);
+}
+.speech-home--guide {
+  top: clamp(6px, 2.2svh, 18px);
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  width: min(96%, 560px);
+  padding: clamp(14px, 2.6svh, 24px) clamp(14px, 4.8vw, 30px);
+  border-width: 5px;
+  border-radius: 42px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  font-size: clamp(24px, 6.5vw, 62px);
+  text-align: center;
+  white-space: nowrap;
+  z-index: 2;
+}
+.speech-home--guide::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -17px;
+  width: 28px;
+  height: 28px;
+  background: #fff;
+  border-right: 5px solid #ffab37;
+  border-bottom: 5px solid #ffab37;
+  transform: translateX(-50%) rotate(45deg);
+  border-bottom-right-radius: 5px;
+}
+.speech-home__highlight {
+  color: #ff6b1a;
 }
 .speech-select {
   top: 32px;
@@ -162,6 +196,11 @@ p {
   color: #fff;
   font-weight: 900;
   font-size: clamp(24px, 7vw, 40px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 2vw, 14px);
+  padding: 12px 16px;
 }
 .action-btn.orange {
   background: linear-gradient(#ff9a45, #ff7d22);
@@ -172,6 +211,69 @@ p {
 .action-btn.small {
   font-size: clamp(18px, 5vw, 28px);
   min-height: 50px;
+}
+.action-btn__star {
+  font-size: 0.85em;
+  line-height: 1;
+}
+.trust-pill {
+  margin: 0 auto;
+  min-height: 42px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 171, 55, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: clamp(14px, 3.5vw, 19px);
+  font-weight: 800;
+  color: rgba(47, 23, 0, 0.92);
+  white-space: nowrap;
+}
+.trust-pill__icon--heart {
+  color: #ff6b1a;
+}
+.trust-pill__icon--shield {
+  color: #2d8fe3;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+}
+.step-indicator__item {
+  display: inline-flex;
+  align-items: center;
+}
+.step-indicator__dot {
+  width: clamp(40px, 10vw, 56px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 3px solid #e2d2b4;
+  background: rgba(255, 255, 255, 0.96);
+  display: grid;
+  place-items: center;
+  font-size: clamp(24px, 6.5vw, 48px);
+  font-weight: 900;
+  line-height: 1;
+}
+.step-indicator__dot.is-current {
+  border-color: #ff9b35;
+  color: #fff;
+  background: linear-gradient(#ffb85e, #ff850f);
+}
+.step-indicator__line {
+  width: clamp(22px, 5.3vw, 34px);
+  height: 3px;
+  background: #dbc8a6;
 }
 
 .choice-grid {
@@ -530,7 +632,19 @@ p {
     padding: calc(var(--safe-top) + 6px) 8px calc(var(--safe-bottom) + 8px);
   }
   .home-character {
-    height: clamp(360px, 56svh, 520px);
+    height: clamp(320px, 48svh, 460px);
+    bottom: 26px;
+  }
+  .speech-home--guide {
+    font-size: clamp(20px, 5.9vw, 40px);
+    gap: 3px;
+  }
+  .action-btn {
+    min-height: 70px;
+    font-size: clamp(22px, 6.1vw, 34px);
+  }
+  .trust-pill {
+    font-size: clamp(12px, 3.2vw, 16px);
   }
   .result-bubble {
     padding: 24px 12px 30px;

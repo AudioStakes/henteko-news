@@ -6,6 +6,7 @@ import { SoundScreen } from "./components/SoundScreen";
 import { StartScreen } from "./components/StartScreen";
 import { WordSelectScreen } from "./components/WordSelectScreen";
 import { WordsAudioCheckScreen } from "./components/WordsAudioCheckScreen";
+import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
 import { useSoundSettings } from "./hooks/useSoundSettings";
@@ -16,6 +17,7 @@ export default function App() {
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
   const {
     screen,
+    currentStep,
     currentCategory,
     isLastSelectStep,
     selections,
@@ -70,6 +72,8 @@ export default function App() {
           <WordSelectScreen
             key={currentCategory.key}
             category={currentCategory}
+            currentStep={currentStep}
+            totalSteps={CATEGORIES.length}
             onSelect={(word) => {
               warmup();
               const next = handleSelectWord(word);

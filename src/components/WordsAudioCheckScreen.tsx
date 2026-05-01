@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CATEGORIES } from "../data/words";
-import { toPoliteAction } from "../utils/speechText";
+import { useSpeech } from "../hooks/useSpeech";
+import { toWordOption } from "../utils/wordOption";
 
 type QueueItem = {
   categoryKey: string;
@@ -8,20 +9,6 @@ type QueueItem = {
   displayText: string;
   speechText: string;
 };
-
-const DEFAULT_LANG = "ja-JP";
-
-function buildQueue(): QueueItem[] {
-  return CATEGORIES.flatMap((category) =>
-    category.words.map((word) => ({
-      categoryKey: category.key,
-      categoryLabel: category.label,
-      displayText: word,
-      speechText: category.key === "action" ? toPoliteAction(word) : word,
-    })),
-  );
-}
-
 const CATEGORY_BUTTON_LABELS: Record<string, string> = {
   who: "だれが",
   when: "いつ",
@@ -29,6 +16,20 @@ const CATEGORY_BUTTON_LABELS: Record<string, string> = {
   what: "なにを",
   action: "どうした",
 };
+
+function buildQueue(): QueueItem[] {
+  return CATEGORIES.flatMap((category) =>
+    category.words.map((word) => {
+      const option = toWordOption(word);
+      return {
+        categoryKey: category.key,
+        categoryLabel: category.label,
+        displayText: option.display,
+        speechText: option.speech ?? option.display,
+      };
+    }),
+  );
+}
 
 export function WordsAudioCheckScreen() {
   const queue = useMemo(() => buildQueue(), []);
@@ -44,81 +45,51 @@ export function WordsAudioCheckScreen() {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState("");
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const indexRef = useRef(-1);
   const resumeIndexRef = useRef(0);
-
-  useEffect(() => {
-    return () => {
-      window.speechSynthesis.cancel();
-    };
-  }, []);
+  const { speak, cancel, isSupported } = useSpeech();
 
   const stopPlayback = () => {
-    const currentResumeIndex = indexRef.current >= 0 ? indexRef.current : 0;
-    resumeIndexRef.current = currentResumeIndex;
-    indexRef.current = -1;
-    utteranceRef.current = null;
+    resumeIndexRef.current = Math.max(currentIndex, 0);
     setCurrentIndex(-1);
     setIsPlaying(false);
-    window.speechSynthesis.cancel();
+    cancel();
   };
-
   const playFrom = (startIndex: number) => {
-    if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)) {
-      setError("このブラウザでは よみあげが つかえません。");
-      return;
-    }
-
+    if (!isSupported) return setError("このブラウザでは よみあげが つかえません。");
     stopPlayback();
     setError("");
-    resumeIndexRef.current = startIndex;
-    indexRef.current = startIndex;
-    setCurrentIndex(startIndex);
     setIsPlaying(true);
-
-    const speakNext = (index: number) => {
-      if (index >= queue.length) {
-        indexRef.current = -1;
-        utteranceRef.current = null;
-        setCurrentIndex(queue.length - 1);
+    let idx = startIndex;
+    const next = () => {
+      if (idx >= queue.length) {
         setIsPlaying(false);
+        setCurrentIndex(queue.length - 1);
         resumeIndexRef.current = 0;
         return;
       }
-
-      const item = queue[index];
-      resumeIndexRef.current = index;
-      indexRef.current = index;
-      setCurrentIndex(index);
-
-      const utterance = new SpeechSynthesisUtterance(item.speechText);
-      utteranceRef.current = utterance;
-      utterance.lang = DEFAULT_LANG;
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-
-      utterance.onend = () => {
-        if (indexRef.current !== index) return;
-        speakNext(index + 1);
-      };
-
-      utterance.onerror = () => {
-        indexRef.current = -1;
-        utteranceRef.current = null;
+      setCurrentIndex(idx);
+      resumeIndexRef.current = idx;
+      const ok = speak(queue[idx].speechText, {
+        rate: 0.9,
+        pitch: 1,
+        onEnd: () => {
+          idx += 1;
+          next();
+        },
+        onError: () => {
+          setIsPlaying(false);
+          setError("よみあげが とちゅうで とまりました。もういちど はじめてください。");
+        },
+      });
+      if (!ok) {
         setIsPlaying(false);
         setError("よみあげが とちゅうで とまりました。もういちど はじめてください。");
-      };
-
-      window.speechSynthesis.resume();
-      window.speechSynthesis.speak(utterance);
+      }
     };
-
-    speakNext(startIndex);
+    next();
   };
 
   const currentItem = currentIndex >= 0 ? queue[currentIndex] : null;
-
   return (
     <section className="screen sound-screen">
       <div className="sound-card words-audio-check">

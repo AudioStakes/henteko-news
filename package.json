@@ -10,7 +10,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "typecheck": "tsc -b --noEmit"
+    "typecheck": "tsc -b --noEmit",
+    "check:words": "node scripts/check-words.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

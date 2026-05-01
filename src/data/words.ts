@@ -266,7 +266,7 @@ export const CATEGORIES: Category[] = [
   {
     key: "action",
     label: "どうした？",
-    words: Object.keys(ACTION_POLITE_MAP),
+    words: Object.entries(ACTION_POLITE_MAP).map(([display, speech]) => ({ display, speech })),
   },
 ];
 

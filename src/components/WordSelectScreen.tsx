@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Category } from "../types/game";
 import { playChoiceSound, primeChoiceSound } from "../utils/soundEffects";
+import { toWordOption } from "../utils/wordOption";
 import { toCardWord } from "../utils/words";
 import { CharacterImage } from "./CharacterImage";
 
@@ -13,7 +14,7 @@ const MAX_CHOICES = 6;
 const MAX_FONT_SIZE = 38;
 const MIN_FONT_SIZE = 18;
 
-function shuffleWords(words: string[]) {
+function shuffleWords(words: Array<{ id: string; text: string }>) {
   const shuffled = [...words];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -24,7 +25,13 @@ function shuffleWords(words: string[]) {
 
 export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) {
   const shuffledWords = useMemo(
-    () => shuffleWords(category.words).slice(0, MAX_CHOICES),
+    () =>
+      shuffleWords(
+        category.words.map((word, originalIndex) => ({
+          id: `${category.key}-${originalIndex}-${toWordOption(word).display}`,
+          text: toWordOption(word).display,
+        })),
+      ).slice(0, MAX_CHOICES),
     [category],
   );
   const [pickedWord, setPickedWord] = useState("");
@@ -91,22 +98,22 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
         <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
       </div>
       <div className="choice-grid">
-        {shuffledWords.map((word, index) => {
-          const isPicked = pickedWord === word;
+        {shuffledWords.map((choice, index) => {
+          const isPicked = pickedWord === choice.text;
           return (
             <button
-              key={word}
+              key={choice.id}
               type="button"
               className={`choice-card${isPicked ? " is-selected" : ""}`}
               disabled={Boolean(pickedWord)}
-              onClick={() => handlePick(word)}
+              onClick={() => handlePick(choice.text)}
               onPointerDown={handlePressStart}
               onTouchStart={handlePressStart}
               ref={(element) => {
                 buttonRefs.current[index] = element;
               }}
             >
-              {toCardWord(word)}
+              {toCardWord(choice.text)}
             </button>
           );
         })}

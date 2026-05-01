@@ -1,5 +1,7 @@
-const CACHE_NAME = "henteko-news-v3";
-const ASSETS = [
+const VERSION = "2026-05-01";
+const STATIC_CACHE = `henteko-static-${VERSION}`;
+const HTML_CACHE = `henteko-html-${VERSION}`;
+const STATIC_ASSETS = [
   "/assets/bg-studio.webp",
   "/assets/header-logo.webp",
   "/robots.txt",
@@ -7,78 +9,49 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)));
   self.skipWaiting();
 });
-
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))),
+        Promise.all(
+          keys.filter((k) => ![STATIC_CACHE, HTML_CACHE].includes(k)).map((k) => caches.delete(k)),
+        ),
       ),
   );
   self.clients.claim();
 });
-
 self.addEventListener("fetch", (event) => {
-  const request = event.request;
+  const { request } = event;
   if (request.method !== "GET") return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  if (!["http:", "https:"].includes(url.protocol)) return;
 
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          if (!response || response.status !== 200) {
-            return response;
-          }
-
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put("/index.html", responseClone);
-          });
-
-          return response;
+        .then((res) => {
+          if (res?.ok) caches.open(HTML_CACHE).then((c) => c.put("/index.html", res.clone()));
+          return res;
         })
-        .catch(() => {
-          return caches.match("/index.html").then(
-            (fallback) =>
-              fallback ||
-              new Response("Offline", {
-                status: 503,
-                statusText: "Service Unavailable",
-                headers: { "Content-Type": "text/plain" },
-              }),
-          );
-        }),
+        .catch(async () => (await caches.match("/index.html")) || Response.error()),
     );
     return;
   }
-
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request)
-        .then((response) => {
-          if (!response || response.status !== 200 || request.url.startsWith("chrome-extension://"))
-            return response;
-
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(request, responseClone);
-          });
-
-          return response;
-        })
-        .catch(() => {
-          return new Response("Offline", {
-            status: 503,
-            statusText: "Service Unavailable",
-            headers: { "Content-Type": "text/plain" },
-          });
-        });
-    }),
-  );
+  if (url.pathname.startsWith("/assets/")) {
+    event.respondWith(
+      caches.match(request).then(
+        (cached) =>
+          cached ||
+          fetch(request).then((res) => {
+            if (res?.ok) caches.open(STATIC_CACHE).then((c) => c.put(request, res.clone()));
+            return res;
+          }),
+      ),
+    );
+  }
 });

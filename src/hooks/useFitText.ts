@@ -29,7 +29,7 @@ export function useFitText({
 
       while (size > minFontSize) {
         const nodes = targetsSelector
-          ? Array.from(target.querySelectorAll<HTMLElement>(targetsSelector))
+          ? [target, ...Array.from(target.querySelectorAll<HTMLElement>(targetsSelector))]
           : [target];
         const over = nodes.some(
           (node) =>

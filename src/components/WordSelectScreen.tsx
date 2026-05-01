@@ -88,7 +88,7 @@ export function WordSelectScreen({ category, onSelect }: WordSelectScreenProps) 
     <section className="screen select-screen">
       <div className="hero hero-select">
         <CharacterImage variant="select" className="select-character" />
-        <div className="speech speech-select speech-select--from-alien">{category.label}</div>
+        <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
       </div>
       <div className="choice-grid">
         {shuffledWords.map((word, index) => {

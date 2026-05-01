@@ -40,17 +40,17 @@ p { margin: 0; }
 .hero-home { display: grid; place-items: end center; }
 .hero-select { height: clamp(168px, 27svh, 220px); }
 .character { position: absolute; object-fit: contain; }
-.home-character { width: min(96%, 420px); height: clamp(400px, 60svh, 700px); bottom: 0; left: 50%; transform: translateX(-50%); }
+.home-character { width: min(80%, 420px); height: clamp(400px, 60svh, 700px); bottom: 60px; left: 50%; transform: translateX(-50%); }
 .select-character { width: min(44%, 180px); left: 8px; bottom: 0; }
 .result-character { width: min(42%, 180px); left: 4px; bottom: 0; }
 .speech { position: absolute; background: #fff; border: 4px solid #ffab37; border-radius: 22px; font-weight: 900; line-height: 1.1; }
 .speech-home { top: 10px; right: 8px; padding: 10px 16px; font-size: clamp(24px, 7vw, 34px); }
-.speech-select { top: 8px; right: 36px; padding: 12px 18px; font-size: clamp(28px, 7.6vw, 42px); }
-.speech-select--from-alien::after {
+.speech-select { top: 32px; right: 20px; padding: 12px 18px; font-size: clamp(28px, 7.6vw, 42px); }
+.speech-select--from-hiyoko::after {
   content: '';
   position: absolute;
   left: -12px;
-  top: 16px;
+  top: 20px;
   width: 16px;
   height: 16px;
   background: #fff;

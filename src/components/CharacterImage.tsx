@@ -1,13 +1,13 @@
-import alienHome from '../assets/alien-home.webp';
-import alienSelect from '../assets/alien-select.webp';
-import alienResult from '../assets/alien-result.webp';
+import hiyokoHome from '../assets/hiyoko.webp';
+import hiyokoSelect from '../assets/hiyoko_question.webp';
+import hiyokoResult from '../assets/hiyoko.webp';
 
 type CharacterVariant = 'home' | 'select' | 'result';
 
 const characterSrc: Record<CharacterVariant, string> = {
-  home: alienHome,
-  select: alienSelect,
-  result: alienResult,
+  home: hiyokoHome,
+  select: hiyokoSelect,
+  result: hiyokoResult,
 };
 
 type CharacterImageProps = {
@@ -18,6 +18,7 @@ type CharacterImageProps = {
 
 export function CharacterImage({ variant, className = '', alt }: CharacterImageProps) {
   const loading = variant === 'home' ? undefined : 'eager';
+  const fetchPriorityProps = { fetchpriority: variant === 'home' ? 'high' : 'auto' } as Record<string, string>;
 
   return (
     <img
@@ -26,8 +27,8 @@ export function CharacterImage({ variant, className = '', alt }: CharacterImageP
       alt={alt ?? ''}
       aria-hidden={alt ? undefined : true}
       decoding="async"
-      fetchPriority={variant === 'home' ? 'high' : 'auto'}
       loading={loading}
+      {...fetchPriorityProps}
     />
   );
 }

@@ -11,7 +11,7 @@
     "format": "biome format --write .",
     "check": "biome check --write .",
     "typecheck": "tsc -b --noEmit",
-    "check:words": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/check-words.mjs"
+    "check:words": "node scripts/check-words.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

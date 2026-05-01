@@ -65,6 +65,21 @@ function tsNodeToValue(node, filePath, constName) {
   );
 }
 
+function unwrapExpression(node) {
+  let current = node;
+
+  while (
+    ts.isAsExpression(current) ||
+    ts.isSatisfiesExpression(current) ||
+    ts.isParenthesizedExpression(current) ||
+    ts.isTypeAssertionExpression(current)
+  ) {
+    current = current.expression;
+  }
+
+  return current;
+}
+
 function findExportedConstArray(source, filePath, constName) {
   const sourceFile = ts.createSourceFile(
     filePath,
@@ -85,10 +100,11 @@ function findExportedConstArray(source, filePath, constName) {
       if (!ts.isIdentifier(declaration.name) || declaration.name.text !== constName) {
         continue;
       }
-      if (!declaration.initializer || !ts.isArrayLiteralExpression(declaration.initializer)) {
+      const initializer = declaration.initializer && unwrapExpression(declaration.initializer);
+      if (!initializer || !ts.isArrayLiteralExpression(initializer)) {
         throw new Error(`Const ${constName} in ${filePath} is not an array literal`);
       }
-      return declaration.initializer;
+      return initializer;
     }
   }
 

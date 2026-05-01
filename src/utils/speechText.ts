@@ -1,4 +1,4 @@
-import type { Selections } from "../types/game";
+import type { Selections, WordOption } from "../types/game";
 
 export const ACTION_POLITE_MAP: Record<string, string> = {
   "100こにふやした": "100こにふやしました",
@@ -86,33 +86,34 @@ export const ACTION_POLITE_MAP: Record<string, string> = {
   くるまにのせた: "くるまにのせました",
 };
 
-export function toPoliteAction(action?: string) {
-  if (!action) return "";
-  const normalized = action.replace(/[！!]/g, "").trim();
+function toSpeech(word?: WordOption) {
+  if (!word) return "";
+  if (word.speech?.trim()) return word.speech.trim();
+  const normalized = word.display.replace(/[！!]/g, "").trim();
   if (!normalized) return "";
-  if (normalized.endsWith("しました") || normalized.endsWith("ました")) return normalized;
   if (ACTION_POLITE_MAP[normalized]) return ACTION_POLITE_MAP[normalized];
+  if (normalized.endsWith("しました") || normalized.endsWith("ました")) return normalized;
   if (normalized.endsWith("した")) return `${normalized.slice(0, -2)}しました`;
   return normalized;
 }
 
 export function buildNewsLines(selections: Selections) {
   return [
-    selections.who,
-    selections.when,
-    selections.where,
-    selections.what,
-    selections.action ? `${toPoliteAction(selections.action)}！` : undefined,
+    selections.who?.display,
+    selections.when?.display,
+    selections.where?.display,
+    selections.what?.display,
+    selections.action ? `${toSpeech(selections.action)}！` : undefined,
   ].filter((word): word is string => Boolean(word));
 }
 
 export function toSpeechText(selections: Selections) {
   const parts = [
-    selections.who,
-    selections.when,
-    selections.where,
-    selections.what,
-    toPoliteAction(selections.action),
+    selections.who?.speech ?? selections.who?.display,
+    selections.when?.speech ?? selections.when?.display,
+    selections.where?.speech ?? selections.where?.display,
+    selections.what?.speech ?? selections.what?.display,
+    toSpeech(selections.action),
   ].filter((word): word is string => Boolean(word));
 
   return parts.length > 0 ? `ニュースです！${parts.join("、")}！` : "ニュースです！";

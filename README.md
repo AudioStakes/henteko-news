@@ -36,6 +36,7 @@ npm run lint
 npm run format
 npm run check
 npm run typecheck
+npm run check:words
 ```
 
 ビルド確認:
@@ -54,9 +55,9 @@ Netlify の新規サイト作成時は、以下を指定してください。
 
 ## キャッシュ運用の注意
 
-- Service Worker で静的アセットをキャッシュします。更新時に反映が遅れる場合は、`public/sw.js` の `CACHE_NAME` を更新してください。
+- Service Worker は same-origin のみを対象に、`/assets/` を cache-first、ナビゲーションを network-first で処理します。オフライン時は直近の `index.html` キャッシュにフォールバックします。
 - 画像は `public/_headers` で `max-age=86400`（1日）を設定しています。
-- 画像を差し替えた直後はキャッシュの影響で反映に時間がかかる場合があります。
+- Service Worker のキャッシュ名は `public/sw.js` の `VERSION` で管理します。
 - 頻繁に更新する画像は `hiyoko-v2.webp` のようにファイル名へバージョンを付ける運用がおすすめです。
 - OGP画像（`ogp.png`）は将来追加予定です。現状は既存アイコンをOGPの参照先にしています。
 

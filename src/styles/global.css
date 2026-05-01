@@ -55,13 +55,13 @@
   --safe-bottom: max(env(safe-area-inset-bottom), 8px);
 
   /* Typography */
-  --font-family-base: "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-family-base:
+    "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
   --font-weight-heavy: 900;
 
   color: var(--color-ink);
   font-family: var(--font-family-base);
 }
-
 
 /* ==========================================================================
    Base
@@ -107,7 +107,6 @@ p {
   margin: 0;
 }
 
-
 /* ==========================================================================
    App Layout
    ========================================================================== */
@@ -130,9 +129,7 @@ p {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(6px, 2.2cqw, 10px);
-  padding:
-    calc(var(--safe-top) + clamp(4px, 1.8cqw, 8px))
-    clamp(8px, 2.4cqw, 10px)
+  padding: calc(var(--safe-top) + clamp(4px, 1.8cqw, 8px)) clamp(8px, 2.4cqw, 10px)
     calc(var(--safe-bottom) + clamp(6px, 2.4cqw, 10px));
   background: url("/assets/bg-studio.webp") center / cover no-repeat;
 }
@@ -190,7 +187,6 @@ p {
   }
 }
 
-
 /* ==========================================================================
    Shared Components
    ========================================================================== */
@@ -240,19 +236,19 @@ p {
   color: var(--color-white);
   font-size: clamp(22px, 8.8cqw, 40px);
   font-weight: var(--font-weight-heavy);
-  line-height: 1.08;
+  line-height: 1.05;
   text-align: center;
 }
 
 /* Existing modifier classes are kept for compatibility. */
 .action-btn.orange,
 .action-btn--orange {
-  background: linear-gradient(var(--color-orange-bright), var(--color-orange));
+  background: linear-gradient(to bottom, var(--color-orange-bright), var(--color-orange));
 }
 
 .action-btn.blue,
 .action-btn--blue {
-  background: linear-gradient(var(--color-blue-soft), var(--color-blue));
+  background: linear-gradient(to bottom, var(--color-blue-soft), var(--color-blue));
 }
 
 .action-btn.small,
@@ -305,7 +301,6 @@ p {
   }
 }
 
-
 /* ==========================================================================
    Step Indicator
    ========================================================================== */
@@ -316,9 +311,8 @@ p {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: clamp(6px, 2cqw, 8px) clamp(6px, 3cqw, 12px);
-  border-radius: var(--radius-pill);
-  background: var(--surface-white-82);
+  height: 100%;
+  padding: clamp(3px, 1cqw, 5px) clamp(6px, 3cqw, 12px);
 }
 
 .step-indicator__item {
@@ -346,11 +340,10 @@ p {
 }
 
 .step-indicator__line {
-  width: clamp(14px, 5.3cqw, 34px);
+  width: clamp(12px, 4.4cqw, 28px);
   height: 3px;
   background: var(--color-line-muted);
 }
-
 
 /* ==========================================================================
    Home Screen
@@ -428,17 +421,16 @@ p {
   }
 }
 
-
 /* ==========================================================================
    Select Screen
    ========================================================================== */
 
 .select-screen {
-  grid-template-rows: auto minmax(0, auto) minmax(0, 1fr);
+  grid-template-rows: clamp(42px, 6svh, 56px) clamp(140px, 18svh, 160px) minmax(0, 1fr);
 }
 
 .hero-select {
-  height: clamp(132px, 25svh, 220px);
+  height: 100%;
 }
 
 .select-character {
@@ -452,7 +444,7 @@ p {
   right: clamp(8px, 4cqw, 20px);
   width: min(52cqw, 260px);
   padding: clamp(8px, 2.8cqw, 12px) clamp(12px, 4cqw, 18px);
-  font-size: clamp(24px, 9cqw, 42px);
+  font-size: clamp(24px, 8cqw, 42px);
   text-align: center;
 }
 
@@ -490,9 +482,10 @@ p {
   background: var(--surface-white-93);
   color: var(--color-ink);
   -webkit-text-fill-color: var(--color-ink);
-  font-size: clamp(14px, 8.8cqw, 38px);
+  font-size: clamp(24px, 8.4cqw, 38px);
   font-weight: var(--font-weight-heavy);
-  line-height: 1.1;
+  line-height: 1.08;
+  text-align: center;
   text-overflow: clip;
   text-wrap: nowrap;
   white-space: nowrap;
@@ -530,10 +523,9 @@ p {
 
 @media (max-height: 700px) {
   .choice-card {
-    font-size: clamp(14px, 8cqw, 34px);
+    font-size: clamp(23px, 8cqw, 36px);
   }
 }
-
 
 /* ==========================================================================
    Result Screen
@@ -580,10 +572,12 @@ p {
 .result-text {
   position: relative;
   overflow: hidden;
+  padding-inline: clamp(8px, 2.8cqw, 14px);
   color: var(--color-ink);
   font-size: var(--result-font-size);
   font-weight: var(--font-weight-heavy);
-  line-height: 1;
+  line-height: 1.1;
+  text-align: center;
   text-overflow: clip;
   white-space: nowrap;
   word-break: keep-all;
@@ -692,7 +686,7 @@ p {
 .result-action--next {
   grid-column: 1 / -1;
   border: 0;
-  background: linear-gradient(var(--color-orange-bright), var(--color-orange));
+  background: linear-gradient(to bottom, var(--color-orange-bright), var(--color-orange));
   color: var(--color-white);
   -webkit-text-fill-color: var(--color-white);
   box-shadow: var(--shadow-orange);
@@ -707,7 +701,6 @@ p {
     font-size: clamp(22px, 9cqw, 32px);
   }
 }
-
 
 /* ==========================================================================
    Sound Screen
@@ -827,7 +820,6 @@ p {
   margin-top: 2px;
 }
 
-
 /* ==========================================================================
    Words Audio Check
    ========================================================================== */
@@ -856,7 +848,6 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
-
 
 /* ==========================================================================
    Accessibility / User Preferences

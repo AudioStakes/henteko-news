@@ -44,9 +44,10 @@ export function WordSelectScreen({
   const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
   useFitText({
     root: gridElement,
-    minFontSize: 14,
+    minFontSize: 24,
     maxFontSize: 38,
     targetsSelector: ".choice-card",
+    fitMode: "individual",
   });
 
   const handlePick = (id: string, option: WordOption) => {

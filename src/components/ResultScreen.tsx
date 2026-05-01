@@ -12,14 +12,17 @@ type ResultScreenProps = {
   onOpenSound: () => void;
   onRestartGame: () => void;
 };
-const MIN_FONT_SIZE = 20;
+const MIN_FONT_SIZE = 28;
 const MAX_FONT_SIZE = 48;
+
+function clampFontSize(size: number) {
+  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, size));
+}
+
 function getInitialFontSize(lines: string[]) {
-  const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
   const lineCount = Math.max(lines.length, 1);
-  const widthLimited = MAX_FONT_SIZE - Math.max(0, longest - 6) * 2.8;
-  const heightLimited = MAX_FONT_SIZE - Math.max(0, lineCount - 3) * 4.5;
-  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.min(widthLimited, heightLimited)));
+  const heightLimited = MAX_FONT_SIZE - Math.max(0, lineCount - 3) * 3;
+  return clampFontSize(heightLimited);
 }
 export function ResultScreen({
   lines,
@@ -41,6 +44,7 @@ export function ResultScreen({
     getInitialFontSize: () => getInitialFontSize(lines),
     setFontSize,
     watchDeps: [lines],
+    fitMode: "shared",
   });
   const lineKeyCount = new Map<string, number>();
   const keyedLines = lines.map((line) => {

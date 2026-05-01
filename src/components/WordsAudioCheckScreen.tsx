@@ -1,14 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef } from "react";
 import { CATEGORIES } from "../data/words";
-import { useSpeech } from "../hooks/useSpeech";
+import { useSpeechQueue } from "../hooks/useSpeechQueue";
 import { toWordOption } from "../utils/wordOption";
 
-type QueueItem = {
-  categoryKey: string;
-  categoryLabel: string;
-  displayText: string;
-  speechText: string;
-};
 const CATEGORY_BUTTON_LABELS: Record<string, string> = {
   who: "だれが",
   when: "いつ",
@@ -16,8 +10,7 @@ const CATEGORY_BUTTON_LABELS: Record<string, string> = {
   what: "なにを",
   action: "どうした",
 };
-
-function buildQueue(): QueueItem[] {
+function buildQueue() {
   return CATEGORIES.flatMap((category) =>
     category.words.map((word) => {
       const option = toWordOption(word);
@@ -30,9 +23,18 @@ function buildQueue(): QueueItem[] {
     }),
   );
 }
-
 export function WordsAudioCheckScreen() {
   const queue = useMemo(() => buildQueue(), []);
+  const resumeIndexRef = useRef(0);
+  const { start, stop, currentIndex, isPlaying, error } = useSpeechQueue(
+    queue.map((i) => i.speechText),
+    {
+      onComplete: () => {
+        resumeIndexRef.current = 0;
+      },
+      onError: () => {},
+    },
+  );
   const categoryStarts = useMemo(
     () =>
       CATEGORIES.map((category) => ({
@@ -42,53 +44,14 @@ export function WordsAudioCheckScreen() {
       })),
     [queue],
   );
-  const [currentIndex, setCurrentIndex] = useState(-1);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [error, setError] = useState("");
-  const resumeIndexRef = useRef(0);
-  const { speak, cancel, isSupported } = useSpeech();
-
+  const playFrom = (idx: number) => {
+    resumeIndexRef.current = idx;
+    start(idx);
+  };
   const stopPlayback = () => {
     resumeIndexRef.current = Math.max(currentIndex, 0);
-    setCurrentIndex(-1);
-    setIsPlaying(false);
-    cancel();
+    stop();
   };
-  const playFrom = (startIndex: number) => {
-    if (!isSupported) return setError("このブラウザでは よみあげが つかえません。");
-    stopPlayback();
-    setError("");
-    setIsPlaying(true);
-    let idx = startIndex;
-    const next = () => {
-      if (idx >= queue.length) {
-        setIsPlaying(false);
-        setCurrentIndex(queue.length - 1);
-        resumeIndexRef.current = 0;
-        return;
-      }
-      setCurrentIndex(idx);
-      resumeIndexRef.current = idx;
-      const ok = speak(queue[idx].speechText, {
-        rate: 0.9,
-        pitch: 1,
-        onEnd: () => {
-          idx += 1;
-          next();
-        },
-        onError: () => {
-          setIsPlaying(false);
-          setError("よみあげが とちゅうで とまりました。もういちど はじめてください。");
-        },
-      });
-      if (!ok) {
-        setIsPlaying(false);
-        setError("よみあげが とちゅうで とまりました。もういちど はじめてください。");
-      }
-    };
-    next();
-  };
-
   const currentItem = currentIndex >= 0 ? queue[currentIndex] : null;
   return (
     <section className="screen sound-screen">

@@ -8,28 +8,24 @@ import { WordSelectScreen } from "./components/WordSelectScreen";
 import { WordsAudioCheckScreen } from "./components/WordsAudioCheckScreen";
 import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
-import type { SoundSettings } from "./types/game";
+import { useSoundSettings } from "./hooks/useSoundSettings";
 import { preloadImagesWhenIdle } from "./utils/preload";
 import { buildNewsLines } from "./utils/speechText";
 
-const INITIAL_SOUND: SoundSettings = { enabled: true, speed: "normal" };
-const normalizeSoundSettings = (sound: SoundSettings): SoundSettings => ({
-  enabled: Boolean(sound.enabled),
-  speed: ["slow", "normal", "fast", "veryFast"].includes(sound.speed)
-    ? sound.speed
-    : ("normal" as const),
-});
-
 export default function App() {
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
-  const { screen, setScreen, step, selections, startGame, handleSelectWord, setSelections } =
-    useGameFlow();
-  const [soundSettings, setSoundSettings] = useLocalStorage<SoundSettings>(
-    "henteko-news-sound",
-    INITIAL_SOUND,
-  );
+  const {
+    screen,
+    step,
+    selections,
+    startGame,
+    handleSelectWord,
+    setSelections,
+    openSound,
+    closeSound,
+  } = useGameFlow();
+  const [soundSettings, setSoundSettings] = useSoundSettings();
   const {
     reaction,
     speechError,
@@ -39,18 +35,12 @@ export default function App() {
     warmup,
     cancel,
     speakNews,
+    isSpeaking,
   } = useNewsSpeech(soundSettings);
   const lines = useMemo(() => buildNewsLines(selections), [selections]);
-
-  useEffect(() => {
-    const normalized = normalizeSoundSettings(soundSettings);
-    if (normalized.enabled !== soundSettings.enabled || normalized.speed !== soundSettings.speed)
-      setSoundSettings(normalized);
-  }, [soundSettings, setSoundSettings]);
   useEffect(() => {
     preloadImagesWhenIdle(NEXT_SCREEN_IMAGE_URLS);
   }, []);
-
   if (pathname === "/words-audio-check")
     return (
       <div className="viewport">
@@ -60,7 +50,6 @@ export default function App() {
         </main>
       </div>
     );
-
   const start = () => {
     cancel();
     warmup();
@@ -69,38 +58,33 @@ export default function App() {
     setSpeechError("");
     startGame();
   };
-  const onSelect = (word: string) => {
-    warmup();
-    const next = handleSelectWord(word);
-    if (step === CATEGORIES.length - 1) speakNews(next);
-  };
-
   return (
     <div className="viewport">
       <main className="app-shell">
         <AppHeader />
-        {screen === "start" && <StartScreen onStart={start} />}
-        {screen === "sound" && (
-          <SoundScreen
-            settings={soundSettings}
-            onUpdate={setSoundSettings}
-            onBack={() => setScreen("result")}
-          />
+        {screen.name === "start" && <StartScreen onStart={start} />}
+        {screen.name === "sound" && (
+          <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={closeSound} />
         )}
-        {screen === "select" && (
+        {screen.name === "select" && (
           <WordSelectScreen
             key={CATEGORIES[step].key}
             category={CATEGORIES[step]}
-            onSelect={onSelect}
+            onSelect={(word) => {
+              warmup();
+              const next = handleSelectWord(word);
+              if (step === CATEGORIES.length - 1) speakNews(next);
+            }}
           />
         )}
-        {screen === "result" && (
+        {screen.name === "result" && (
           <ResultScreen
             lines={lines}
             reaction={reaction || (isSupported ? "" : "おとはつかえないけど、たのしい！")}
             speechError={speechError}
+            replayDisabled={isSpeaking}
             onReplayVoice={() => speakNews(selections)}
-            onOpenSound={() => setScreen("sound")}
+            onOpenSound={() => openSound("result")}
             onRestartGame={start}
           />
         )}

@@ -31,7 +31,7 @@ function getVoiceConfig(sound: SoundSettings) {
 export function useNewsSpeech(soundSettings: SoundSettings) {
   const [reaction, setReaction] = useState("");
   const [speechError, setSpeechError] = useState("");
-  const { speak, isSupported, warmup, cancel } = useSpeech();
+  const { speak, isSupported, isSpeaking, warmup, cancel } = useSpeech();
   const showSpeechUnavailable = () =>
     setSpeechError("よみあげの おとが でません。ブラウザを さいきどうすると なおるかも。");
 
@@ -45,7 +45,7 @@ export function useNewsSpeech(soundSettings: SoundSettings) {
       onEnd: () => setReaction(pickReaction()),
       onError: showSpeechUnavailable,
     });
-    if (!ok) showSpeechUnavailable();
+    if (!ok && !isSpeaking) showSpeechUnavailable();
   };
 
   return {
@@ -57,5 +57,6 @@ export function useNewsSpeech(soundSettings: SoundSettings) {
     warmup,
     cancel,
     speakNews,
+    isSpeaking,
   };
 }

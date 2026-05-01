@@ -1,5 +1,5 @@
 import type { Category } from "../types/game";
-import { ACTION_POLITE_MAP } from "../utils/speechText";
+import { ACTION_WORDS } from "./actions";
 
 export const CATEGORIES: Category[] = [
   {
@@ -266,7 +266,7 @@ export const CATEGORIES: Category[] = [
   {
     key: "action",
     label: "どうした？",
-    words: Object.entries(ACTION_POLITE_MAP).map(([display, speech]) => ({ display, speech })),
+    words: ACTION_WORDS,
   },
 ];
 

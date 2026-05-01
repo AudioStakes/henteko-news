@@ -1,4 +1,8 @@
-const VERSION = "2026-05-01";
+const SERVICE_WORKER_URL = new URL(self.location.href);
+const VERSION =
+  SERVICE_WORKER_URL.searchParams.get("v") ||
+  SERVICE_WORKER_URL.searchParams.get("version") ||
+  SERVICE_WORKER_URL.href;
 const STATIC_CACHE = `henteko-static-${VERSION}`;
 const HTML_CACHE = `henteko-html-${VERSION}`;
 const STATIC_ASSETS = [

@@ -2,15 +2,51 @@ import ts from "typescript";
 
 const MAX_LEN = 30;
 
+const formatHost = {
+  getCanonicalFileName: (fileName) => fileName,
+  getCurrentDirectory: () => ts.sys.getCurrentDirectory(),
+  getNewLine: () => ts.sys.newLine,
+};
+
+function loadProjectCompilerOptions() {
+  const configPath =
+    ts.findConfigFile(ts.sys.getCurrentDirectory(), ts.sys.fileExists, "tsconfig.app.json") ??
+    ts.findConfigFile(ts.sys.getCurrentDirectory(), ts.sys.fileExists, "tsconfig.json");
+
+  if (!configPath) {
+    throw new Error("Could not find tsconfig.app.json or tsconfig.json");
+  }
+
+  const configFile = ts.readConfigFile(configPath, ts.sys.readFile);
+  if (configFile.error) {
+    throw new Error(ts.formatDiagnosticsWithColorAndContext([configFile.error], formatHost));
+  }
+
+  const parsedConfig = ts.parseJsonConfigFileContent(
+    configFile.config,
+    ts.sys,
+    ts.getDirectoryPath(configPath),
+  );
+
+  if (parsedConfig.errors.length > 0) {
+    throw new Error(ts.formatDiagnosticsWithColorAndContext(parsedConfig.errors, formatHost));
+  }
+
+  return parsedConfig.options;
+}
+
 function compileTsModule(filePath) {
-  const program = ts.createProgram([filePath], {
-    target: ts.ScriptTarget.ES2020,
+  const projectCompilerOptions = loadProjectCompilerOptions();
+  const compilerOptions = {
+    ...projectCompilerOptions,
+    target: projectCompilerOptions.target ?? ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.CommonJS,
-  });
+  };
+  const program = ts.createProgram([filePath], compilerOptions);
   const sourceFile = program.getSourceFile(filePath);
   if (!sourceFile) throw new Error(`Could not load ${filePath}`);
   const diagnostics = ts.getPreEmitDiagnostics(program);
-  if (diagnostics.length > 0) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, ts.sys));
+  if (diagnostics.length > 0) throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, formatHost));
   let output = "";
   program.emit(sourceFile, (name, text) => {
     if (name.endsWith(".js")) output = text;

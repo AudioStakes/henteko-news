@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
 import { useFitText } from "../hooks/useFitText";
 import type { Category, WordOption } from "../types/game";
@@ -41,10 +41,10 @@ export function WordSelectScreen({
     [category],
   );
   const [pickedId, setPickedId] = useState("");
-  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
   useFitText({
-    root: gridRef.current,
-    minFontSize: 18,
+    root: gridElement,
+    minFontSize: 14,
     maxFontSize: 38,
     targetsSelector: ".choice-card",
   });
@@ -62,7 +62,7 @@ export function WordSelectScreen({
         <CharacterImage variant="select" className="select-character" />
         <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
       </div>
-      <div className="choice-grid" ref={gridRef}>
+      <div className="choice-grid" ref={setGridElement}>
         {shuffledWords.map((choice) => (
           <button
             key={choice.id}

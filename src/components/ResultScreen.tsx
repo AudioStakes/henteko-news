@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
 import { useFitText } from "../hooks/useFitText";
 import { CharacterImage } from "./CharacterImage";
@@ -31,10 +31,10 @@ export function ResultScreen({
   onRestartGame,
 }: ResultScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
-  const bubbleRef = useRef<HTMLElement | null>(null);
+  const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
   const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
   useFitText({
-    root: bubbleRef.current,
+    root: bubbleElement,
     minFontSize: MIN_FONT_SIZE,
     maxFontSize: MAX_FONT_SIZE,
     targetsSelector: ".result-text",
@@ -52,7 +52,7 @@ export function ResultScreen({
   return (
     <section className="screen result-screen">
       <article
-        ref={bubbleRef}
+        ref={setBubbleElement}
         className="result-bubble"
         aria-label="かんせいニュース"
         style={{

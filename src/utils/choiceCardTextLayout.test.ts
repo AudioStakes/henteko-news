@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import {
-  calculateChoiceCardTextLayout,
   CHOICE_CARD_WIDTH_RULES,
+  calculateChoiceCardTextLayout,
   getChoiceCardWidthRule,
 } from "./choiceCardTextLayout";
 
@@ -58,7 +58,13 @@ describe("calculateChoiceCardTextLayout", () => {
         ...cardText,
       })),
     ),
-  )("$name", ({ gridWidth, availableTextWidth, text, expectedCharacterCount, expectedFontSizes }) => {
+  )("$name", ({
+    gridWidth,
+    availableTextWidth,
+    text,
+    expectedCharacterCount,
+    expectedFontSizes,
+  }) => {
     const layout = calculateChoiceCardTextLayout({
       gridWidth,
       text,

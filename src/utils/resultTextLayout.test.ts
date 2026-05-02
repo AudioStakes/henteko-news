@@ -46,7 +46,13 @@ describe("calculateResultTextLayout", () => {
         ...lineSet,
       })),
     ),
-  )("$name", ({ frameWidth, maxBubbleHeight, lines, expectedMaxCharacterCount, expectedFontSizes }) => {
+  )("$name", ({
+    frameWidth,
+    maxBubbleHeight,
+    lines,
+    expectedMaxCharacterCount,
+    expectedFontSizes,
+  }) => {
     const layout = calculateResultTextLayout({
       frameWidth,
       lines,
@@ -79,20 +85,20 @@ describe("calculateResultTextLayout", () => {
     expect(totalTextHeight).toBeLessThanOrEqual(layout.bubbleHeight);
   });
 
-  test.each(FRAME_WIDTHS)(
-    "keeps bubble content within max height on $label",
-    ({ frameWidth, maxBubbleHeight }) => {
-      const layout = calculateResultTextLayout({
-        frameWidth,
-        lines: ["ゆうしゃが", "はみがきのあと", "おみせのまえで", "ぬいぐるみを", "あつめました！"],
-        maxFontSize: 64,
-        maxBubbleHeight,
-        lineGapRatio: 0.24,
-        glyphWidthRatio: 1,
-      });
+  test.each(FRAME_WIDTHS)("keeps bubble content within max height on $label", ({
+    frameWidth,
+    maxBubbleHeight,
+  }) => {
+    const layout = calculateResultTextLayout({
+      frameWidth,
+      lines: ["ゆうしゃが", "はみがきのあと", "おみせのまえで", "ぬいぐるみを", "あつめました！"],
+      maxFontSize: 64,
+      maxBubbleHeight,
+      lineGapRatio: 0.24,
+      glyphWidthRatio: 1,
+    });
 
-      expect(layout.contentHeight).toBeLessThanOrEqual(maxBubbleHeight);
-      expect(layout.bubbleHeight).toBeLessThanOrEqual(maxBubbleHeight);
-    },
-  );
+    expect(layout.contentHeight).toBeLessThanOrEqual(maxBubbleHeight);
+    expect(layout.bubbleHeight).toBeLessThanOrEqual(maxBubbleHeight);
+  });
 });

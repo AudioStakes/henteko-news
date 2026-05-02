@@ -192,7 +192,7 @@ export function useFitText({
       }
     };
 
-    const fit = () => {
+    const applyBestFit = () => {
       if (!targetsSelector) {
         fitSingleElement();
         return;
@@ -206,11 +206,11 @@ export function useFitText({
       fitGroupedTargets();
     };
 
-    fit();
+    applyBestFit();
 
     const onResize = () => {
       if (isApplyingSize) return;
-      fit();
+      applyBestFit();
     };
 
     if (typeof ResizeObserver !== "undefined") {

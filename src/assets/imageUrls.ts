@@ -1,3 +1,4 @@
+import hiyokoSelect from "./hiyoko_question.webp";
 import hiyoko1 from "./hiyoko1.webp";
 import hiyoko2 from "./hiyoko2.webp";
 import hiyoko3 from "./hiyoko3.webp";
@@ -6,7 +7,6 @@ import hiyoko5 from "./hiyoko5.webp";
 import hiyoko6 from "./hiyoko6.webp";
 import hiyoko7 from "./hiyoko7.webp";
 import hiyoko8 from "./hiyoko8.webp";
-import hiyokoSelect from "./hiyoko_question.webp";
 
 export const HIYOKO_IMAGE_URLS = [
   hiyoko1,

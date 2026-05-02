@@ -101,4 +101,40 @@ describe("calculateResultTextLayout", () => {
     expect(layout.contentHeight).toBeLessThanOrEqual(maxBubbleHeight);
     expect(layout.bubbleHeight).toBeLessThanOrEqual(maxBubbleHeight);
   });
+
+  test("treats zero frame width as no width constraint until measurement is ready", () => {
+    const layout = calculateResultTextLayout({
+      frameWidth: 0,
+      lines: ["アリが", "いまで", "うみで", "アイスを", "みた"],
+      maxFontSize: 64,
+      maxBubbleHeight: 336,
+      lineGapRatio: 0.24,
+      glyphWidthRatio: 1,
+    });
+
+    expect(layout.fontSize).toBeGreaterThan(0);
+    expect(layout.fontSize).toBe(56);
+  });
+
+  test("uses polite action width guard even when the final line ends with punctuation", () => {
+    const layout = calculateResultTextLayout({
+      frameWidth: 304,
+      lines: [
+        "しょうぼうしさんが",
+        "リモコンをさがしているとき",
+        "すべりだいのてっぺんで",
+        "きょうりゅうのたまごを",
+        "ふっとばした！",
+      ],
+      maxFontSize: 64,
+      maxBubbleHeight: 307,
+      lineGapRatio: 0.24,
+      glyphWidthRatio: 1,
+    });
+
+    const lastLineLayout = layout.lineLayouts[layout.lineLayouts.length - 1];
+
+    expect(lastLineLayout?.characterCount).toBe(8);
+    expect(lastLineLayout?.measuredWidth).toBe(8 * layout.fontSize);
+  });
 });

@@ -21,10 +21,10 @@ function getVoiceConfig(sound: SoundSettings) {
     sound.speed === "slow"
       ? 1.0
       : sound.speed === "fast"
-        ? 1.4
+        ? 1.5
         : sound.speed === "veryFast"
-          ? 1.6
-          : 1.15;
+          ? 1.7
+          : 1.25;
   return { rate, pitch };
 }
 

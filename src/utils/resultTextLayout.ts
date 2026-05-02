@@ -29,10 +29,14 @@ function countCharacters(text: string) {
   return Array.from(text).length;
 }
 
+function normalizeActionLine(line: string) {
+  return line.trim().replace(/[！!]$/u, "");
+}
+
 function getLineCharacterCount(line: string, index: number, lineCount: number) {
   if (index !== lineCount - 1) return countCharacters(line);
 
-  const politeAction = ACTION_POLITE_MAP[line];
+  const politeAction = ACTION_POLITE_MAP[normalizeActionLine(line)];
   const lineHasExclamation = /[！!]$/.test(line);
   const displayCharacterCount = countCharacters(line) + (lineHasExclamation ? 0 : 1);
 
@@ -57,7 +61,7 @@ export function calculateResultTextLayout({
   );
   const maxCharacterCount = Math.max(0, ...lineCharacterCounts);
   const widthLimitedFontSize =
-    maxCharacterCount > 0
+    safeFrameWidth > 0 && maxCharacterCount > 0
       ? Math.floor(safeFrameWidth / (maxCharacterCount * safeGlyphWidthRatio))
       : safeMaxFontSize;
   const heightLimitedFontSize = findHeightLimitedFontSize(

@@ -155,7 +155,7 @@ p {
 
 .app-header__logo {
   width: min(100%, 390px);
-  max-height: clamp(54px, 19svh, 102px);
+  max-height: clamp(54px, 22svh, 140px);
   height: auto;
   object-fit: contain;
 }
@@ -440,7 +440,7 @@ p {
 }
 
 .speech-home--guide {
-  top: 10%;
+  top: 15%;
   bottom: auto;
   left: 50%;
   right: auto;
@@ -487,7 +487,7 @@ p {
 
 @media (max-height: 700px) {
   .speech-home--guide {
-    top: 5%;
+    top: 2%;
     font-size: clamp(17px, 6.6cqw, 30px);
   }
 }

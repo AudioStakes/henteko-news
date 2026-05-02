@@ -25,10 +25,10 @@ export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
       <div className="hero hero-home">
         <div className="speech speech-home speech-home--guide">
           <span>
-            ことばを<span className="speech-home__highlight">5つ</span>えらんで
+            えらんだ<span className="speech-home__highlight">ことば</span>が
           </span>
           <span>
-            <span className="speech-home__highlight">ニュース</span>をつくろう！
+            <span className="speech-home__highlight">ニュース</span>になるよ！
           </span>
         </div>
         <CharacterImage variant="home" src={imageUrl} className="home-character" />

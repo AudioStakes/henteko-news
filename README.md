@@ -33,11 +33,14 @@ npm run dev
 
 ```bash
 npm run lint
+npm run test
 npm run format
 npm run check
 npm run typecheck
 npm run check:words
 ```
+
+CI でも `npm run test` を実行しています。レイアウト計算まわりを触ったときは、関連する `src/utils/*.test.ts` が通ることを確認してください。
 
 ビルド確認:
 

@@ -1,6 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
-import { useFitText } from "../hooks/useFitText";
 import { calculateResultTextLayout } from "../utils/resultTextLayout";
 import { CharacterImage } from "./CharacterImage";
 
@@ -21,9 +20,6 @@ const RESULT_BUBBLE_HEIGHT_BY_WIDTH = [
   { maxFrameWidth: 373, maxBubbleHeight: 336 },
 ] as const;
 const RESULT_BUBBLE_MAX_HEIGHT_FALLBACK = 355;
-const REACTION_MIN_FONT_SIZE = 22;
-const REACTION_MAX_FONT_SIZE = 52;
-
 function getResultBubbleMaxHeight(frameWidth: number) {
   for (const rule of RESULT_BUBBLE_HEIGHT_BY_WIDTH) {
     if (frameWidth <= rule.maxFrameWidth) return rule.maxBubbleHeight;
@@ -79,17 +75,6 @@ export function ResultScreen({
       }),
     [lines, resultFrameWidth],
   );
-
-  const [reactionElement, setReactionElement] = useState<HTMLParagraphElement | null>(null);
-  const [reactionFontSize, setReactionFontSize] = useState(REACTION_MAX_FONT_SIZE);
-  useFitText({
-    root: reactionElement,
-    minFontSize: REACTION_MIN_FONT_SIZE,
-    maxFontSize: REACTION_MAX_FONT_SIZE,
-    setFontSize: setReactionFontSize,
-    watchDeps: [reaction],
-  });
-
   const lineKeyCount = new Map<string, number>();
   const keyedLines = lines.map((line) => {
     const seen = (lineKeyCount.get(line) ?? 0) + 1;
@@ -124,14 +109,7 @@ export function ResultScreen({
               {speechError}
             </p>
           ) : null}
-          <p
-            ref={setReactionElement}
-            className="reaction"
-            aria-live="polite"
-            style={{
-              ["--reaction-font-size" as string]: `${reactionFontSize}px`,
-            }}
-          >
+          <p className="reaction" aria-live="polite">
             {reaction}
           </p>
         </div>

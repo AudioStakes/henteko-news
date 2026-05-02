@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
-import { useFitText } from "../hooks/useFitText";
 import type { Category, WordOption } from "../types/game";
+import { calculateChoiceCardTextLayout } from "../utils/choiceCardTextLayout";
 import { toWordOption } from "../utils/wordOption";
 import { toCardWord } from "../utils/words";
 import { CharacterImage } from "./CharacterImage";
@@ -15,6 +15,10 @@ type WordSelectScreenProps = {
   imageUrl: string;
 };
 const MAX_CHOICES = 6;
+const CHOICE_CARD_MIN_FONT_SIZE = 18;
+const CHOICE_CARD_MAX_FONT_SIZE = 35;
+const CHOICE_CARD_GLYPH_WIDTH_RATIO = 1;
+
 function shuffleWords(words: Array<{ id: string; option: WordOption }>) {
   const shuffled = [...words];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -44,13 +48,48 @@ export function WordSelectScreen({
   );
   const [pickedId, setPickedId] = useState("");
   const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
-  useFitText({
-    root: gridElement,
-    minFontSize: 24,
-    maxFontSize: 38,
-    targetsSelector: ".choice-card",
-    fitMode: "individual",
-  });
+  const [choiceGridWidth, setChoiceGridWidth] = useState(373);
+
+  useLayoutEffect(() => {
+    if (!gridElement) return;
+
+    const updateGridWidth = () => {
+      setChoiceGridWidth(Math.max(0, Math.floor(gridElement.clientWidth)));
+    };
+
+    updateGridWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateGridWidth);
+      return () => window.removeEventListener("resize", updateGridWidth);
+    }
+
+    const observer = new ResizeObserver(updateGridWidth);
+    observer.observe(gridElement);
+
+    return () => observer.disconnect();
+  }, [gridElement]);
+
+  const choiceCards = useMemo(
+    () =>
+      shuffledWords.map((choice) => {
+        const cardLabel = toCardWord(choice.option.display);
+        const layout = calculateChoiceCardTextLayout({
+          gridWidth: choiceGridWidth,
+          text: cardLabel,
+          minFontSize: CHOICE_CARD_MIN_FONT_SIZE,
+          maxFontSize: CHOICE_CARD_MAX_FONT_SIZE,
+          glyphWidthRatio: CHOICE_CARD_GLYPH_WIDTH_RATIO,
+        });
+
+        return {
+          ...choice,
+          cardLabel,
+          fontSize: layout.fontSize,
+        };
+      }),
+    [choiceGridWidth, shuffledWords],
+  );
 
   const handlePick = (id: string, option: WordOption) => {
     if (pickedId) return;
@@ -66,7 +105,7 @@ export function WordSelectScreen({
         <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
       </div>
       <div className="choice-grid" ref={setGridElement}>
-        {shuffledWords.map((choice) => (
+        {choiceCards.map((choice) => (
           <button
             key={choice.id}
             type="button"
@@ -74,8 +113,11 @@ export function WordSelectScreen({
             disabled={Boolean(pickedId)}
             onClick={withClickSound(() => handlePick(choice.id, choice.option))}
             onPointerDown={primeOnPressStart}
+            style={{
+              ["--choice-card-font-size" as string]: `${choice.fontSize}px`,
+            }}
           >
-            {toCardWord(choice.option.display)}
+            <span className="choice-card__label">{choice.cardLabel}</span>
           </button>
         ))}
       </div>

@@ -33,11 +33,14 @@ npm run dev
 
 ```bash
 npm run lint
+npm run test
 npm run format
 npm run check
 npm run typecheck
 npm run check:words
 ```
+
+CI でも `npm run test` を実行しています。レイアウト計算まわりを触ったときは、関連する `src/utils/*.test.ts` が通ることを確認してください。
 
 ビルド確認:
 
@@ -60,16 +63,6 @@ Netlify の新規サイト作成時は、以下を指定してください。
 - Service Worker は `src/main.tsx` から `/sw.js?v=<package.json version>` で登録し、URL クエリのバージョンをキャッシュキーに使います。
 - 頻繁に更新する画像は `hiyoko-v2.webp` のようにファイル名へバージョンを付ける運用がおすすめです。
 - OGP画像（`ogp.png`）は将来追加予定です。現状は既存アイコンをOGPの参照先にしています。
-
-## 注意事項
-
-- ログインなし
-- 広告なし
-- 課金なし
-- 個人情報の取得なし
-- カメラ不使用
-- マイク不使用
-
 
 ## 開発者向け: 読み上げ確認
 

@@ -19,12 +19,12 @@ function getVoiceConfig(sound: SoundSettings) {
           : 0.9;
   const pitch =
     sound.speed === "slow"
-      ? 0.85
+      ? 1.0
       : sound.speed === "fast"
-        ? 1.25
+        ? 1.5
         : sound.speed === "veryFast"
-          ? 1.45
-          : 1.0;
+          ? 1.7
+          : 1.25;
   return { rate, pitch };
 }
 

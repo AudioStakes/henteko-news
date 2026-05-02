@@ -1,47 +1,80 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
-import { useFitText } from "../hooks/useFitText";
+import { calculateResultTextLayout } from "../utils/resultTextLayout";
 import { CharacterImage } from "./CharacterImage";
 
 type ResultScreenProps = {
   lines: string[];
   reaction: string;
   speechError: string;
+  imageUrl: string;
   onReplayVoice: () => void;
   replayDisabled?: boolean;
-  onOpenSound: () => void;
   onRestartGame: () => void;
 };
-const MIN_FONT_SIZE = 20;
-const MAX_FONT_SIZE = 48;
-function getInitialFontSize(lines: string[]) {
-  const longest = lines.reduce((max, line) => Math.max(max, line.length), 0);
-  const lineCount = Math.max(lines.length, 1);
-  const widthLimited = MAX_FONT_SIZE - Math.max(0, longest - 6) * 2.8;
-  const heightLimited = MAX_FONT_SIZE - Math.max(0, lineCount - 3) * 4.5;
-  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, Math.min(widthLimited, heightLimited)));
+const MAX_FONT_SIZE = 64;
+const RESULT_GLYPH_WIDTH_RATIO = 1;
+const RESULT_LINE_GAP_RATIO = 0.24;
+const RESULT_BUBBLE_HEIGHT_BY_WIDTH = [
+  { maxFrameWidth: 304, maxBubbleHeight: 307 },
+  { maxFrameWidth: 373, maxBubbleHeight: 336 },
+] as const;
+const RESULT_BUBBLE_MAX_HEIGHT_FALLBACK = 355;
+function getResultBubbleMaxHeight(frameWidth: number) {
+  for (const rule of RESULT_BUBBLE_HEIGHT_BY_WIDTH) {
+    if (frameWidth <= rule.maxFrameWidth) return rule.maxBubbleHeight;
+  }
+
+  return RESULT_BUBBLE_MAX_HEIGHT_FALLBACK;
 }
+
 export function ResultScreen({
   lines,
   reaction,
   speechError,
+  imageUrl,
   onReplayVoice,
   replayDisabled,
-  onOpenSound,
   onRestartGame,
 }: ResultScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
-  const bubbleRef = useRef<HTMLElement | null>(null);
-  const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
-  useFitText({
-    root: bubbleRef.current,
-    minFontSize: MIN_FONT_SIZE,
-    maxFontSize: MAX_FONT_SIZE,
-    targetsSelector: ".result-text",
-    getInitialFontSize: () => getInitialFontSize(lines),
-    setFontSize,
-    watchDeps: [lines],
-  });
+  const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
+  const [resultFrameWidth, setResultFrameWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (!bubbleElement) return;
+
+    const updateFrameWidth = () => {
+      const styles = window.getComputedStyle(bubbleElement);
+      const inlinePadding =
+        Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
+
+      setResultFrameWidth(Math.max(0, Math.floor(bubbleElement.clientWidth - inlinePadding)));
+    };
+
+    updateFrameWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateFrameWidth);
+      return () => window.removeEventListener("resize", updateFrameWidth);
+    }
+
+    const observer = new ResizeObserver(updateFrameWidth);
+    observer.observe(bubbleElement);
+
+    return () => observer.disconnect();
+  }, [bubbleElement]);
+  const resultLayout = useMemo(
+    () =>
+      calculateResultTextLayout({
+        frameWidth: resultFrameWidth,
+        lines,
+        maxFontSize: MAX_FONT_SIZE,
+        maxBubbleHeight: getResultBubbleMaxHeight(resultFrameWidth),
+        lineGapRatio: RESULT_LINE_GAP_RATIO,
+        glyphWidthRatio: RESULT_GLYPH_WIDTH_RATIO,
+      }),
+    [lines, resultFrameWidth],
+  );
   const lineKeyCount = new Map<string, number>();
   const keyedLines = lines.map((line) => {
     const seen = (lineKeyCount.get(line) ?? 0) + 1;
@@ -52,12 +85,14 @@ export function ResultScreen({
   return (
     <section className="screen result-screen">
       <article
-        ref={bubbleRef}
+        ref={setBubbleElement}
         className="result-bubble"
         aria-label="かんせいニュース"
         style={{
           ["--result-line-count" as string]: String(Math.max(lines.length, 1)),
-          ["--result-font-size" as string]: `${fontSize}px`,
+          ["--result-font-size" as string]: `${resultLayout.fontSize}px`,
+          ["--result-line-gap" as string]: `${resultLayout.lineGap}px`,
+          ["--result-content-height" as string]: `${resultLayout.bubbleHeight}px`,
         }}
       >
         {keyedLines.map((item) => (
@@ -67,7 +102,7 @@ export function ResultScreen({
         ))}
       </article>
       <div className="result-bottom">
-        <CharacterImage variant="result" className="result-character" />
+        <CharacterImage variant="result" src={imageUrl} className="result-character" />
         <div className="result-sidecopy">
           {speechError ? (
             <p className="speech-error" role="status" aria-live="polite">
@@ -90,18 +125,6 @@ export function ResultScreen({
           <span className="action-icon" aria-hidden="true">
             ↻
           </span>
-          <span>もう1かいきく</span>
-        </button>
-        <button
-          type="button"
-          className="action-btn result-action sound"
-          onClick={withClickSound(onOpenSound)}
-          onPointerDown={primeOnPressStart}
-        >
-          <span className="action-icon" aria-hidden="true">
-            🔊
-          </span>
-          <span>こえ</span>
         </button>
         <button
           type="button"
@@ -109,7 +132,7 @@ export function ResultScreen({
           onClick={withClickSound(onRestartGame)}
           onPointerDown={primeOnPressStart}
         >
-          <span>ニュースをつくる</span>
+          <span>つぎのニュース →</span>
         </button>
       </div>
     </section>

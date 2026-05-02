@@ -1,21 +1,13 @@
-import hiyokoImage from "../assets/hiyoko.webp";
-import hiyokoSelect from "../assets/hiyoko_question.webp";
-
 type CharacterVariant = "home" | "select" | "result";
-
-const characterSrc: Record<CharacterVariant, string> = {
-  home: hiyokoImage,
-  select: hiyokoSelect,
-  result: hiyokoImage,
-};
 
 type CharacterImageProps = {
   variant: CharacterVariant;
+  src: string;
   className?: string;
   alt?: string;
 };
 
-export function CharacterImage({ variant, className = "", alt }: CharacterImageProps) {
+export function CharacterImage({ variant, src, className = "", alt }: CharacterImageProps) {
   const loading = variant === "home" ? undefined : "eager";
   const fetchPriorityProps = { fetchpriority: variant === "home" ? "high" : "auto" } as Record<
     string,
@@ -25,7 +17,7 @@ export function CharacterImage({ variant, className = "", alt }: CharacterImageP
   return (
     <img
       className={`character character--${variant} ${className}`.trim()}
-      src={characterSrc[variant]}
+      src={src}
       alt={alt ?? ""}
       aria-hidden={alt ? undefined : true}
       decoding="async"

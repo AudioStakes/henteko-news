@@ -3,9 +3,10 @@ import { CharacterImage } from "./CharacterImage";
 
 type StartScreenProps = {
   onStart: () => void;
+  imageUrl: string;
 };
 
-export function StartScreen({ onStart }: StartScreenProps) {
+export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
   const handleStart = () => {
     void playChoiceSound().catch(() => {
       // Keep navigation responsive even if sound playback is unavailable.
@@ -30,7 +31,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
             <span className="speech-home__highlight">ニュース</span>をつくろう！
           </span>
         </div>
-        <CharacterImage variant="home" className="home-character" />
+        <CharacterImage variant="home" src={imageUrl} className="home-character" />
       </div>
       <div className="action-stack">
         <button
@@ -41,9 +42,6 @@ export function StartScreen({ onStart }: StartScreenProps) {
           onTouchStart={handlePressStart}
         >
           <span className="action-btn__label">ニュースをつくる</span>
-          <span className="action-btn__star" aria-hidden="true">
-            ⭐
-          </span>
         </button>
       </div>
     </section>

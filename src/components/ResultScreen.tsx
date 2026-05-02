@@ -1,51 +1,95 @@
-import { useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
 import { useFitText } from "../hooks/useFitText";
+import { calculateResultTextLayout } from "../utils/resultTextLayout";
 import { CharacterImage } from "./CharacterImage";
 
 type ResultScreenProps = {
   lines: string[];
   reaction: string;
   speechError: string;
+  imageUrl: string;
   onReplayVoice: () => void;
   replayDisabled?: boolean;
-  onOpenSound: () => void;
   onRestartGame: () => void;
 };
-const MIN_FONT_SIZE = 28;
-const MAX_FONT_SIZE = 48;
+const MAX_FONT_SIZE = 64;
+const RESULT_GLYPH_WIDTH_RATIO = 1;
+const RESULT_LINE_GAP_RATIO = 0.24;
+const RESULT_BUBBLE_HEIGHT_BY_WIDTH = [
+  { maxFrameWidth: 304, maxBubbleHeight: 307 },
+  { maxFrameWidth: 373, maxBubbleHeight: 336 },
+] as const;
+const RESULT_BUBBLE_MAX_HEIGHT_FALLBACK = 355;
+const REACTION_MIN_FONT_SIZE = 22;
+const REACTION_MAX_FONT_SIZE = 52;
 
-function clampFontSize(size: number) {
-  return Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, size));
+function getResultBubbleMaxHeight(frameWidth: number) {
+  for (const rule of RESULT_BUBBLE_HEIGHT_BY_WIDTH) {
+    if (frameWidth <= rule.maxFrameWidth) return rule.maxBubbleHeight;
+  }
+
+  return RESULT_BUBBLE_MAX_HEIGHT_FALLBACK;
 }
 
-function getInitialFontSize(lines: string[]) {
-  const lineCount = Math.max(lines.length, 1);
-  const heightLimited = MAX_FONT_SIZE - Math.max(0, lineCount - 3) * 3;
-  return clampFontSize(heightLimited);
-}
 export function ResultScreen({
   lines,
   reaction,
   speechError,
+  imageUrl,
   onReplayVoice,
   replayDisabled,
-  onOpenSound,
   onRestartGame,
 }: ResultScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
   const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
-  const [fontSize, setFontSize] = useState(() => getInitialFontSize(lines));
+  const [resultFrameWidth, setResultFrameWidth] = useState(0);
+  useLayoutEffect(() => {
+    if (!bubbleElement) return;
+
+    const updateFrameWidth = () => {
+      const styles = window.getComputedStyle(bubbleElement);
+      const inlinePadding =
+        Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight);
+
+      setResultFrameWidth(Math.max(0, Math.floor(bubbleElement.clientWidth - inlinePadding)));
+    };
+
+    updateFrameWidth();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateFrameWidth);
+      return () => window.removeEventListener("resize", updateFrameWidth);
+    }
+
+    const observer = new ResizeObserver(updateFrameWidth);
+    observer.observe(bubbleElement);
+
+    return () => observer.disconnect();
+  }, [bubbleElement]);
+  const resultLayout = useMemo(
+    () =>
+      calculateResultTextLayout({
+        frameWidth: resultFrameWidth,
+        lines,
+        maxFontSize: MAX_FONT_SIZE,
+        maxBubbleHeight: getResultBubbleMaxHeight(resultFrameWidth),
+        lineGapRatio: RESULT_LINE_GAP_RATIO,
+        glyphWidthRatio: RESULT_GLYPH_WIDTH_RATIO,
+      }),
+    [lines, resultFrameWidth],
+  );
+
+  const [reactionElement, setReactionElement] = useState<HTMLParagraphElement | null>(null);
+  const [reactionFontSize, setReactionFontSize] = useState(REACTION_MAX_FONT_SIZE);
   useFitText({
-    root: bubbleElement,
-    minFontSize: MIN_FONT_SIZE,
-    maxFontSize: MAX_FONT_SIZE,
-    targetsSelector: ".result-text",
-    getInitialFontSize: () => getInitialFontSize(lines),
-    setFontSize,
-    watchDeps: [lines],
-    fitMode: "shared",
+    root: reactionElement,
+    minFontSize: REACTION_MIN_FONT_SIZE,
+    maxFontSize: REACTION_MAX_FONT_SIZE,
+    setFontSize: setReactionFontSize,
+    watchDeps: [reaction],
   });
+
   const lineKeyCount = new Map<string, number>();
   const keyedLines = lines.map((line) => {
     const seen = (lineKeyCount.get(line) ?? 0) + 1;
@@ -61,7 +105,9 @@ export function ResultScreen({
         aria-label="かんせいニュース"
         style={{
           ["--result-line-count" as string]: String(Math.max(lines.length, 1)),
-          ["--result-font-size" as string]: `${fontSize}px`,
+          ["--result-font-size" as string]: `${resultLayout.fontSize}px`,
+          ["--result-line-gap" as string]: `${resultLayout.lineGap}px`,
+          ["--result-content-height" as string]: `${resultLayout.bubbleHeight}px`,
         }}
       >
         {keyedLines.map((item) => (
@@ -71,14 +117,21 @@ export function ResultScreen({
         ))}
       </article>
       <div className="result-bottom">
-        <CharacterImage variant="result" className="result-character" />
+        <CharacterImage variant="result" src={imageUrl} className="result-character" />
         <div className="result-sidecopy">
           {speechError ? (
             <p className="speech-error" role="status" aria-live="polite">
               {speechError}
             </p>
           ) : null}
-          <p className="reaction" aria-live="polite">
+          <p
+            ref={setReactionElement}
+            className="reaction"
+            aria-live="polite"
+            style={{
+              ["--reaction-font-size" as string]: `${reactionFontSize}px`,
+            }}
+          >
             {reaction}
           </p>
         </div>
@@ -94,18 +147,6 @@ export function ResultScreen({
           <span className="action-icon" aria-hidden="true">
             ↻
           </span>
-          <span>もう1かいきく</span>
-        </button>
-        <button
-          type="button"
-          className="action-btn result-action sound"
-          onClick={withClickSound(onOpenSound)}
-          onPointerDown={primeOnPressStart}
-        >
-          <span className="action-icon" aria-hidden="true">
-            🔊
-          </span>
-          <span>こえ</span>
         </button>
         <button
           type="button"
@@ -113,7 +154,7 @@ export function ResultScreen({
           onClick={withClickSound(onRestartGame)}
           onPointerDown={primeOnPressStart}
         >
-          <span>ニュースをつくる</span>
+          <span>つぎのニュース →</span>
         </button>
       </div>
     </section>

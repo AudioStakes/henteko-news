@@ -12,6 +12,7 @@ type WordSelectScreenProps = {
   onSelect: (word: WordOption) => void;
   currentStep: number;
   totalSteps: number;
+  imageUrl: string;
 };
 const MAX_CHOICES = 6;
 function shuffleWords(words: Array<{ id: string; option: WordOption }>) {
@@ -28,6 +29,7 @@ export function WordSelectScreen({
   onSelect,
   currentStep,
   totalSteps,
+  imageUrl,
 }: WordSelectScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
   const shuffledWords = useMemo(
@@ -60,7 +62,7 @@ export function WordSelectScreen({
     <section className="screen select-screen">
       <StepIndicator current={currentStep} total={totalSteps} />
       <div className="hero hero-select">
-        <CharacterImage variant="select" className="select-character" />
+        <CharacterImage variant="select" src={imageUrl} className="select-character" />
         <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
       </div>
       <div className="choice-grid" ref={setGridElement}>

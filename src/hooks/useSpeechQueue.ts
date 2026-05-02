@@ -55,7 +55,7 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
       setCurrentIndex(idx);
       const ok = speak(items[idx], {
         rate: 0.9,
-        pitch: 1,
+        pitch: 1.15,
         onEnd: () => next(idx + 1),
         onError: () => failQueue(queueId, ERR_PLAYBACK),
       });

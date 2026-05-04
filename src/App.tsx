@@ -91,7 +91,6 @@ export default function App() {
             replayDisabled
             onReplayVoice={() => {}}
             onRestartGame={() => {}}
-            onOpenSound={() => {}}
           />
         )}
         {!debugSelections && screen.name === "start" && (

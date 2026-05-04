@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DEFAULT_NEWS_SPEECH_CONFIG } from "../constants/speech";
 import type { Selections, SoundSettings } from "../types/game";
 import { buildNewsLines, toSpeechText } from "../utils/speechText";
 import { useSpeech } from "./useSpeech";
@@ -13,8 +14,7 @@ export function useNewsSpeech(soundSettings: SoundSettings) {
     if (!soundSettings.enabled || buildNewsLines(nextSelections).length !== 5) return;
     setSpeechError("");
     const ok = speak(toSpeechText(nextSelections), {
-      rate: 1,
-      pitch: 1,
+      ...DEFAULT_NEWS_SPEECH_CONFIG,
       onError: showSpeechUnavailable,
     });
     if (!ok && !isSpeaking) showSpeechUnavailable();

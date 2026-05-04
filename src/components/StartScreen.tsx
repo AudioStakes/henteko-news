@@ -1,24 +1,14 @@
-import { playChoiceSound, primeChoiceSound } from "../utils/soundEffects";
+import { useButtonSound } from "../hooks/useButtonSound";
 import { CharacterImage } from "./CharacterImage";
 
 type StartScreenProps = {
   onStart: () => void;
+  onOpenSound: () => void;
   imageUrl: string;
 };
 
-export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
-  const handleStart = () => {
-    void playChoiceSound().catch(() => {
-      // Keep navigation responsive even if sound playback is unavailable.
-    });
-    onStart();
-  };
-
-  const handlePressStart = () => {
-    void primeChoiceSound().catch(() => {
-      // iOS Safari may reject unlock attempts; try again on actual tap.
-    });
-  };
+export function StartScreen({ onStart, onOpenSound, imageUrl }: StartScreenProps) {
+  const { primeOnPressStart, withClickSound } = useButtonSound();
 
   return (
     <section className="screen home-screen">
@@ -37,11 +27,18 @@ export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
         <button
           type="button"
           className="action-btn orange"
-          onClick={handleStart}
-          onPointerDown={handlePressStart}
-          onTouchStart={handlePressStart}
+          onClick={withClickSound(onStart)}
+          onPointerDown={primeOnPressStart}
         >
           <span className="action-btn__label">ニュースをつくる</span>
+        </button>
+        <button
+          type="button"
+          className="action-btn blue small"
+          onClick={withClickSound(onOpenSound)}
+          onPointerDown={primeOnPressStart}
+        >
+          <span>こえのせってい</span>
         </button>
       </div>
     </section>

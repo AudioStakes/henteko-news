@@ -1,12 +1,6 @@
 import { useButtonSound } from "../hooks/useButtonSound";
 import type { SoundSettings } from "../types/game";
 
-const SPEED_OPTIONS = [
-  { value: "slow", label: "ゆっくり" },
-  { value: "normal", label: "ふつう" },
-  { value: "fast", label: "はやい" },
-  { value: "veryFast", label: "すごくはやい" },
-] as const satisfies ReadonlyArray<{ value: SoundSettings["speed"]; label: string }>;
 type SoundScreenProps = {
   settings: SoundSettings;
   onUpdate: (next: SoundSettings) => void;
@@ -41,23 +35,6 @@ export function SoundScreen({ settings, onUpdate, onBack }: SoundScreenProps) {
             >
               オフ
             </button>
-          </div>
-        </div>
-        <div className="sound-list">
-          <p className="sound-label">はやさ</p>
-          <div className="sound-row one">
-            {SPEED_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                aria-pressed={settings.speed === option.value}
-                className={settings.speed === option.value ? "sound-choice active" : "sound-choice"}
-                onClick={withClickSound(() => onUpdate({ ...settings, speed: option.value }))}
-                onPointerDown={primeOnPressStart}
-              >
-                <span className="sound-choice-main">{option.label}</span>
-              </button>
-            ))}
           </div>
         </div>
         <button

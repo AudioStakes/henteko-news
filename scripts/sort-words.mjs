@@ -6,7 +6,6 @@ const stringGroups = [
   ["src/data/words/when.ts", "WHEN_WORDS"],
   ["src/data/words/where.ts", "WHERE_WORDS"],
   ["src/data/words/what.ts", "WHAT_WORDS"],
-  ["src/data/words/reaction.ts", "REACTIONS"],
 ];
 
 for (const [file, name] of stringGroups) {

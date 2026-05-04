@@ -101,12 +101,12 @@ export function ResultScreen({
       </article>
       <div className="result-bottom">
         <CharacterImage variant="result" src={imageUrl} className="result-character" />
+        {speechError ? (
+          <p className="speech-error" role="status" aria-live="polite">
+            {speechError}
+          </p>
+        ) : null}
       </div>
-      {speechError ? (
-        <p className="speech-error" role="status" aria-live="polite">
-          {speechError}
-        </p>
-      ) : null}
       <div className="action-stack compact result-actions">
         <button
           type="button"

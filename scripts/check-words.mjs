@@ -7,7 +7,6 @@ const groups = [
   { key: "where", file: "src/data/words/where.ts", name: "WHERE_WORDS", type: "string" },
   { key: "what", file: "src/data/words/what.ts", name: "WHAT_WORDS", type: "string" },
   { key: "action", file: "src/data/words/action.ts", name: "ACTION_WORDS", type: "action" },
-  { key: "reaction", file: "src/data/words/reaction.ts", name: "REACTIONS", type: "string" },
 ];
 
 let errors = 0;

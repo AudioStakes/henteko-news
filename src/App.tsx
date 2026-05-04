@@ -115,9 +115,9 @@ export default function App() {
         {!debugSelections && screen.name === "result" && (
           <ResultScreen
             lines={lines}
-            speechError={isSupported ? speechError : "おとはつかえないけど、たのしい！"}
+            speechError={isSupported ? speechError : ""}
             imageUrl={hiyokoImageUrl}
-            replayDisabled={isSpeaking}
+            replayDisabled={isSpeaking || !isSupported}
             onReplayVoice={() => speakNews(effectiveSelections)}
             onRestartGame={start}
           />

@@ -47,6 +47,7 @@ export default function App() {
     startGame,
     handleSelectWord,
     setSelections,
+    openSound,
     closeSound,
   } = useGameFlow();
   const [soundSettings, setSoundSettings] = useSoundSettings();
@@ -90,10 +91,15 @@ export default function App() {
             replayDisabled
             onReplayVoice={() => {}}
             onRestartGame={() => {}}
+            onOpenSound={() => {}}
           />
         )}
         {!debugSelections && screen.name === "start" && (
-          <StartScreen onStart={start} imageUrl={hiyokoImageUrl} />
+          <StartScreen
+            onStart={start}
+            onOpenSound={() => openSound("start")}
+            imageUrl={hiyokoImageUrl}
+          />
         )}
         {!debugSelections && screen.name === "sound" && (
           <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={closeSound} />
@@ -120,6 +126,7 @@ export default function App() {
             replayDisabled={isSpeaking || !isSupported}
             onReplayVoice={() => speakNews(effectiveSelections)}
             onRestartGame={start}
+            onOpenSound={() => openSound("result")}
           />
         )}
       </main>

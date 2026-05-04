@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { DEFAULT_NEWS_SPEECH_CONFIG } from "../constants/speech";
 import { useSpeech } from "./useSpeech";
 
 type Options = { onComplete?: () => void; onError?: (message: string) => void };
@@ -54,8 +55,7 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
       }
       setCurrentIndex(idx);
       const ok = speak(items[idx], {
-        rate: 0.9,
-        pitch: 1.15,
+        ...DEFAULT_NEWS_SPEECH_CONFIG,
         onEnd: () => next(idx + 1),
         onError: () => failQueue(queueId, ERR_PLAYBACK),
       });

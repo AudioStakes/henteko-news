@@ -13,9 +13,6 @@ export type Category = {
 
 export type Selections = Partial<Record<CategoryKey, WordOption>>;
 
-export type SoundSpeed = "slow" | "normal" | "fast" | "veryFast";
-
 export type SoundSettings = {
   enabled: boolean;
-  speed: SoundSpeed;
 };

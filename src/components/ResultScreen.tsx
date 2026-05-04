@@ -5,7 +5,6 @@ import { CharacterImage } from "./CharacterImage";
 
 type ResultScreenProps = {
   lines: string[];
-  reaction: string;
   speechError: string;
   imageUrl: string;
   onReplayVoice: () => void;
@@ -30,7 +29,6 @@ function getResultBubbleMaxHeight(frameWidth: number) {
 
 export function ResultScreen({
   lines,
-  reaction,
   speechError,
   imageUrl,
   onReplayVoice,
@@ -103,17 +101,12 @@ export function ResultScreen({
       </article>
       <div className="result-bottom">
         <CharacterImage variant="result" src={imageUrl} className="result-character" />
-        <div className="result-sidecopy">
-          {speechError ? (
-            <p className="speech-error" role="status" aria-live="polite">
-              {speechError}
-            </p>
-          ) : null}
-          <p className="reaction" aria-live="polite">
-            {reaction}
-          </p>
-        </div>
       </div>
+      {speechError ? (
+        <p className="speech-error" role="status" aria-live="polite">
+          {speechError}
+        </p>
+      ) : null}
       <div className="action-stack compact result-actions">
         <button
           type="button"

@@ -38,10 +38,6 @@ export default function App() {
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
   const search = typeof window !== "undefined" ? window.location.search : "";
   const debugSelections = getDebugSelections(search);
-  const debugReaction =
-    typeof window !== "undefined"
-      ? (new URLSearchParams(window.location.search).get("reaction") ?? "")
-      : "";
   const {
     screen,
     currentStep,
@@ -54,17 +50,8 @@ export default function App() {
     closeSound,
   } = useGameFlow();
   const [soundSettings, setSoundSettings] = useSoundSettings();
-  const {
-    reaction,
-    speechError,
-    setReaction,
-    setSpeechError,
-    isSupported,
-    warmup,
-    cancel,
-    speakNews,
-    isSpeaking,
-  } = useNewsSpeech(soundSettings);
+  const { speechError, setSpeechError, isSupported, warmup, cancel, speakNews, isSpeaking } =
+    useNewsSpeech(soundSettings);
   const effectiveSelections = debugSelections ?? selections;
   const lines = useMemo(() => buildNewsLines(effectiveSelections), [effectiveSelections]);
   const hiyokoImageUrl = useMemo(() => {
@@ -88,7 +75,6 @@ export default function App() {
     cancel();
     warmup();
     setSelections({});
-    setReaction("");
     setSpeechError("");
     startGame();
   };
@@ -99,7 +85,6 @@ export default function App() {
         {debugSelections && (
           <ResultScreen
             lines={lines}
-            reaction={debugReaction || "ちょうどよくみえるかな？"}
             speechError=""
             imageUrl={hiyokoImageUrl}
             replayDisabled
@@ -130,8 +115,7 @@ export default function App() {
         {!debugSelections && screen.name === "result" && (
           <ResultScreen
             lines={lines}
-            reaction={reaction || (isSupported ? "" : "おとはつかえないけど、たのしい！")}
-            speechError={speechError}
+            speechError={isSupported ? speechError : "おとはつかえないけど、たのしい！"}
             imageUrl={hiyokoImageUrl}
             replayDisabled={isSpeaking}
             onReplayVoice={() => speakNews(effectiveSelections)}

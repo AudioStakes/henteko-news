@@ -647,7 +647,7 @@ p {
 .result-bubble::after {
   content: "";
   position: absolute;
-  left: 50px;
+  left: calc(50% - 17px);
   bottom: -22px;
   width: 34px;
   height: 34px;
@@ -690,8 +690,7 @@ p {
 
 .result-character {
   position: static;
-  width: min(100%, 180px);
-  max-height: clamp(86px, 18svh, 145px);
+  max-height: clamp(86px, 22svh, 24svh);
   height: auto;
   margin-inline: auto;
   transform: translateY(2px);
@@ -780,13 +779,6 @@ p {
 }
 
 @media (max-height: 700px) {
-  .result-bubble {
-    --result-padding-top: clamp(16px, 4svh, 24px);
-    --result-padding-bottom: clamp(24px, 5svh, 30px);
-
-    padding-inline: 12px;
-  }
-
   .result-action {
     min-height: clamp(64px, 11svh, 82px);
   }

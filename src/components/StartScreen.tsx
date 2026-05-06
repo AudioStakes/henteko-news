@@ -3,12 +3,11 @@ import { CharacterImage } from "./CharacterImage";
 
 type StartScreenProps = {
   onStart: () => void;
-  onOpenSound: () => void;
   imageUrl: string;
 };
 
-export function StartScreen({ onStart, onOpenSound, imageUrl }: StartScreenProps) {
-  const { primeOnPressStart, withClickSound } = useButtonSound();
+export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
+  const { playOnPressStart, withClickSound } = useButtonSound();
 
   return (
     <section className="screen home-screen">
@@ -28,17 +27,9 @@ export function StartScreen({ onStart, onOpenSound, imageUrl }: StartScreenProps
           type="button"
           className="action-btn orange"
           onClick={withClickSound(onStart)}
-          onPointerDown={primeOnPressStart}
+          onPointerDown={playOnPressStart}
         >
           <span className="action-btn__label">ニュースをつくる</span>
-        </button>
-        <button
-          type="button"
-          className="action-btn blue small"
-          onClick={withClickSound(onOpenSound)}
-          onPointerDown={primeOnPressStart}
-        >
-          <span>こえのせってい</span>
         </button>
       </div>
     </section>

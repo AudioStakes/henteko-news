@@ -3,11 +3,7 @@ import { CATEGORIES } from "../data/words";
 import type { Category, Selections, WordOption } from "../types/game";
 import { toWordOption } from "../utils/wordOption";
 
-export type ScreenState =
-  | { name: "start" }
-  | { name: "select"; step: number }
-  | { name: "result" }
-  | { name: "sound"; returnTo: "start" | "result" };
+export type ScreenState = { name: "start" } | { name: "select"; step: number } | { name: "result" };
 
 export function useGameFlow() {
   const [screen, setScreen] = useState<ScreenState>({ name: "start" });
@@ -23,9 +19,6 @@ export function useGameFlow() {
     setSelections({});
     setScreen({ name: "select", step: 0 });
   };
-  const openSound = (returnTo: "start" | "result") => setScreen({ name: "sound", returnTo });
-  const closeSound = () =>
-    setScreen((prev) => (prev.name === "sound" ? { name: prev.returnTo } : prev));
   const handleSelectWord = (word: string | WordOption) => {
     if (screen.name !== "select") return selections;
     const category = CATEGORIES[screen.step];
@@ -44,7 +37,5 @@ export function useGameFlow() {
     startGame,
     handleSelectWord,
     setSelections,
-    openSound,
-    closeSound,
   };
 }

@@ -14,7 +14,7 @@ type WordSelectScreenProps = {
   totalSteps: number;
   imageUrl: string;
 };
-const MAX_CHOICES = 6;
+const MAX_CHOICES = 5;
 const CHOICE_CARD_MIN_FONT_SIZE = 18;
 const CHOICE_CARD_MAX_FONT_SIZE = 35;
 const CHOICE_CARD_GLYPH_WIDTH_RATIO = 1;
@@ -35,7 +35,7 @@ export function WordSelectScreen({
   totalSteps,
   imageUrl,
 }: WordSelectScreenProps) {
-  const { primeOnPressStart, withClickSound } = useButtonSound();
+  const { playOnPressStart, withClickSound } = useButtonSound();
   const shuffledWords = useMemo(
     () =>
       shuffleWords(
@@ -112,7 +112,7 @@ export function WordSelectScreen({
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
             disabled={Boolean(pickedId)}
             onClick={withClickSound(() => handlePick(choice.id, choice.option))}
-            onPointerDown={primeOnPressStart}
+            onPointerDown={playOnPressStart}
             style={{
               ["--choice-card-font-size" as string]: `${choice.fontSize}px`,
             }}

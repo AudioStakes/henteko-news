@@ -1,7 +1,26 @@
 let audioContext: AudioContext | null = null;
 let lastPlayedAt = 0;
+const CHOICE_SOUND_DEBOUNCE_MS = 70;
+const CHOICE_SOUND_DURATION_SECONDS = 0.24;
+
+function warnInDevelopment(message: string, error?: unknown) {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  if (error) {
+    console.warn(message, error);
+    return;
+  }
+
+  console.warn(message);
+}
 
 function getAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
   const AudioContextClass =
     window.AudioContext ||
     (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -17,82 +36,54 @@ function getAudioContext(): AudioContext | null {
   return audioContext;
 }
 
-export async function primeChoiceSound(): Promise<void> {
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  if (context.state === "suspended") {
-    try {
-      await context.resume();
-    } catch {
-      return;
-    }
-  }
-
-  const buffer = context.createBuffer(1, 1, context.sampleRate);
-  const source = context.createBufferSource();
-  const gain = context.createGain();
-
-  gain.gain.value = 0.0001;
-  source.buffer = buffer;
-  source.connect(gain);
-  gain.connect(context.destination);
+export function playChoiceSoundFromUserGesture(): void {
+  let cleanup: (() => void) | undefined;
 
   try {
-    source.start();
-  } catch {
-    // Ignore unlock failures and keep the app interactive.
-  }
-}
-
-export async function playChoiceSound(): Promise<void> {
-  const nowMs = performance.now();
-  if (nowMs - lastPlayedAt < 70) {
-    return;
-  }
-  lastPlayedAt = nowMs;
-
-  const context = getAudioContext();
-  if (!context) {
-    return;
-  }
-
-  if (context.state === "suspended") {
-    try {
-      await context.resume();
-    } catch {
+    const nowMs = performance.now();
+    if (nowMs - lastPlayedAt < CHOICE_SOUND_DEBOUNCE_MS) {
       return;
     }
-  }
+    lastPlayedAt = nowMs;
 
-  const now = context.currentTime;
-  const oscillator = context.createOscillator();
-  const gain = context.createGain();
-  let cleanedUp = false;
-  const cleanup = () => {
-    if (cleanedUp) {
+    const context = getAudioContext();
+    if (!context) {
       return;
     }
-    cleanedUp = true;
 
-    try {
-      oscillator.disconnect();
-    } catch {
-      // Ignore disconnect errors during cleanup.
+    // iOS/WebKit can require playback to start inside the original user activation,
+    // so we resume and schedule the sound synchronously from the gesture handler.
+    if (context.state === "suspended") {
+      void context.resume().catch((error) => {
+        warnInDevelopment("Failed to resume AudioContext for button sound.", error);
+      });
     }
 
-    try {
-      gain.disconnect();
-    } catch {
-      // Ignore disconnect errors during cleanup.
-    }
-  };
+    const now = context.currentTime;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    let cleanedUp = false;
+    cleanup = () => {
+      if (cleanedUp) {
+        return;
+      }
+      cleanedUp = true;
 
-  oscillator.onended = cleanup;
+      try {
+        oscillator.disconnect();
+      } catch {
+        // Ignore disconnect errors during cleanup.
+      }
 
-  try {
+      try {
+        gain.disconnect();
+      } catch {
+        // Ignore disconnect errors during cleanup.
+      }
+    };
+
+    oscillator.onended = cleanup;
+
     oscillator.type = "triangle";
     oscillator.frequency.setValueAtTime(620, now);
     oscillator.frequency.exponentialRampToValueAtTime(960, now + 0.08);
@@ -106,9 +97,10 @@ export async function playChoiceSound(): Promise<void> {
     gain.connect(context.destination);
 
     oscillator.start(now);
-    oscillator.stop(now + 0.24);
+    oscillator.stop(now + CHOICE_SOUND_DURATION_SECONDS);
   } catch (error) {
-    cleanup();
-    throw error;
+    cleanup?.();
+    warnInDevelopment("Failed to play button sound.", error);
+    return;
   }
 }

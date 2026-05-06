@@ -2,14 +2,12 @@ import { useEffect, useMemo } from "react";
 import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "./assets/imageUrls";
 import { AppHeader } from "./components/AppHeader";
 import { ResultScreen } from "./components/ResultScreen";
-import { SoundScreen } from "./components/SoundScreen";
 import { StartScreen } from "./components/StartScreen";
 import { WordSelectScreen } from "./components/WordSelectScreen";
 import { WordsAudioCheckScreen } from "./components/WordsAudioCheckScreen";
 import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
-import { useSoundSettings } from "./hooks/useSoundSettings";
 import type { Selections, WordOption } from "./types/game";
 import { preloadImagesWhenIdle } from "./utils/preload";
 import { buildNewsLines } from "./utils/speechText";
@@ -47,12 +45,9 @@ export default function App() {
     startGame,
     handleSelectWord,
     setSelections,
-    openSound,
-    closeSound,
   } = useGameFlow();
-  const [soundSettings, setSoundSettings] = useSoundSettings();
   const { speechError, setSpeechError, isSupported, warmup, cancel, speakNews, isSpeaking } =
-    useNewsSpeech(soundSettings);
+    useNewsSpeech();
   const effectiveSelections = debugSelections ?? selections;
   const lines = useMemo(() => buildNewsLines(effectiveSelections), [effectiveSelections]);
   const hiyokoImageUrl = useMemo(() => {
@@ -94,14 +89,7 @@ export default function App() {
           />
         )}
         {!debugSelections && screen.name === "start" && (
-          <StartScreen
-            onStart={start}
-            onOpenSound={() => openSound("start")}
-            imageUrl={hiyokoImageUrl}
-          />
-        )}
-        {!debugSelections && screen.name === "sound" && (
-          <SoundScreen settings={soundSettings} onUpdate={setSoundSettings} onBack={closeSound} />
+          <StartScreen onStart={start} imageUrl={hiyokoImageUrl} />
         )}
         {!debugSelections && screen.name === "select" && currentCategory && (
           <WordSelectScreen
@@ -125,7 +113,6 @@ export default function App() {
             replayDisabled={isSpeaking || !isSupported}
             onReplayVoice={() => speakNews(effectiveSelections)}
             onRestartGame={start}
-            onOpenSound={() => openSound("result")}
           />
         )}
       </main>

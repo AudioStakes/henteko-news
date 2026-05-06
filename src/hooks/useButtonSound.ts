@@ -1,18 +1,31 @@
-import { playChoiceSound, primeChoiceSound } from "../utils/soundEffects";
+import { useRef } from "react";
+import { playChoiceSoundFromUserGesture } from "../utils/soundEffects";
 
 export function useButtonSound() {
-  const primeOnPressStart = () => {
-    void primeChoiceSound().catch(() => {
-      // iOS Safari may reject unlock attempts; try again on actual tap.
-    });
+  const lastPointerSoundAtRef = useRef(0);
+
+  const playOnPressStart: React.PointerEventHandler<HTMLButtonElement> = (event) => {
+    if (event.currentTarget.disabled) {
+      return;
+    }
+
+    lastPointerSoundAtRef.current = performance.now();
+    playChoiceSoundFromUserGesture();
   };
 
-  const withClickSound = (callback: () => void) => () => {
-    void playChoiceSound().catch(() => {
-      // Keep controls responsive even when sound playback fails.
-    });
-    callback();
-  };
+  const withClickSound =
+    (callback: () => void): React.MouseEventHandler<HTMLButtonElement> =>
+    (event) => {
+      if (!event.currentTarget.disabled) {
+        const now = performance.now();
+        const hadRecentPointerSound = now - lastPointerSoundAtRef.current < 500;
+        if (!hadRecentPointerSound) {
+          playChoiceSoundFromUserGesture();
+        }
+      }
 
-  return { primeOnPressStart, withClickSound };
+      callback();
+    };
+
+  return { playOnPressStart, withClickSound };
 }

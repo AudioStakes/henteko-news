@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { DEFAULT_NEWS_SPEECH_CONFIG } from "../constants/speech";
-import type { Selections, SoundSettings } from "../types/game";
+import type { Selections } from "../types/game";
 import { buildNewsLines, toSpeechText } from "../utils/speechText";
 import { useSpeech } from "./useSpeech";
 
-export function useNewsSpeech(soundSettings: SoundSettings) {
+export function useNewsSpeech() {
   const [speechError, setSpeechError] = useState("");
   const { speak, isSupported, isSpeaking, warmup, cancel } = useSpeech();
   const showSpeechUnavailable = () =>
     setSpeechError("よみあげの おとが でません。ブラウザを さいきどうすると なおるかも。");
 
   const speakNews = (nextSelections: Selections) => {
-    if (!soundSettings.enabled || buildNewsLines(nextSelections).length !== 5) return;
+    if (buildNewsLines(nextSelections).length !== 5) return;
     setSpeechError("");
     const ok = speak(toSpeechText(nextSelections), {
       ...DEFAULT_NEWS_SPEECH_CONFIG,

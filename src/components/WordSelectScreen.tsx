@@ -35,7 +35,7 @@ export function WordSelectScreen({
   totalSteps,
   imageUrl,
 }: WordSelectScreenProps) {
-  const { primeOnPressStart, withClickSound } = useButtonSound();
+  const { playOnPressStart, withClickSound } = useButtonSound();
   const shuffledWords = useMemo(
     () =>
       shuffleWords(
@@ -112,7 +112,7 @@ export function WordSelectScreen({
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
             disabled={Boolean(pickedId)}
             onClick={withClickSound(() => handlePick(choice.id, choice.option))}
-            onPointerDown={primeOnPressStart}
+            onPointerDown={playOnPressStart}
             style={{
               ["--choice-card-font-size" as string]: `${choice.fontSize}px`,
             }}

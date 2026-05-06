@@ -7,7 +7,7 @@ type StartScreenProps = {
 };
 
 export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
-  const { primeOnPressStart, withClickSound } = useButtonSound();
+  const { playOnPressStart, withClickSound } = useButtonSound();
 
   return (
     <section className="screen home-screen">
@@ -27,7 +27,7 @@ export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
           type="button"
           className="action-btn orange"
           onClick={withClickSound(onStart)}
-          onPointerDown={primeOnPressStart}
+          onPointerDown={playOnPressStart}
         >
           <span className="action-btn__label">ニュースをつくる</span>
         </button>

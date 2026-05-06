@@ -35,7 +35,7 @@ export function ResultScreen({
   replayDisabled,
   onRestartGame,
 }: ResultScreenProps) {
-  const { primeOnPressStart, withClickSound } = useButtonSound();
+  const { playOnPressStart, withClickSound } = useButtonSound();
   const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
   const [resultFrameWidth, setResultFrameWidth] = useState(0);
   useLayoutEffect(() => {
@@ -112,7 +112,7 @@ export function ResultScreen({
           type="button"
           className="action-btn result-action replay"
           onClick={withClickSound(onReplayVoice)}
-          onPointerDown={primeOnPressStart}
+          onPointerDown={playOnPressStart}
           disabled={replayDisabled}
         >
           <span className="action-icon" aria-hidden="true">
@@ -123,7 +123,7 @@ export function ResultScreen({
           type="button"
           className="action-btn result-action next"
           onClick={withClickSound(onRestartGame)}
-          onPointerDown={primeOnPressStart}
+          onPointerDown={playOnPressStart}
         >
           <span>つぎのニュース →</span>
         </button>

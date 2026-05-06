@@ -10,7 +10,6 @@ type ResultScreenProps = {
   onReplayVoice: () => void;
   replayDisabled?: boolean;
   onRestartGame: () => void;
-  onOpenSound?: () => void;
 };
 const MAX_FONT_SIZE = 64;
 const RESULT_GLYPH_WIDTH_RATIO = 1;
@@ -35,7 +34,6 @@ export function ResultScreen({
   onReplayVoice,
   replayDisabled,
   onRestartGame,
-  onOpenSound,
 }: ResultScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
   const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
@@ -121,16 +119,6 @@ export function ResultScreen({
             ↻
           </span>
         </button>
-        {onOpenSound ? (
-          <button
-            type="button"
-            className="action-btn blue small"
-            onClick={withClickSound(onOpenSound)}
-            onPointerDown={primeOnPressStart}
-          >
-            <span>こえ</span>
-          </button>
-        ) : null}
         <button
           type="button"
           className="action-btn result-action next"

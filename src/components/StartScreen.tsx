@@ -3,11 +3,10 @@ import { CharacterImage } from "./CharacterImage";
 
 type StartScreenProps = {
   onStart: () => void;
-  onOpenSound: () => void;
   imageUrl: string;
 };
 
-export function StartScreen({ onStart, onOpenSound, imageUrl }: StartScreenProps) {
+export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
   const { primeOnPressStart, withClickSound } = useButtonSound();
 
   return (
@@ -31,14 +30,6 @@ export function StartScreen({ onStart, onOpenSound, imageUrl }: StartScreenProps
           onPointerDown={primeOnPressStart}
         >
           <span className="action-btn__label">ニュースをつくる</span>
-        </button>
-        <button
-          type="button"
-          className="action-btn blue small"
-          onClick={withClickSound(onOpenSound)}
-          onPointerDown={primeOnPressStart}
-        >
-          <span>こえのせってい</span>
         </button>
       </div>
     </section>

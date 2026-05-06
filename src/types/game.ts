@@ -12,7 +12,3 @@ export type Category = {
 };
 
 export type Selections = Partial<Record<CategoryKey, WordOption>>;
-
-export type SoundSettings = {
-  enabled: boolean;
-};

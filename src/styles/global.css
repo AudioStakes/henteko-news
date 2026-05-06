@@ -610,7 +610,13 @@ p {
    ========================================================================== */
 
 .result-screen {
-  grid-template-rows: minmax(0, 1fr) minmax(0, auto) auto;
+  --result-character-width: 160px;
+  --result-character-height: 178px;
+  --result-character-overlap: 9px;
+  --result-bubble-character-gap: 2px;
+
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  overflow: hidden;
 }
 
 .result-bubble {
@@ -622,6 +628,9 @@ p {
   --result-padding-bottom: clamp(26px, 7svh, 38px);
 
   position: relative;
+  box-sizing: border-box;
+  width: min(100%, 100cqw);
+  max-width: 100%;
   min-width: 0;
   min-height: 0;
   height: calc(
@@ -630,7 +639,7 @@ p {
     var(--result-padding-bottom) +
     8px
   );
-  align-self: center;
+  align-self: end;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -647,7 +656,7 @@ p {
 .result-bubble::after {
   content: "";
   position: absolute;
-  left: calc(50% - 17px);
+  left: 50%;
   bottom: -22px;
   width: 34px;
   height: 34px;
@@ -655,7 +664,7 @@ p {
   border-right: 4px solid var(--color-yellow);
   border-bottom: 4px solid var(--color-yellow);
   border-bottom-right-radius: 4px;
-  transform: rotate(45deg);
+  transform: translateX(-50%) rotate(45deg);
   z-index: 1;
 }
 
@@ -681,19 +690,33 @@ p {
 .result-bottom {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 10px;
-  min-height: clamp(92px, 22svh, 200px);
+  min-height: 0;
+  width: 100%;
+  margin-top: var(--result-bubble-character-gap);
+  align-self: start;
   z-index: 3;
+}
+
+.result-character-wrap {
+  width: var(--result-character-width);
+  height: var(--result-character-height);
+  margin-top: calc(-1 * var(--result-character-overlap));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex: 0 0 auto;
 }
 
 .result-character {
   position: static;
-  max-height: clamp(86px, 22svh, 24svh);
-  height: auto;
-  margin-inline: auto;
-  transform: translateY(2px);
+  align-self: center;
+  display: block;
+  width: var(--result-character-width);
+  height: var(--result-character-height);
+  object-fit: contain;
   z-index: 3;
 }
 
@@ -715,6 +738,7 @@ p {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: stretch;
+  align-self: end;
   gap: clamp(10px, 2.8cqw, 16px);
 }
 

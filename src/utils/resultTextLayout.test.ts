@@ -27,11 +27,11 @@ const LINE_SETS = [
       "きょうりゅうのたまごを",
       "そうじきですいそうになった",
     ],
-    expectedMaxCharacterCount: 15,
+    expectedMaxCharacterCount: 14,
     expectedFontSizes: {
-      304: 20,
-      373: 24,
-      410: 27,
+      304: 21,
+      373: 26,
+      410: 29,
     },
   },
 ] as const;

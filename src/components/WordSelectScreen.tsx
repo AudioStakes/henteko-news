@@ -14,7 +14,7 @@ type WordSelectScreenProps = {
   totalSteps: number;
   imageUrl: string;
 };
-const MAX_CHOICES = 6;
+const MAX_CHOICES = 5;
 const CHOICE_CARD_MIN_FONT_SIZE = 18;
 const CHOICE_CARD_MAX_FONT_SIZE = 35;
 const CHOICE_CARD_GLYPH_WIDTH_RATIO = 1;

@@ -6,14 +6,25 @@ const VERSION =
 const STATIC_CACHE = `henteko-static-${VERSION}`;
 const HTML_CACHE = `henteko-html-${VERSION}`;
 const STATIC_ASSETS = [
+  "/",
+  "/index.html",
+  "/manifest.webmanifest",
   "/assets/bg-studio.webp",
   "/assets/header-logo.webp",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-512-maskable.png",
   "/robots.txt",
   "/sitemap.xml",
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)));
+  event.waitUntil(
+    Promise.all([
+      caches.open(STATIC_CACHE).then((cache) => cache.addAll(STATIC_ASSETS)),
+      caches.open(HTML_CACHE).then((cache) => cache.add("/index.html")),
+    ]),
+  );
   self.skipWaiting();
 });
 self.addEventListener("activate", (event) => {
@@ -44,11 +55,15 @@ self.addEventListener("fetch", (event) => {
           }
           return res;
         })
-        .catch(async () => (await caches.match("/index.html")) || Response.error()),
+        .catch(async () => {
+          return (
+            (await caches.match("/index.html")) || (await caches.match("/")) || Response.error()
+          );
+        }),
     );
     return;
   }
-  if (url.pathname.startsWith("/assets/")) {
+  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/")) {
     event.respondWith(
       (async () => {
         const cache = await caches.open(STATIC_CACHE);
@@ -62,6 +77,17 @@ self.addEventListener("fetch", (event) => {
         }
         return res;
       })(),
+    );
+    return;
+  }
+
+  if (
+    url.pathname === "/manifest.webmanifest" ||
+    url.pathname === "/robots.txt" ||
+    url.pathname === "/sitemap.xml"
+  ) {
+    event.respondWith(
+      caches.match(url.pathname, { ignoreVary: true }).then((cached) => cached || fetch(request)),
     );
   }
 });

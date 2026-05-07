@@ -14,7 +14,9 @@ export function useButtonSound() {
   };
 
   const withClickSound =
-    (callback: () => void): React.MouseEventHandler<HTMLButtonElement> =>
+    (
+      callback: (event: React.MouseEvent<HTMLButtonElement>) => void,
+    ): React.MouseEventHandler<HTMLButtonElement> =>
     (event) => {
       if (!event.currentTarget.disabled) {
         const now = performance.now();
@@ -24,7 +26,7 @@ export function useButtonSound() {
         }
       }
 
-      callback();
+      callback(event);
     };
 
   return { playOnPressStart, withClickSound };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "./assets/imageUrls";
 import { AppHeader } from "./components/AppHeader";
 import { ResultScreen } from "./components/ResultScreen";
@@ -33,6 +33,10 @@ function getDebugSelections(search: string): Selections | null {
 }
 
 export default function App() {
+  const [isOffline, setIsOffline] = useState(() => {
+    if (typeof navigator === "undefined") return false;
+    return !navigator.onLine;
+  });
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
   const search = typeof window !== "undefined" ? window.location.search : "";
   const debugSelections = getDebugSelections(search);
@@ -58,10 +62,28 @@ export default function App() {
   useEffect(() => {
     preloadImagesWhenIdle(NEXT_SCREEN_IMAGE_URLS);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
   if (pathname === "/words-audio-check")
     return (
       <div className="viewport">
         <main className="app-shell">
+          {isOffline && (
+            <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>
+          )}
           <AppHeader />
           <WordsAudioCheckScreen />
         </main>
@@ -77,6 +99,7 @@ export default function App() {
   return (
     <div className="viewport">
       <main className="app-shell">
+        {isOffline && <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>}
         <AppHeader />
         {debugSelections && (
           <ResultScreen

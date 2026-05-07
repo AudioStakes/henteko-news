@@ -1,4 +1,12 @@
-import { useLayoutEffect, useMemo, useState } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
 import type { Category, WordOption } from "../types/game";
 import { calculateChoiceCardTextLayout } from "../utils/choiceCardTextLayout";
@@ -49,6 +57,7 @@ export function WordSelectScreen({
   const [pickedId, setPickedId] = useState("");
   const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
   const [choiceGridWidth, setChoiceGridWidth] = useState(373);
+  const selectTimeoutRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     if (!gridElement) return;
@@ -69,6 +78,15 @@ export function WordSelectScreen({
 
     return () => observer.disconnect();
   }, [gridElement]);
+
+  useEffect(
+    () => () => {
+      if (selectTimeoutRef.current !== null) {
+        window.clearTimeout(selectTimeoutRef.current);
+      }
+    },
+    [],
+  );
 
   const choiceCards = useMemo(
     () =>
@@ -91,10 +109,18 @@ export function WordSelectScreen({
     [choiceGridWidth, shuffledWords],
   );
 
-  const handlePick = (id: string, option: WordOption) => {
+  const handlePick = (
+    event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>,
+    id: string,
+    option: WordOption,
+  ) => {
     if (pickedId) return;
+    event.currentTarget.blur();
     setPickedId(id);
-    window.setTimeout(() => onSelect(option), 320);
+    selectTimeoutRef.current = window.setTimeout(() => {
+      selectTimeoutRef.current = null;
+      onSelect(option);
+    }, 260);
   };
 
   return (
@@ -111,7 +137,7 @@ export function WordSelectScreen({
             type="button"
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
             disabled={Boolean(pickedId)}
-            onClick={withClickSound(() => handlePick(choice.id, choice.option))}
+            onClick={withClickSound((event) => handlePick(event, choice.id, choice.option))}
             onPointerDown={playOnPressStart}
             style={{
               ["--choice-card-font-size" as string]: `${choice.fontSize}px`,

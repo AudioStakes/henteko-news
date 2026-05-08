@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { act } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 vi.mock("./hooks/useButtonSound", () => ({
@@ -31,15 +31,18 @@ describe("App game flow", () => {
     window.history.replaceState({}, "", "/");
   });
 
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
   it("moves from start to result and can restart", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
 
     for (let i = 0; i < 5; i += 1) {
-      const choices = screen
-        .getAllByRole("button")
-        .filter((button) => button.className.includes("choice-card"));
+      const choices = screen.getAllByTestId("choice-card");
       fireEvent.click(choices[0]);
       act(() => {
         vi.advanceTimersByTime(300);

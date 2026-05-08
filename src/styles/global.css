@@ -177,6 +177,26 @@ p {
   box-shadow: var(--shadow-soft-light);
 }
 
+.app-footer {
+  justify-self: center;
+  margin-top: auto;
+  padding-bottom: 2px;
+  color: rgba(47, 23, 0, 0.82);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.app-footer__link {
+  color: inherit;
+}
+
+.app-footer__link:focus-visible {
+  outline: 3px solid var(--color-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .app-header__logo {
   width: min(100%, 390px);
   max-height: clamp(54px, 22svh, 140px);

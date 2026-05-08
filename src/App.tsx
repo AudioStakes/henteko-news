@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "./assets/imageUrls";
+import { AppFooter } from "./components/AppFooter";
 import { AppHeader } from "./components/AppHeader";
 import { ResultScreen } from "./components/ResultScreen";
 import { StartScreen } from "./components/StartScreen";
@@ -138,6 +139,7 @@ export default function App() {
             onRestartGame={start}
           />
         )}
+        <AppFooter />
       </main>
     </div>
   );

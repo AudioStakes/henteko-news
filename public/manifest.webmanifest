@@ -1,0 +1,29 @@
+{
+  "name": "へんてこニュース",
+  "short_name": "へんてこニュース",
+  "description": "へんてこな言葉を選ぶと、宇宙人キャスターがニュースとして読み上げる、子ども向けのおふざけ言葉ゲームです。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff1be",
+  "theme_color": "#fff1be",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

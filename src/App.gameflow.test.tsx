@@ -24,6 +24,16 @@ vi.mock("./hooks/useNewsSpeech", () => ({
   useNewsSpeech: () => speechState,
 }));
 
+function completeOneGame() {
+  for (let i = 0; i < 5; i += 1) {
+    const choices = screen.getAllByTestId("choice-card");
+    fireEvent.click(choices[0]);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+  }
+}
+
 describe("App game flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -36,24 +46,32 @@ describe("App game flow", () => {
     vi.useRealTimers();
   });
 
-  it("moves from start to result and can restart", () => {
+  it("renders start screen initially", () => {
+    render(<App />);
+
+    expect(screen.getByRole("button", { name: "ニュースをつくる" })).toBeInTheDocument();
+  });
+
+  it("moves from start to result after five selections", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
 
-    for (let i = 0; i < 5; i += 1) {
-      const choices = screen.getAllByTestId("choice-card");
-      fireEvent.click(choices[0]);
-      act(() => {
-        vi.advanceTimersByTime(300);
-      });
-    }
+    completeOneGame();
 
     expect(screen.getByLabelText("かんせいニュース")).toBeInTheDocument();
     expect(speechState.speakNews).toHaveBeenCalledTimes(1);
+  });
+
+  it("restarts from result into the first select step", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+    completeOneGame();
 
     fireEvent.click(screen.getByRole("button", { name: "つぎのニュース →" }));
 
     expect(screen.getByText("だれが？")).toBeInTheDocument();
+    expect(screen.getAllByTestId("choice-card")).toHaveLength(5);
   });
 });

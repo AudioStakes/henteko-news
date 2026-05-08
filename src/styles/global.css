@@ -779,23 +779,23 @@ p {
 }
 
 .result-actions {
+  --result-action-size: clamp(72px, 20cqw, 96px);
+
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: stretch;
+  grid-template-columns: var(--result-action-size) minmax(0, 1fr);
+  align-items: center;
   align-self: end;
   gap: clamp(10px, 2.8cqw, 16px);
 }
 
 .result-action {
-  min-height: clamp(72px, 12svh, 96px);
+  height: var(--result-action-size);
+  min-height: var(--result-action-size);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: clamp(8px, 1.8cqw, 12px);
   border-radius: var(--radius-pill);
-  box-shadow:
-    0 6px 0 rgba(211, 122, 22, 0.18),
-    0 14px 24px rgba(211, 122, 22, 0.16);
   font-size: clamp(20px, 5.6cqw, 34px);
   font-weight: var(--font-weight-heavy);
   line-height: 1;
@@ -816,11 +816,15 @@ p {
 
 .result-action.replay,
 .result-action--replay {
-  width: clamp(72px, 20cqw, 96px);
-  min-width: clamp(72px, 20cqw, 96px);
-  padding-inline: 0;
-  border: 4px solid #f6bf59;
-  border-radius: 999px;
+  width: var(--result-action-size);
+  height: var(--result-action-size);
+  min-width: var(--result-action-size);
+  min-height: var(--result-action-size);
+  aspect-ratio: 1 / 1;
+  flex: 0 0 var(--replay-size);
+  padding: 0;
+  margin: 2px 2px;
+  border-radius: 50%;
   background: radial-gradient(
     circle at 30% 28%,
     rgba(255, 255, 255, 0.96),
@@ -834,27 +838,25 @@ p {
 
 .result-action.next,
 .result-action--next {
-  padding-inline: clamp(20px, 5.4cqw, 34px);
-  border: 3px solid rgba(255, 214, 160, 0.9);
+  box-sizing: border-box;
+  height: var(--result-action-size);
+  min-height: var(--result-action-size);
+  padding-block: 0;
+  margin: 2px;
   background: linear-gradient(to bottom, #ffbb71 0%, #ff9d46 52%, #ff8a1f 100%);
   color: var(--color-white);
   -webkit-text-fill-color: var(--color-white);
   text-shadow: 0 2px 0 rgba(214, 104, 0, 0.28);
 }
 
-.result-action.next > span {
-  transform: translateY(-1px);
-}
-
 @media (max-height: 700px) {
   .result-action {
-    min-height: clamp(64px, 11svh, 82px);
+    --result-action-size: clamp(64px, 18cqw, 84px);
   }
 
   .result-action.replay,
   .result-action--replay {
-    width: clamp(64px, 18cqw, 84px);
-    min-width: clamp(64px, 18cqw, 84px);
+    --replay-size: clamp(64px, 18cqw, 84px);
   }
 }
 

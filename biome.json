@@ -32,5 +32,13 @@
       "!dist",
       "!node_modules"
     ]
+  },
+  "html": {
+    "formatter": {
+      "enabled": true,
+      "indentStyle": "space",
+      "indentWidth": 2,
+      "lineWidth": 100
+    }
   }
 }

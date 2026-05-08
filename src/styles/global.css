@@ -564,7 +564,6 @@ p {
   min-width: 0;
   min-height: 0;
   position: relative;
-  overflow: hidden;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: repeat(5, minmax(0, 1fr));
@@ -821,7 +820,6 @@ p {
   min-width: var(--result-action-size);
   min-height: var(--result-action-size);
   aspect-ratio: 1 / 1;
-  flex: 0 0 var(--replay-size);
   padding: 0;
   margin: 2px 2px;
   border-radius: 50%;
@@ -850,13 +848,8 @@ p {
 }
 
 @media (max-height: 700px) {
-  .result-action {
+  .result-actions {
     --result-action-size: clamp(64px, 18cqw, 84px);
-  }
-
-  .result-action.replay,
-  .result-action--replay {
-    --replay-size: clamp(64px, 18cqw, 84px);
   }
 }
 

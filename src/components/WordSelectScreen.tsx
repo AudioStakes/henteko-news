@@ -135,6 +135,7 @@ export function WordSelectScreen({
           <button
             key={choice.id}
             type="button"
+            data-testid="choice-card"
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
             disabled={Boolean(pickedId)}
             onClick={withClickSound((event) => handlePick(event, choice.id, choice.option))}

@@ -86,6 +86,17 @@ export default function App() {
           )}
           <AppHeader />
           <WordsAudioCheckScreen />
+          <p className="app-footer">
+            Created by{" "}
+            <a
+              className="app-footer__link"
+              href="https://x.com/AudioStakes"
+              target="_blank"
+              rel="noreferrer"
+            >
+              @AudioStakes
+            </a>
+          </p>
         </main>
       </div>
     );
@@ -138,6 +149,17 @@ export default function App() {
             onRestartGame={start}
           />
         )}
+        <p className="app-footer">
+          Created by{" "}
+          <a
+            className="app-footer__link"
+            href="https://x.com/AudioStakes"
+            target="_blank"
+            rel="noreferrer"
+          >
+            @AudioStakes
+          </a>
+        </p>
       </main>
     </div>
   );

@@ -30,7 +30,9 @@ const fullSelections: Selections = {
 
 describe("useNewsSpeech", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockSpeak.mockReset();
+    mockWarmup.mockReset();
+    mockCancel.mockReset();
     mockIsSupported = true;
     mockIsSpeaking = false;
   });
@@ -40,6 +42,18 @@ describe("useNewsSpeech", () => {
 
     act(() => {
       result.current.speakNews({ who: fullSelections.who });
+    });
+
+    expect(mockSpeak).not.toHaveBeenCalled();
+    expect(result.current.speechError).toBe("");
+  });
+
+  it("does not call speak when one of five selections is missing", () => {
+    const { action, ...incompleteSelections } = fullSelections;
+    const { result } = renderHook(() => useNewsSpeech());
+
+    act(() => {
+      result.current.speakNews(incompleteSelections);
     });
 
     expect(mockSpeak).not.toHaveBeenCalled();
@@ -56,6 +70,25 @@ describe("useNewsSpeech", () => {
 
     expect(mockSpeak).toHaveBeenCalledTimes(1);
     expect(result.current.speechError).toBe("");
+  });
+
+  it("shows unavailable message via speak onError callback", () => {
+    mockSpeak.mockReturnValue(true);
+    const { result } = renderHook(() => useNewsSpeech());
+
+    act(() => {
+      result.current.speakNews(fullSelections);
+    });
+
+    const options = mockSpeak.mock.calls[0]?.[1] as
+      | { onError?: (reason: string) => void }
+      | undefined;
+
+    act(() => {
+      options?.onError?.("timeout");
+    });
+
+    expect(result.current.speechError).toContain("よみあげ");
   });
 
   it("shows unavailable message when speak fails and is not speaking", () => {

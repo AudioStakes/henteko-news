@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "./assets/imageUrls";
+import { AppFooter } from "./components/AppFooter";
 import { AppHeader } from "./components/AppHeader";
 import { ResultScreen } from "./components/ResultScreen";
 import { StartScreen } from "./components/StartScreen";
@@ -86,17 +87,6 @@ export default function App() {
           )}
           <AppHeader />
           <WordsAudioCheckScreen />
-          <p className="app-footer">
-            Created by{" "}
-            <a
-              className="app-footer__link"
-              href="https://x.com/AudioStakes"
-              target="_blank"
-              rel="noreferrer"
-            >
-              @AudioStakes
-            </a>
-          </p>
         </main>
       </div>
     );
@@ -149,17 +139,7 @@ export default function App() {
             onRestartGame={start}
           />
         )}
-        <p className="app-footer">
-          Created by{" "}
-          <a
-            className="app-footer__link"
-            href="https://x.com/AudioStakes"
-            target="_blank"
-            rel="noreferrer"
-          >
-            @AudioStakes
-          </a>
-        </p>
+        <AppFooter />
       </main>
     </div>
   );

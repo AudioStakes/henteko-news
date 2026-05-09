@@ -28,3 +28,8 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Playwright artifacts
+playwright-report/
+test-results/
+blob-report/

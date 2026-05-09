@@ -13,7 +13,8 @@
     "check": "biome check --write .",
     "typecheck": "tsc -b --noEmit",
     "check:words": "node scripts/check-words.mjs",
-    "sort:words": "node scripts/sort-words.mjs"
+    "sort:words": "node scripts/sort-words.mjs",
+    "test:layout": "playwright test"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -29,6 +30,7 @@
     "jsdom": "^29.1.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.5",
+    "@playwright/test": "^1.54.2"
   }
 }

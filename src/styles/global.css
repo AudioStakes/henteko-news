@@ -78,10 +78,10 @@
   --viewport-block-size: 100dvh;
   --safe-top: max(env(safe-area-inset-top), var(--space-2));
   --safe-bottom: max(env(safe-area-inset-bottom), var(--space-2));
-  --shell-gap: clamp(8px, 2.4cqw, 12px);
+  --shell-gap: clamp(4px, 1.2cqw, 8px);
   --shell-padding-inline: clamp(8px, 2.8cqw, 12px);
   --shell-padding-top: calc(var(--safe-top) + clamp(6px, 2cqw, 10px));
-  --shell-padding-bottom: calc(var(--safe-bottom) + clamp(8px, 2.8cqw, 12px));
+  --shell-padding-bottom: calc(var(--safe-bottom) + 4px);
   --screen-gap: clamp(8px, 2.4cqw, 12px);
   --screen-footer-safe-padding: clamp(4px, 1cqh, 10px);
   --touch-target-min: 48px;
@@ -297,6 +297,7 @@ h1 {
 
 @media (max-height: 700px) {
   .app-shell {
+    --safe-bottom: max(env(safe-area-inset-bottom), 0px);
     --shell-gap: 8px;
     --shell-padding-inline: 8px;
     --shell-padding-top: calc(var(--safe-top) + 6px);
@@ -319,7 +320,6 @@ h1 {
   min-height: 0;
   overflow: hidden;
   border-radius: var(--radius-xl);
-  background: var(--surface-hero);
 }
 
 .speech {
@@ -351,7 +351,6 @@ h1 {
   padding: clamp(10px, 3cqw, 12px) clamp(12px, 3.8cqw, 16px);
   overflow-wrap: anywhere;
   border-radius: var(--radius-pill);
-  box-shadow: var(--elevation-button);
   color: var(--color-white);
   font-size: clamp(22px, 8.8cqw, 40px);
   font-weight: var(--font-weight-heavy);
@@ -487,7 +486,6 @@ h1 {
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   animation-play-state: running;
-  box-shadow: var(--elevation-button-pressed);
 }
 
 .home-screen .action-btn::after {
@@ -710,7 +708,8 @@ h1 {
   position: relative;
   min-block-size: 0;
   max-inline-size: 100%;
-  overflow: hidden;
+  overflow: visible;
+  isolation: isolate;
   top: auto;
   right: auto;
   justify-self: stretch;
@@ -722,18 +721,28 @@ h1 {
   text-align: center;
 }
 
+.speech-select--from-hiyoko::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -14px;
+  width: 23px;
+  height: 23px;
+  background: var(--color-orange-300);
+  transform: translateY(-50%) rotate(45deg);
+  z-index: -2;
+}
+
 .speech-select--from-hiyoko::after {
   content: "";
   position: absolute;
-  left: -12px;
-  top: clamp(22px, 5.5cqw, 30px);
-  width: 16px;
-  height: 16px;
+  top: 50%;
+  left: -8px;
+  width: 21px;
+  height: 21px;
   background: var(--color-white);
-  border-left: 4px solid var(--color-orange-300);
-  border-top: 4px solid var(--color-orange-300);
-  border-top-left-radius: 4px;
-  transform: rotate(-45deg);
+  transform: translateY(-50%) rotate(45deg);
+  z-index: -1;
 }
 
 .choice-grid {
@@ -745,6 +754,7 @@ h1 {
   grid-template-rows: repeat(5, minmax(0, 1fr));
   gap: clamp(6px, 1.2svh, 10px);
   padding-block: 0;
+  padding-bottom: var(--space-1);
 }
 
 .choice-card {
@@ -761,7 +771,6 @@ h1 {
   background: var(--surface-choice);
   color: var(--color-ink);
   -webkit-text-fill-color: var(--color-ink);
-  box-shadow: var(--elevation-soft-light);
   font-size: var(--choice-card-font-size, clamp(18px, 8.4cqw, 38px));
   font-weight: var(--font-weight-heavy);
   line-height: 1;
@@ -886,7 +895,7 @@ h1 {
   gap: var(--result-line-gap);
   overflow: visible;
   padding: var(--result-padding-top) clamp(12px, 4cqw, 16px) var(--result-padding-bottom);
-  border: var(--stroke-panel);
+  border: var(--stroke-speech);
   border-radius: var(--radius-2xl);
   background: var(--color-white);
   box-shadow: var(--elevation-soft);
@@ -902,8 +911,8 @@ h1 {
   width: 34px;
   height: 34px;
   background: var(--color-white);
-  border-right: 4px solid var(--color-yellow-400);
-  border-bottom: 4px solid var(--color-yellow-400);
+  border-right: var(--stroke-speech);
+  border-bottom: var(--stroke-speech);
   border-bottom-right-radius: 4px;
   transform: translateX(-50%) rotate(45deg);
 }
@@ -923,6 +932,7 @@ h1 {
   white-space: nowrap;
   text-overflow: clip;
   word-break: keep-all;
+  z-index: 1;
 }
 
 .result-character-wrap {
@@ -951,6 +961,7 @@ h1 {
   grid-template-columns: var(--result-action-size) minmax(0, 1fr);
   align-items: center;
   gap: clamp(10px, 2.8cqw, 16px);
+  padding-bottom: var(--space-1);
 }
 
 .result-footer {
@@ -1153,32 +1164,4 @@ h1 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
-}
-
-/* ==========================================================================
-   Accessibility / User Preferences
-   ========================================================================== */
-
-@media (prefers-reduced-motion: reduce) {
-  .home-screen .action-btn,
-  .home-screen .action-btn::after,
-  .home-screen .action-btn__label,
-  .choice-card.is-selected {
-    animation: none;
-  }
-
-  .action-btn,
-  .choice-card,
-  .result-action,
-  .sound-choice {
-    transition-duration: 80ms;
-  }
-
-  .action-btn:active:not(:disabled),
-  .sound-choice:active:not(:disabled),
-  .choice-card:active:not(:disabled),
-  .result-action:active:not(:disabled),
-  .sound-choice.active {
-    transform: none;
-  }
 }

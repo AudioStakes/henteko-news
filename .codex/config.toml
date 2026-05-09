@@ -1,0 +1,12 @@
+[project]
+name = "henteko-news"
+stack = "React, TypeScript, Vite, Plain CSS, Web Speech API"
+
+[workflow]
+refactor_policy = "Preserve behavior. Use small PRs. Add tests before structural changes."
+validation = [
+  "npm run typecheck",
+  "npm run test",
+  "npm run lint",
+  "npm run build"
+]

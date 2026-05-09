@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "./assets/imageUrls";
-import { AppFooter } from "./components/AppFooter";
-import { AppHeader } from "./components/AppHeader";
-import { ResultScreen } from "./components/ResultScreen";
-import { StartScreen } from "./components/StartScreen";
-import { WordSelectScreen } from "./components/WordSelectScreen";
-import { WordsAudioCheckScreen } from "./components/WordsAudioCheckScreen";
+import { AppView } from "./components/AppView";
 import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
@@ -58,18 +53,7 @@ export default function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
-  if (isWordsAudioCheckRoute)
-    return (
-      <div className="viewport">
-        <main className="app-shell">
-          {isOffline && (
-            <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>
-          )}
-          <AppHeader />
-          <WordsAudioCheckScreen />
-        </main>
-      </div>
-    );
+
   const start = () => {
     cancel();
     warmup();
@@ -77,50 +61,31 @@ export default function App() {
     setSpeechError("");
     startGame();
   };
+
+  const handleSelect = (word: Parameters<typeof handleSelectWord>[0]) => {
+    warmup();
+    const next = handleSelectWord(word);
+    if (isLastSelectStep) speakNews(next);
+  };
+
   return (
-    <div className="viewport">
-      <main className="app-shell">
-        {isOffline && <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>}
-        <AppHeader />
-        {debugSelections && (
-          <ResultScreen
-            lines={lines}
-            speechError=""
-            imageUrl={hiyokoImageUrl}
-            replayDisabled
-            onReplayVoice={() => {}}
-            onRestartGame={() => {}}
-          />
-        )}
-        {!debugSelections && screen.name === "start" && (
-          <StartScreen onStart={start} imageUrl={hiyokoImageUrl} />
-        )}
-        {!debugSelections && screen.name === "select" && currentCategory && (
-          <WordSelectScreen
-            key={currentCategory.key}
-            category={currentCategory}
-            currentStep={currentStep}
-            totalSteps={CATEGORIES.length}
-            imageUrl={hiyokoImageUrl}
-            onSelect={(word) => {
-              warmup();
-              const next = handleSelectWord(word);
-              if (isLastSelectStep) speakNews(next);
-            }}
-          />
-        )}
-        {!debugSelections && screen.name === "result" && (
-          <ResultScreen
-            lines={lines}
-            speechError={isSupported ? speechError : ""}
-            imageUrl={hiyokoImageUrl}
-            replayDisabled={isSpeaking || !isSupported}
-            onReplayVoice={() => speakNews(effectiveSelections)}
-            onRestartGame={start}
-          />
-        )}
-        <AppFooter />
-      </main>
-    </div>
+    <AppView
+      isOffline={isOffline}
+      isWordsAudioCheckRoute={isWordsAudioCheckRoute}
+      debugSelections={debugSelections}
+      screen={screen}
+      currentStep={currentStep}
+      currentCategory={currentCategory}
+      totalSteps={CATEGORIES.length}
+      lines={lines}
+      speechError={speechError}
+      isSupported={isSupported}
+      isSpeaking={isSpeaking}
+      imageUrl={hiyokoImageUrl}
+      onStart={start}
+      onSelectWord={handleSelect}
+      onReplayVoice={() => speakNews(effectiveSelections)}
+      onRestartGame={start}
+    />
   );
 }

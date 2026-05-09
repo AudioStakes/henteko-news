@@ -9,29 +9,9 @@ import { WordsAudioCheckScreen } from "./components/WordsAudioCheckScreen";
 import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
-import type { Selections, WordOption } from "./types/game";
+import { resolveAppMode } from "./utils/appMode";
 import { preloadImagesWhenIdle } from "./utils/preload";
 import { buildNewsLines } from "./utils/speechText";
-
-function parseDebugWord(value: string | null): WordOption | undefined {
-  if (!value) return undefined;
-  const decoded = value.trim();
-  if (!decoded) return undefined;
-  return { display: decoded, speech: decoded };
-}
-
-function getDebugSelections(search: string): Selections | null {
-  const params = new URLSearchParams(search);
-  if (params.get("debugResult") !== "1") return null;
-
-  return {
-    who: parseDebugWord(params.get("who")),
-    when: parseDebugWord(params.get("when")),
-    where: parseDebugWord(params.get("where")),
-    what: parseDebugWord(params.get("what")),
-    action: parseDebugWord(params.get("action")),
-  };
-}
 
 export default function App() {
   const [isOffline, setIsOffline] = useState(() => {
@@ -40,7 +20,7 @@ export default function App() {
   });
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
   const search = typeof window !== "undefined" ? window.location.search : "";
-  const debugSelections = getDebugSelections(search);
+  const { isWordsAudioCheckRoute, debugSelections } = resolveAppMode(pathname, search);
   const {
     screen,
     currentStep,
@@ -78,7 +58,7 @@ export default function App() {
       window.removeEventListener("offline", handleOffline);
     };
   }, []);
-  if (pathname === "/words-audio-check")
+  if (isWordsAudioCheckRoute)
     return (
       <div className="viewport">
         <main className="app-shell">

@@ -10,10 +10,14 @@ import {
 import { useButtonSound } from "../hooks/useButtonSound";
 import type { Category, WordOption } from "../types/game";
 import { calculateChoiceCardTextLayout } from "../utils/choiceCardTextLayout";
-import { toWordOption } from "../utils/wordOption";
 import { toCardWord } from "../utils/words";
 import { CharacterImage } from "./CharacterImage";
 import { StepIndicator } from "./StepIndicator";
+import {
+  buildShuffledChoices,
+  computePickState,
+  scheduleSelection,
+} from "./wordSelectScreenHelpers";
 
 type WordSelectScreenProps = {
   category: Category;
@@ -27,15 +31,6 @@ const CHOICE_CARD_MIN_FONT_SIZE = 18;
 const CHOICE_CARD_MAX_FONT_SIZE = 35;
 const CHOICE_CARD_GLYPH_WIDTH_RATIO = 1;
 
-function shuffleWords(words: Array<{ id: string; option: WordOption }>) {
-  const shuffled = [...words];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
-
 export function WordSelectScreen({
   category,
   onSelect,
@@ -44,20 +39,12 @@ export function WordSelectScreen({
   imageUrl,
 }: WordSelectScreenProps) {
   const { playOnPressStart, withClickSound } = useButtonSound();
-  const shuffledWords = useMemo(
-    () =>
-      shuffleWords(
-        category.words.map((word, i) => {
-          const option = toWordOption(word);
-          return { id: `${category.key}-${i}-${option.display}`, option };
-        }),
-      ).slice(0, MAX_CHOICES),
-    [category],
-  );
+  const shuffledWords = useMemo(() => buildShuffledChoices(category, MAX_CHOICES), [category]);
   const [pickedId, setPickedId] = useState("");
   const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
   const [choiceGridWidth, setChoiceGridWidth] = useState(373);
-  const selectTimeoutRef = useRef<number | null>(null);
+  const pickedIdRef = useRef("");
+  const selectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
     if (!gridElement) return;
@@ -82,7 +69,7 @@ export function WordSelectScreen({
   useEffect(
     () => () => {
       if (selectTimeoutRef.current !== null) {
-        window.clearTimeout(selectTimeoutRef.current);
+        clearTimeout(selectTimeoutRef.current);
       }
     },
     [],
@@ -114,13 +101,21 @@ export function WordSelectScreen({
     id: string,
     option: WordOption,
   ) => {
-    if (pickedId) return;
+    const nextPickedId = computePickState(pickedIdRef.current, id);
+    if (nextPickedId === pickedIdRef.current) return;
+
+    pickedIdRef.current = nextPickedId;
     event.currentTarget.blur();
-    setPickedId(id);
-    selectTimeoutRef.current = window.setTimeout(() => {
-      selectTimeoutRef.current = null;
-      onSelect(option);
-    }, 260);
+    setPickedId(nextPickedId);
+    selectTimeoutRef.current = scheduleSelection(
+      (selectedWord) => {
+        selectTimeoutRef.current = null;
+        onSelect(selectedWord);
+      },
+      option,
+      260,
+      window.setTimeout,
+    );
   };
 
   return (

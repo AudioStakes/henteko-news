@@ -23,11 +23,14 @@ const RESULT_LINE_GAP_RATIO = 0.24;
 const RESULT_DEFAULT_FRAME_WIDTH = 373;
 const RESULT_LAYOUT_ITERATIONS = 3;
 const RESULT_BUBBLE_HEIGHT_BY_WIDTH = [
-  { maxFrameWidth: 304, maxBubbleHeight: 307 },
-  { maxFrameWidth: 373, maxBubbleHeight: 336 },
+  { maxFrameWidth: 304, maxBubbleHeight: 316 },
+  { maxFrameWidth: 373, maxBubbleHeight: 344 },
 ] as const;
-const RESULT_BUBBLE_MAX_HEIGHT_FALLBACK = 355;
-const RESULT_HEADER_SAFE_TOP_GAP = 16;
+const RESULT_BUBBLE_MAX_HEIGHT_FALLBACK = 364;
+// Keeps the bubble from visually colliding with the top area in short viewports.
+const RESULT_HEADER_SAFE_TOP_GAP = 12;
+// Bubble border is 4px top + 4px bottom.
+const RESULT_BUBBLE_CHROME_HEIGHT = 8;
 
 function getResultBubbleMaxHeight(frameWidth: number) {
   for (const rule of RESULT_BUBBLE_HEIGHT_BY_WIDTH) {
@@ -77,16 +80,17 @@ export function ResultScreen({
   const { playOnPressStart, withClickSound } = useButtonSound();
   const [resultScreenElement, setResultScreenElement] = useState<HTMLElement | null>(null);
   const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
-  const [actionsElement, setActionsElement] = useState<HTMLElement | null>(null);
+  const [footerElement, setFooterElement] = useState<HTMLElement | null>(null);
   const [layoutMetrics, setLayoutMetrics] = useState({
     frameWidth: 0,
     resultScreenHeight: 0,
-    actionsHeight: 0,
+    footerHeight: 0,
+    rowGap: 0,
     bubblePaddingBlock: 0,
   });
 
   useLayoutEffect(() => {
-    if (!resultScreenElement && !bubbleElement && !actionsElement) return;
+    if (!resultScreenElement && !bubbleElement && !footerElement) return;
 
     const updateLayoutMetrics = () => {
       const bubbleStyles = bubbleElement ? window.getComputedStyle(bubbleElement) : null;
@@ -107,24 +111,29 @@ export function ResultScreen({
             Math.round(
               Number.parseFloat(bubbleStyles.paddingTop) +
                 Number.parseFloat(bubbleStyles.paddingBottom) +
-                8,
+                RESULT_BUBBLE_CHROME_HEIGHT,
             ),
           )
+        : 0;
+      const screenStyles = resultScreenElement
+        ? window.getComputedStyle(resultScreenElement)
+        : null;
+      const rowGap = screenStyles
+        ? Math.max(0, Math.round(Number.parseFloat(screenStyles.rowGap)))
         : 0;
       const resultScreenHeight = resultScreenElement
         ? Math.max(0, Math.floor(resultScreenElement.clientHeight))
         : 0;
-      const actionsHeight = actionsElement
-        ? Math.max(0, Math.ceil(actionsElement.offsetHeight))
-        : 0;
+      const footerHeight = footerElement ? Math.max(0, Math.ceil(footerElement.offsetHeight)) : 0;
 
       setLayoutMetrics((current) =>
         current.frameWidth === frameWidth &&
         current.resultScreenHeight === resultScreenHeight &&
-        current.actionsHeight === actionsHeight &&
+        current.footerHeight === footerHeight &&
+        current.rowGap === rowGap &&
         current.bubblePaddingBlock === bubblePaddingBlock
           ? current
-          : { frameWidth, resultScreenHeight, actionsHeight, bubblePaddingBlock },
+          : { frameWidth, resultScreenHeight, footerHeight, rowGap, bubblePaddingBlock },
       );
     };
 
@@ -138,10 +147,10 @@ export function ResultScreen({
     const observer = new ResizeObserver(updateLayoutMetrics);
     if (resultScreenElement) observer.observe(resultScreenElement);
     if (bubbleElement) observer.observe(bubbleElement);
-    if (actionsElement) observer.observe(actionsElement);
+    if (footerElement) observer.observe(footerElement);
 
     return () => observer.disconnect();
-  }, [actionsElement, bubbleElement, resultScreenElement]);
+  }, [bubbleElement, footerElement, resultScreenElement]);
 
   const effectiveFrameWidth = layoutMetrics.frameWidth || RESULT_DEFAULT_FRAME_WIDTH;
   const widthBasedMaxBubbleHeight = getResultBubbleMaxHeight(effectiveFrameWidth);
@@ -158,8 +167,8 @@ export function ResultScreen({
     for (let iteration = 0; iteration < RESULT_LAYOUT_ITERATIONS; iteration += 1) {
       const nextMaxBubbleHeight = calculateSafeResultBubbleMaxHeight({
         widthBasedMaxBubbleHeight,
-        resultScreenHeight: layoutMetrics.resultScreenHeight,
-        actionsHeight: layoutMetrics.actionsHeight,
+        resultScreenHeight: Math.max(0, layoutMetrics.resultScreenHeight - layoutMetrics.rowGap),
+        actionsHeight: layoutMetrics.footerHeight,
         mascotHeight: baseMascotLayout.mascotHeight,
         mascotOverlap: baseMascotLayout.mascotOverlap,
         bubbleCharacterGap: baseMascotLayout.bubbleCharacterGap,
@@ -180,8 +189,8 @@ export function ResultScreen({
     }
 
     const maxMascotHeightFromSpace = calculateMaxResultMascotHeightFromSpace({
-      resultScreenHeight: layoutMetrics.resultScreenHeight,
-      actionsHeight: layoutMetrics.actionsHeight,
+      resultScreenHeight: Math.max(0, layoutMetrics.resultScreenHeight - layoutMetrics.rowGap),
+      actionsHeight: layoutMetrics.footerHeight,
       bubbleContentHeight: resultLayout.contentHeight,
       bubblePaddingBlock: layoutMetrics.bubblePaddingBlock,
       headerSafeTopGap: RESULT_HEADER_SAFE_TOP_GAP,
@@ -220,53 +229,56 @@ export function ResultScreen({
         ["--result-bubble-character-gap" as string]: `${mascotLayout.bubbleCharacterGap}px`,
       }}
     >
-      <article
-        ref={setBubbleElement}
-        className="result-bubble"
-        aria-label="かんせいニュース"
-        style={{
-          ["--result-line-count" as string]: String(Math.max(lines.length, 1)),
-          ["--result-font-size" as string]: `${resultLayout.fontSize}px`,
-          ["--result-line-gap" as string]: `${resultLayout.lineGap}px`,
-          ["--result-content-height" as string]: `${resultLayout.contentHeight}px`,
-        }}
-      >
-        {keyedLines.map((item) => (
-          <p className="result-text" key={item.key}>
-            {item.line}
-          </p>
-        ))}
-      </article>
-      <div className="result-bottom">
+      <div className="result-composition">
+        <article
+          ref={setBubbleElement}
+          className="result-bubble"
+          aria-label="かんせいニュース"
+          style={{
+            ["--result-line-count" as string]: String(Math.max(lines.length, 1)),
+            ["--result-font-size" as string]: `${resultLayout.fontSize}px`,
+            ["--result-line-gap" as string]: `${resultLayout.lineGap}px`,
+            ["--result-content-height" as string]: `${resultLayout.contentHeight}px`,
+          }}
+        >
+          {keyedLines.map((item) => (
+            <p className="result-text" key={item.key}>
+              {item.line}
+            </p>
+          ))}
+        </article>
         <div className="result-character-wrap">
           <CharacterImage variant="result" src={imageUrl} className="result-character" />
         </div>
+      </div>
+      <div ref={setFooterElement} className="result-footer">
         {speechError ? (
           <p className="speech-error" role="status" aria-live="polite">
             {speechError}
           </p>
         ) : null}
-      </div>
-      <div ref={setActionsElement} className="action-stack compact result-actions">
-        <button
-          type="button"
-          className="action-btn result-action replay"
-          onClick={withClickSound(onReplayVoice)}
-          onPointerDown={playOnPressStart}
-          disabled={replayDisabled}
-        >
-          <span className="action-icon" aria-hidden="true">
-            ↻
-          </span>
-        </button>
-        <button
-          type="button"
-          className="action-btn result-action next"
-          onClick={withClickSound(onRestartGame)}
-          onPointerDown={playOnPressStart}
-        >
-          <span>つぎのニュース →</span>
-        </button>
+        <div className="action-stack compact result-actions">
+          <button
+            type="button"
+            className="action-btn result-action replay"
+            aria-label="もういちどよむ"
+            onClick={withClickSound(onReplayVoice)}
+            onPointerDown={playOnPressStart}
+            disabled={replayDisabled}
+          >
+            <span className="action-icon" aria-hidden="true">
+              ↻
+            </span>
+          </button>
+          <button
+            type="button"
+            className="action-btn result-action next"
+            onClick={withClickSound(onRestartGame)}
+            onPointerDown={playOnPressStart}
+          >
+            <span>つぎのニュース →</span>
+          </button>
+        </div>
       </div>
     </section>
   );

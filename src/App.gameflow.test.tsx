@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
+import { CATEGORIES } from "./data/words";
 
 vi.mock("./hooks/useButtonSound", () => ({
   useButtonSound: () => ({
@@ -43,7 +44,7 @@ function restoreNavigatorOnline() {
 }
 
 function completeOneGame() {
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < CATEGORIES.length; i += 1) {
     const choices = screen.getAllByTestId("choice-card");
     fireEvent.click(choices[0]);
     act(() => {
@@ -72,7 +73,7 @@ describe("App game flow", () => {
     expect(screen.getByRole("button", { name: "ニュースをつくる" })).toBeInTheDocument();
   });
 
-  it("moves from start to result after five selections", () => {
+  it("moves from start to result after selecting all categories", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
@@ -81,6 +82,23 @@ describe("App game flow", () => {
 
     expect(screen.getByLabelText("かんせいニュース")).toBeInTheDocument();
     expect(speechState.speakNews).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not move to result before selecting the last category", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+
+    for (let i = 0; i < CATEGORIES.length - 1; i += 1) {
+      const choices = screen.getAllByTestId("choice-card");
+      fireEvent.click(choices[0]);
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+    }
+
+    expect(screen.queryByLabelText("かんせいニュース")).not.toBeInTheDocument();
+    expect(speechState.speakNews).not.toHaveBeenCalled();
   });
 
   it("restarts from result into the first select step", () => {

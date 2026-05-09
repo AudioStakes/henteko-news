@@ -47,11 +47,7 @@ export function AppView({
   return (
     <div className="viewport">
       <div className="app-shell">
-        <div className="app-shell__notice">
-          {isOffline && (
-            <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>
-          )}
-        </div>
+        {isOffline && <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>}
         <AppHeader />
         <main className="app-shell__main">
           {isWordsAudioCheckRoute && <WordsAudioCheckScreen />}

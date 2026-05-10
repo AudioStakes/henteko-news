@@ -44,60 +44,52 @@ export function AppView({
   onReplayVoice,
   onRestartGame,
 }: AppViewProps) {
-  if (isWordsAudioCheckRoute) {
-    return (
-      <div className="viewport">
-        <main className="app-shell">
-          {isOffline && (
-            <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>
-          )}
-          <AppHeader />
-          <WordsAudioCheckScreen />
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="viewport">
-      <main className="app-shell">
+      <div className="app-shell">
         {isOffline && <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>}
         <AppHeader />
-        {debugSelections && (
-          <ResultScreen
-            lines={lines}
-            speechError=""
-            imageUrl={imageUrl}
-            replayDisabled
-            onReplayVoice={() => {}}
-            onRestartGame={() => {}}
-          />
-        )}
-        {!debugSelections && screen.name === "start" && (
-          <StartScreen onStart={onStart} imageUrl={imageUrl} />
-        )}
-        {!debugSelections && screen.name === "select" && currentCategory && (
-          <WordSelectScreen
-            key={currentCategory.key}
-            category={currentCategory}
-            currentStep={currentStep}
-            totalSteps={totalSteps}
-            imageUrl={imageUrl}
-            onSelect={onSelectWord}
-          />
-        )}
-        {!debugSelections && screen.name === "result" && (
-          <ResultScreen
-            lines={lines}
-            speechError={isSupported ? speechError : ""}
-            imageUrl={imageUrl}
-            replayDisabled={isSpeaking || !isSupported}
-            onReplayVoice={onReplayVoice}
-            onRestartGame={onRestartGame}
-          />
-        )}
+        <main className="app-shell__main">
+          {isWordsAudioCheckRoute && <WordsAudioCheckScreen />}
+          {!isWordsAudioCheckRoute && debugSelections && (
+            <ResultScreen
+              lines={lines}
+              speechError=""
+              imageUrl={imageUrl}
+              replayDisabled
+              onReplayVoice={() => {}}
+              onRestartGame={() => {}}
+            />
+          )}
+          {!isWordsAudioCheckRoute && !debugSelections && screen.name === "start" && (
+            <StartScreen onStart={onStart} imageUrl={imageUrl} />
+          )}
+          {!isWordsAudioCheckRoute &&
+            !debugSelections &&
+            screen.name === "select" &&
+            currentCategory && (
+              <WordSelectScreen
+                key={currentCategory.key}
+                category={currentCategory}
+                currentStep={currentStep}
+                totalSteps={totalSteps}
+                imageUrl={imageUrl}
+                onSelect={onSelectWord}
+              />
+            )}
+          {!isWordsAudioCheckRoute && !debugSelections && screen.name === "result" && (
+            <ResultScreen
+              lines={lines}
+              speechError={isSupported ? speechError : ""}
+              imageUrl={imageUrl}
+              replayDisabled={isSpeaking || !isSupported}
+              onReplayVoice={onReplayVoice}
+              onRestartGame={onRestartGame}
+            />
+          )}
+        </main>
         <AppFooter />
-      </main>
+      </div>
     </div>
   );
 }

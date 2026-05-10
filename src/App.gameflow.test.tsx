@@ -12,6 +12,23 @@ vi.mock("./hooks/useButtonSound", () => ({
   }),
 }));
 
+const { mockTrackEvent } = vi.hoisted(() => ({
+  mockTrackEvent: vi.fn(),
+}));
+
+vi.mock("./utils/analytics", () => ({
+  ANALYTICS_EVENT_NAMES: {
+    gameStart: "game_start",
+    speechSupported: "speech_supported",
+    speechUnsupported: "speech_unsupported",
+    speechError: "speech_error",
+    offlineDetected: "offline_detected",
+    onlineRestored: "online_restored",
+    serviceWorkerError: "service_worker_error",
+  },
+  trackEvent: mockTrackEvent,
+}));
+
 const speechState = {
   speechError: "",
   setSpeechError: vi.fn(),
@@ -59,6 +76,7 @@ describe("App game flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    mockTrackEvent.mockReset();
     speechState.speechError = "";
     speechState.isSupported = true;
     speechState.isSpeaking = false;
@@ -83,6 +101,7 @@ describe("App game flow", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+    expect(mockTrackEvent).toHaveBeenCalledWith("game_start");
 
     completeOneGame();
 
@@ -174,10 +193,21 @@ describe("App game flow", () => {
     act(() => {
       window.dispatchEvent(new Event("offline"));
     });
+    expect(mockTrackEvent).toHaveBeenCalledWith("offline_detected");
 
     expect(
       screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
     ).toBeInTheDocument();
+  });
+
+  it("tracks online restored event", () => {
+    render(<App />);
+
+    act(() => {
+      window.dispatchEvent(new Event("online"));
+    });
+
+    expect(mockTrackEvent).toHaveBeenCalledWith("online_restored");
   });
 
   it("announces only speech error when an error is shown on result screen", () => {

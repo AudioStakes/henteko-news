@@ -12,9 +12,11 @@ import { CharacterImage } from "./CharacterImage";
 type ResultScreenProps = {
   lines: string[];
   speechError: string;
+  speechStatusText?: string;
   imageUrl: string;
   onReplayVoice: () => void;
   replayDisabled?: boolean;
+  replayDisabledReason?: string;
   onRestartGame: () => void;
 };
 const MAX_FONT_SIZE = 64;
@@ -72,9 +74,11 @@ function buildMascotLayout(
 export function ResultScreen({
   lines,
   speechError,
+  speechStatusText,
   imageUrl,
   onReplayVoice,
   replayDisabled,
+  replayDisabledReason,
   onRestartGame,
 }: ResultScreenProps) {
   const { playOnPressStart, withClickSound } = useButtonSound();
@@ -252,6 +256,15 @@ export function ResultScreen({
         </div>
       </div>
       <div ref={setFooterElement} className="result-footer">
+        {speechStatusText ? (
+          <p
+            className="speech-status"
+            role={speechError ? undefined : "status"}
+            aria-live={speechError ? undefined : "polite"}
+          >
+            {speechStatusText}
+          </p>
+        ) : null}
         {speechError ? (
           <p className="speech-error" role="status" aria-live="polite">
             {speechError}
@@ -262,6 +275,7 @@ export function ResultScreen({
             type="button"
             className="action-btn result-action replay"
             aria-label="もういちどよむ"
+            title={replayDisabled ? replayDisabledReason : undefined}
             onClick={withClickSound(onReplayVoice)}
             onPointerDown={playOnPressStart}
             disabled={replayDisabled}

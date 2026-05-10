@@ -3,6 +3,7 @@ import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { CATEGORIES } from "./data/words";
+import type { SpeechAvailability } from "./hooks/useNewsSpeech";
 
 vi.mock("./hooks/useButtonSound", () => ({
   useButtonSound: () => ({
@@ -19,6 +20,7 @@ const speechState = {
   cancel: vi.fn(),
   speakNews: vi.fn(),
   isSpeaking: false,
+  speechAvailability: "ready" as SpeechAvailability,
 };
 
 vi.mock("./hooks/useNewsSpeech", () => ({
@@ -57,6 +59,10 @@ describe("App game flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    speechState.speechError = "";
+    speechState.isSupported = true;
+    speechState.isSpeaking = false;
+    speechState.speechAvailability = "ready";
     setNavigatorOnline(true);
     window.history.replaceState({}, "", "/");
   });
@@ -127,7 +133,9 @@ describe("App game flow", () => {
 
     render(<App />);
 
-    expect(screen.getByText("オフラインです。こえがでないことがあるよ。")).toBeInTheDocument();
+    expect(
+      screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
+    ).toBeInTheDocument();
   });
 
   it("shows ResultScreen instead of start/select flow when debugResult=1", () => {
@@ -167,6 +175,20 @@ describe("App game flow", () => {
       window.dispatchEvent(new Event("offline"));
     });
 
-    expect(screen.getByText("オフラインです。こえがでないことがあるよ。")).toBeInTheDocument();
+    expect(
+      screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
+    ).toBeInTheDocument();
+  });
+
+  it("announces only speech error when an error is shown on result screen", () => {
+    speechState.speechError = "よみあげエラー";
+    speechState.speechAvailability = "error";
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+    completeOneGame();
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("よみあげエラー");
   });
 });

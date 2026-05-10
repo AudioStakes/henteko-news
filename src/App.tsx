@@ -26,8 +26,16 @@ export default function App() {
     handleSelectWord,
     setSelections,
   } = useGameFlow();
-  const { speechError, setSpeechError, isSupported, warmup, cancel, speakNews, isSpeaking } =
-    useNewsSpeech();
+  const {
+    speechError,
+    setSpeechError,
+    isSupported,
+    warmup,
+    cancel,
+    speakNews,
+    isSpeaking,
+    speechAvailability,
+  } = useNewsSpeech();
   const effectiveSelections = debugSelections ?? selections;
   const lines = useMemo(() => buildNewsLines(effectiveSelections), [effectiveSelections]);
   const hiyokoImageUrl = useMemo(() => {
@@ -79,6 +87,15 @@ export default function App() {
       totalSteps={CATEGORIES.length}
       lines={lines}
       speechError={speechError}
+      speechStatusText={
+        speechAvailability === "speaking"
+          ? "ただいま よみあげちゅう。"
+          : speechAvailability === "unsupported"
+            ? "このブラウザでは読み上げできないことがあります。でも文字で遊べます。"
+            : speechAvailability === "ready"
+              ? "こえのボタンで もういちど よめるよ。"
+              : "こえが うまくでないときも、文字でニュースを読めるよ。"
+      }
       isSupported={isSupported}
       isSpeaking={isSpeaking}
       imageUrl={hiyokoImageUrl}

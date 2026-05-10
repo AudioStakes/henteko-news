@@ -88,7 +88,7 @@ describe("useNewsSpeech", () => {
       options?.onError?.("timeout");
     });
 
-    expect(result.current.speechError).toContain("よみあげ");
+    expect(result.current.speechError).toContain("文字");
   });
 
   it("shows unavailable message when speak fails and is not speaking", () => {

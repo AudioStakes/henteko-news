@@ -127,7 +127,9 @@ describe("App game flow", () => {
 
     render(<App />);
 
-    expect(screen.getByText("オフラインです。こえがでないことがあるよ。")).toBeInTheDocument();
+    expect(
+      screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
+    ).toBeInTheDocument();
   });
 
   it("shows ResultScreen instead of start/select flow when debugResult=1", () => {
@@ -167,6 +169,8 @@ describe("App game flow", () => {
       window.dispatchEvent(new Event("offline"));
     });
 
-    expect(screen.getByText("オフラインです。こえがでないことがあるよ。")).toBeInTheDocument();
+    expect(
+      screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
+    ).toBeInTheDocument();
   });
 });

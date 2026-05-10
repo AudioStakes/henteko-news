@@ -17,6 +17,7 @@ type AppViewProps = {
   totalSteps: number;
   lines: string[];
   speechError: string;
+  speechStatusText: string;
   isSupported: boolean;
   isSpeaking: boolean;
   imageUrl: string;
@@ -36,6 +37,7 @@ export function AppView({
   totalSteps,
   lines,
   speechError,
+  speechStatusText,
   isSupported,
   isSpeaking,
   imageUrl,
@@ -47,7 +49,11 @@ export function AppView({
   return (
     <div className="viewport">
       <div className="app-shell">
-        {isOffline && <p className="offline-notice">オフラインです。こえがでないことがあるよ。</p>}
+        {isOffline && (
+          <p className="offline-notice">
+            オフラインです。読み上げや画像の一部が動かないことがあります。
+          </p>
+        )}
         <AppHeader />
         <main className="app-shell__main">
           {isWordsAudioCheckRoute && <WordsAudioCheckScreen />}
@@ -55,6 +61,7 @@ export function AppView({
             <ResultScreen
               lines={lines}
               speechError=""
+              speechStatusText=""
               imageUrl={imageUrl}
               replayDisabled
               onReplayVoice={() => {}}
@@ -81,8 +88,16 @@ export function AppView({
             <ResultScreen
               lines={lines}
               speechError={isSupported ? speechError : ""}
+              speechStatusText={speechStatusText}
               imageUrl={imageUrl}
               replayDisabled={isSpeaking || !isSupported}
+              replayDisabledReason={
+                isSpeaking
+                  ? "いま よみあげちゅうだよ。おわったら もういちど よめるよ。"
+                  : !isSupported
+                    ? "このブラウザでは よみあげに たいおうしていないことがあります。"
+                    : undefined
+              }
               onReplayVoice={onReplayVoice}
               onRestartGame={onRestartGame}
             />

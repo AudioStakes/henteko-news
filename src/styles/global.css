@@ -1188,3 +1188,20 @@ h1 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-screen .action-btn,
+  .home-screen .action-btn::after,
+  .home-screen .action-btn__label {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+
+  .choice-card,
+  .choice-card.is-selected {
+    animation: none;
+    transition: none;
+    transform: translateZ(0);
+  }
+}

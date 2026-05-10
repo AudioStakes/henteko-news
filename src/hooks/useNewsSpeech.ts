@@ -5,7 +5,7 @@ import type { Selections } from "../types/game";
 import { buildNewsLines, toSpeechText } from "../utils/speechText";
 import { useSpeech } from "./useSpeech";
 
-type SpeechAvailability = "ready" | "unsupported" | "speaking" | "error";
+export type SpeechAvailability = "ready" | "unsupported" | "speaking" | "error";
 
 function buildSpeechError(reason: "unsupported" | "timeout" | "error") {
   if (reason === "unsupported") {

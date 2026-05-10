@@ -3,6 +3,7 @@ import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { CATEGORIES } from "./data/words";
+import type { SpeechAvailability } from "./hooks/useNewsSpeech";
 
 vi.mock("./hooks/useButtonSound", () => ({
   useButtonSound: () => ({
@@ -19,7 +20,7 @@ const speechState = {
   cancel: vi.fn(),
   speakNews: vi.fn(),
   isSpeaking: false,
-  speechAvailability: "ready" as "ready" | "unsupported" | "speaking" | "error",
+  speechAvailability: "ready" as SpeechAvailability,
 };
 
 vi.mock("./hooks/useNewsSpeech", () => ({

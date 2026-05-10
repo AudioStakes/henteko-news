@@ -19,6 +19,7 @@ const speechState = {
   cancel: vi.fn(),
   speakNews: vi.fn(),
   isSpeaking: false,
+  speechAvailability: "ready" as "ready" | "unsupported" | "speaking" | "error",
 };
 
 vi.mock("./hooks/useNewsSpeech", () => ({
@@ -57,6 +58,10 @@ describe("App game flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    speechState.speechError = "";
+    speechState.isSupported = true;
+    speechState.isSpeaking = false;
+    speechState.speechAvailability = "ready";
     setNavigatorOnline(true);
     window.history.replaceState({}, "", "/");
   });
@@ -172,5 +177,17 @@ describe("App game flow", () => {
     expect(
       screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
     ).toBeInTheDocument();
+  });
+
+  it("announces only speech error when an error is shown on result screen", () => {
+    speechState.speechError = "よみあげエラー";
+    speechState.speechAvailability = "error";
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+    completeOneGame();
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.getByRole("status")).toHaveTextContent("よみあげエラー");
   });
 });

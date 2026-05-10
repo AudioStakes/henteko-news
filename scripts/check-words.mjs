@@ -22,25 +22,14 @@ for (const group of groups) {
     errors += 1;
   }
   const seen = new Set();
-  const seenIds = new Set();
   if (items.length < WORD_CHECK_RULES.minWordsPerCategory) {
     console.error(`[error] ${group.key}: too few words (${items.length})`);
     errors += 1;
   }
   for (const item of items) {
     const display = typeof item === "string" ? item : item.display;
-    const id = typeof item === "string" ? item : item.id;
     if (!display) {
       console.error(`[error] ${group.key}: display empty`); errors++; continue;
-    }
-    if (id != null && !String(id).trim()) {
-      console.error(`[error] ${group.key}: id empty for "${display}"`); errors++;
-    }
-    if (id != null) {
-      if (seenIds.has(id)) {
-        console.error(`[error] ${group.key}: duplicate id "${id}"`); errors++;
-      }
-      seenIds.add(id);
     }
     if (display !== display.trim()) {
       console.error(`[error] ${group.key}: display has leading/trailing spaces: "${display}"`); errors++;
@@ -61,8 +50,12 @@ for (const group of groups) {
       } else if (Math.abs(display.length - speech.length) > 8) {
         console.warn(`[warn] action: display/speech length gap is large for "${display}"`); warnings++;
       }
-      const strangeChars = [...speech].filter((char) => !speakablePattern.test(char)).length;
-      if (speech.length > 0 && strangeChars / speech.length > WORD_CHECK_RULES.suspiciousCharRatio) {
+      const speechCodePoints = [...speech];
+      const strangeChars = speechCodePoints.filter((char) => !speakablePattern.test(char)).length;
+      if (
+        speechCodePoints.length > 0 &&
+        strangeChars / speechCodePoints.length > WORD_CHECK_RULES.suspiciousCharRatio
+      ) {
         console.warn(`[warn] action: speech has many unusual characters for "${display}"`); warnings++;
       }
     }

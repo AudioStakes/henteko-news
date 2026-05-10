@@ -257,7 +257,11 @@ export function ResultScreen({
       </div>
       <div ref={setFooterElement} className="result-footer">
         {speechStatusText ? (
-          <p className="speech-status" role="status" aria-live="polite">
+          <p
+            className="speech-status"
+            role={speechError ? undefined : "status"}
+            aria-live={speechError ? undefined : "polite"}
+          >
             {speechStatusText}
           </p>
         ) : null}

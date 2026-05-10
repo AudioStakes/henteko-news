@@ -128,4 +128,35 @@ describe("useNewsSpeech", () => {
     expect(mockWarmup).toHaveBeenCalledTimes(1);
     expect(mockCancel).toHaveBeenCalledTimes(1);
   });
+
+  it("exposes speechAvailability as ready by default", () => {
+    const { result } = renderHook(() => useNewsSpeech());
+
+    expect(result.current.speechAvailability).toBe("ready");
+  });
+
+  it("exposes speechAvailability as unsupported when speech is not supported", () => {
+    mockIsSupported = false;
+    const { result } = renderHook(() => useNewsSpeech());
+
+    expect(result.current.speechAvailability).toBe("unsupported");
+  });
+
+  it("exposes speechAvailability as speaking while currently speaking", () => {
+    mockIsSpeaking = true;
+    const { result } = renderHook(() => useNewsSpeech());
+
+    expect(result.current.speechAvailability).toBe("speaking");
+  });
+
+  it("exposes speechAvailability as error after speech failure", () => {
+    mockSpeak.mockReturnValue(false);
+    const { result } = renderHook(() => useNewsSpeech());
+
+    act(() => {
+      result.current.speakNews(fullSelections);
+    });
+
+    expect(result.current.speechAvailability).toBe("error");
+  });
 });

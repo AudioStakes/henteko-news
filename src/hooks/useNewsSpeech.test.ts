@@ -3,12 +3,30 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Selections } from "../types/game";
 import { useNewsSpeech } from "./useNewsSpeech";
 
+const { mockTrackEvent, mockTrackError } = vi.hoisted(() => ({
+  mockTrackEvent: vi.fn(),
+  mockTrackError: vi.fn(),
+}));
 const mockSpeak = vi.fn();
 const mockWarmup = vi.fn();
 const mockCancel = vi.fn();
 
 let mockIsSupported = true;
 let mockIsSpeaking = false;
+
+vi.mock("../utils/analytics", () => ({
+  ANALYTICS_EVENT_NAMES: {
+    gameStart: "game_start",
+    speechSupported: "speech_supported",
+    speechUnsupported: "speech_unsupported",
+    speechError: "speech_error",
+    offlineDetected: "offline_detected",
+    onlineRestored: "online_restored",
+    serviceWorkerError: "service_worker_error",
+  },
+  trackEvent: mockTrackEvent,
+  trackError: mockTrackError,
+}));
 
 vi.mock("./useSpeech", () => ({
   useSpeech: () => ({
@@ -35,6 +53,8 @@ describe("useNewsSpeech", () => {
     mockCancel.mockReset();
     mockIsSupported = true;
     mockIsSpeaking = false;
+    mockTrackEvent.mockReset();
+    mockTrackError.mockReset();
   });
 
   it("does not call speak when selections are incomplete", () => {
@@ -89,6 +109,7 @@ describe("useNewsSpeech", () => {
     });
 
     expect(result.current.speechError).toContain("文字");
+    expect(mockTrackError).toHaveBeenCalledWith("speech_error", { reason: "timeout" });
   });
 
   it("shows unavailable message when speak fails and is not speaking", () => {

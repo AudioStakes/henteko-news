@@ -4,6 +4,7 @@ import { AppView } from "./components/AppView";
 import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
+import { ANALYTICS_EVENT_NAMES, trackEvent } from "./utils/analytics";
 import { resolveAppMode } from "./utils/appMode";
 import { preloadImagesWhenIdle } from "./utils/preload";
 import { buildNewsLines } from "./utils/speechText";
@@ -50,8 +51,14 @@ export default function App() {
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
 
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
+    const handleOnline = () => {
+      setIsOffline(false);
+      trackEvent(ANALYTICS_EVENT_NAMES.onlineRestored);
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      trackEvent(ANALYTICS_EVENT_NAMES.offlineDetected);
+    };
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -63,6 +70,7 @@ export default function App() {
   }, []);
 
   const start = () => {
+    trackEvent(ANALYTICS_EVENT_NAMES.gameStart);
     cancel();
     warmup();
     setSelections({});

@@ -117,8 +117,16 @@ describe("useSpeech", () => {
   it("revokes a late synthesis result after timeout without playing it", async () => {
     vi.useFakeTimers();
     const revoke = vi.fn();
-    let resolveSynthesis!: (value: { url: string; revoke: () => void; durationSec: number }) => void;
-    mockSynthesize.mockReturnValue(new Promise((resolve) => { resolveSynthesis = resolve; }));
+    let resolveSynthesis!: (value: {
+      url: string;
+      revoke: () => void;
+      durationSec: number;
+    }) => void;
+    mockSynthesize.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSynthesis = resolve;
+      }),
+    );
     const onError = vi.fn();
     const onEnd = vi.fn();
     const { result } = renderHook(() => useSpeech());
@@ -135,7 +143,11 @@ describe("useSpeech", () => {
   it("ignores a late synthesis rejection after timeout", async () => {
     vi.useFakeTimers();
     let rejectSynthesis!: (reason: Error) => void;
-    mockSynthesize.mockReturnValue(new Promise((_resolve, reject) => { rejectSynthesis = reject; }));
+    mockSynthesize.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectSynthesis = reject;
+      }),
+    );
     const onError = vi.fn();
     const { result } = renderHook(() => useSpeech());
     act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onError }));
@@ -154,8 +166,16 @@ describe("useSpeech", () => {
 
   it("revokes a pending synthesis after unmount", async () => {
     const revoke = vi.fn();
-    let resolveSynthesis!: (value: { url: string; revoke: () => void; durationSec: number }) => void;
-    mockSynthesize.mockReturnValue(new Promise((resolve) => { resolveSynthesis = resolve; }));
+    let resolveSynthesis!: (value: {
+      url: string;
+      revoke: () => void;
+      durationSec: number;
+    }) => void;
+    mockSynthesize.mockReturnValue(
+      new Promise((resolve) => {
+        resolveSynthesis = resolve;
+      }),
+    );
     const { result, unmount } = renderHook(() => useSpeech());
     act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1 }));
     unmount();

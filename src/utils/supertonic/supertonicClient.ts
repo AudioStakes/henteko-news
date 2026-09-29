@@ -52,12 +52,12 @@ function getStyle(path: string) {
 
 export async function preloadSupertonic() {
   if (!preloadPromise) {
-    preloadPromise = Promise.all([getTts(), getStyle(DEFAULT_VOICE_STYLE_PATH)]).then(
-      () => undefined,
-    ).catch((error) => {
-      preloadPromise = null;
-      throw error;
-    });
+    preloadPromise = Promise.all([getTts(), getStyle(DEFAULT_VOICE_STYLE_PATH)])
+      .then(() => undefined)
+      .catch((error) => {
+        preloadPromise = null;
+        throw error;
+      });
   }
   return preloadPromise;
 }

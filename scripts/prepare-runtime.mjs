@@ -10,4 +10,5 @@ await mkdir(target, { recursive: true });
 for (const name of ["ort-wasm-simd-threaded.mjs", "ort-wasm-simd-threaded.wasm"]) {
   await copyFile(resolve(source, name), resolve(target, name));
 }
+await copyFile(resolve(source, "../LICENSE"), resolve(target, "LICENSE"));
 console.log("ONNX Runtime assets prepared from the installed, locked dependency.");

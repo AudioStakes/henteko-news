@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("onnxruntime-web/wasm", () => ({ env: { wasm: {} } }));
+
 import { loadTextToSpeech, loadVoiceStyle, preprocessSpeechText, writeWavFile } from "./helper";
 
 describe("Supertonic input and asset handling", () => {
@@ -33,6 +34,8 @@ describe("Supertonic input and asset handling", () => {
     expect(buffer.byteLength).toBe(50);
     expect(view.getUint32(24, true)).toBe(44_100);
     expect(view.getUint32(40, true)).toBe(6);
-    expect([view.getInt16(44, true), view.getInt16(46, true), view.getInt16(48, true)]).toEqual([-32768, 0, 32767]);
+    expect([view.getInt16(44, true), view.getInt16(46, true), view.getInt16(48, true)]).toEqual([
+      -32768, 0, 32767,
+    ]);
   });
 });

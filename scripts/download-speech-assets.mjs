@@ -9,6 +9,7 @@ const revision = "aafc6e32416a594460b32413efc49d7fe4ce6d46";
 const baseUrl = `https://huggingface.co/supertone-oss-archive/supertonic-3/resolve/${revision}`;
 const target = resolve("public/supertonic");
 const files = [
+  "LICENSE",
   "onnx/tts.json",
   "onnx/unicode_indexer.json",
   "onnx/duration_predictor.onnx",

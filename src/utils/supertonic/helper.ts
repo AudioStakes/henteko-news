@@ -82,8 +82,8 @@ export async function loadVoiceStyle(paths: string[]): Promise<Style> {
   const ttl = new Float32Array(paths.length * ttlDims[1] * ttlDims[2]);
   const dp = new Float32Array(paths.length * dpDims[1] * dpDims[2]);
   styles.forEach((s, i) => {
-    ttl.set(s.style_ttl.data.flat(Infinity), i * ttlDims[1] * ttlDims[2]);
-    dp.set(s.style_dp.data.flat(Infinity), i * dpDims[1] * dpDims[2]);
+    ttl.set(s.style_ttl.data.flat(2), i * ttlDims[1] * ttlDims[2]);
+    dp.set(s.style_dp.data.flat(2), i * dpDims[1] * dpDims[2]);
   });
   return {
     ttl: new ort.Tensor("float32", ttl, [paths.length, ttlDims[1], ttlDims[2]]),
@@ -116,9 +116,7 @@ export async function loadTextToSpeech(onnxDir: string) {
     call: async (text, lang, style, totalStep, speed = 1) => {
       if (!Number.isFinite(speed) || speed <= 0) throw new Error("Invalid speech speed");
       const processed = preprocessSpeechText(text, lang);
-      const ids = Array.from(processed).map(
-        (c) => indexer[c.codePointAt(0) ?? -1] ?? -1,
-      );
+      const ids = Array.from(processed).map((c) => indexer[c.codePointAt(0) ?? -1] ?? -1);
       const idTensor = new ort.Tensor("int64", new BigInt64Array(ids.map((v) => BigInt(v))), [
         1,
         ids.length,
@@ -148,7 +146,9 @@ export async function loadTextToSpeech(onnxDir: string) {
       let xt: Float32Array = Float32Array.from(
         { length: cfgs.ttl.latent_dim * cfgs.ttl.chunk_compress_factor * latentLen },
         // Supertonic expects Gaussian noise (Box-Muller), not a uniform distribution.
-        () => Math.sqrt(-2 * Math.log(Math.max(0.0001, Math.random()))) * Math.cos(2 * Math.PI * Math.random()),
+        () =>
+          Math.sqrt(-2 * Math.log(Math.max(0.0001, Math.random()))) *
+          Math.cos(2 * Math.PI * Math.random()),
       );
       const latentMask = new ort.Tensor("float32", new Float32Array(latentLen).fill(1), [
         1,

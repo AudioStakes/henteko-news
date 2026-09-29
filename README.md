@@ -53,6 +53,7 @@ public/supertonic/
 
 | コマンド | 確認する内容 |
 | --- | --- |
+| `npm audit --audit-level=high` | 依存関係の既知の重大な脆弱性 |
 | `npm run lint` | Biomeによる静的解析・整形確認 |
 | `npm run typecheck` | TypeScriptの型チェック |
 | `npm test` | ゲーム・音声・レイアウト計算などの単体テスト |

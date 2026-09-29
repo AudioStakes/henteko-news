@@ -73,7 +73,7 @@ npm run build
 npm run preview
 ```
 
-静的ホスティングには **`dist/` 全体**を配布します。音声を使う配布では、ビルドの前に `setup:speech` を実行してください。ホストのビルド設定はビルドコマンド `npm run build`、公開ディレクトリ `dist` です。
+静的ホスティングには **`dist/` 全体**を配布します。第三者のライセンス表示を入れた `dist/licenses/` も保持してください。音声を使う配布では、ビルドの前に `setup:speech` を実行してください。ホストのビルド設定はビルドコマンド `npm run build`、公開ディレクトリ `dist` です。
 
 現在は**ドメイン直下への配布**をサポートします。サブディレクトリへの配布には、画像・音声・Service Worker・manifestの絶対パス対応が必要です。独自ドメインやフォークでは `index.html` の canonical / OGP / JSON-LD、`public/robots.txt`、`public/sitemap.xml` にあるURLも更新してください。`/words-audio-check` を直接開けるよう、ホスト側で存在しない画面パスを `index.html` にフォールバックさせます。
 

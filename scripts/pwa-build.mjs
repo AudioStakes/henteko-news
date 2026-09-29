@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 function listPublicAssets(directory, prefix = "") {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    if (entry.name.startsWith(".") || ["supertonic", "onnxruntime", "sw.js", "_headers"].includes(entry.name)) {
+    if (entry.name.startsWith(".") || ["supertonic", "onnxruntime", "licenses", "sw.js", "_headers"].includes(entry.name)) {
       return [];
     }
     const path = `${prefix}${entry.name}`;

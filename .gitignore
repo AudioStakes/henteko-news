@@ -41,3 +41,6 @@ public/supertonic/onnx/*
 !public/supertonic/onnx/.gitkeep
 public/supertonic/voice_styles/*
 !public/supertonic/voice_styles/.gitkeep
+
+# License copies generated for static distribution
+public/licenses/

@@ -1,4 +1,4 @@
-import { copyFile, mkdir, rm } from "node:fs/promises";
+import { copyFile, cp, mkdir, rm } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
 
@@ -11,4 +11,7 @@ for (const name of ["ort-wasm-simd-threaded.mjs", "ort-wasm-simd-threaded.wasm"]
   await copyFile(resolve(source, name), resolve(target, name));
 }
 await copyFile(resolve("LICENSES/ONNX-Runtime-MIT.txt"), resolve(target, "LICENSE"));
-console.log("ONNX Runtime assets prepared from the installed, locked dependency.");
+const notices = resolve("public/licenses");
+await rm(notices, { recursive: true, force: true });
+await cp(resolve("LICENSES"), notices, { recursive: true });
+console.log("ONNX Runtime assets and third-party license notices prepared.");

@@ -18,8 +18,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm install --save-dev vite@^8.3.1 @vitejs/plugin-react@^6.0.2
-      - run: npm audit fix
+      - run: npx --yes npm@11 update
+      - run: npm audit --json
+        if: always()
       - name: Show dependency changes
         if: always()
         run: git diff --no-ext-diff -- package.json package-lock.json

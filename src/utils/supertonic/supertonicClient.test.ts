@@ -51,9 +51,9 @@ describe("Supertonic initialization", () => {
     await expect(preloadSupertonic()).rejects.toThrow("offline");
     await expect(preloadSupertonic()).resolves.toBeUndefined();
     expect(createSession).toHaveBeenCalledTimes(5);
-    expect(
-      fetchAsset.mock.calls.filter(([path]) => String(path).endsWith("M1.json")),
-    ).toHaveLength(1);
+    expect(fetchAsset.mock.calls.filter(([path]) => String(path).endsWith("M1.json"))).toHaveLength(
+      1,
+    );
   });
 
   it("retries a failed voice style without reloading successful models", async () => {
@@ -61,9 +61,9 @@ describe("Supertonic initialization", () => {
     const { preloadSupertonic } = await import("./supertonicClient");
     await expect(preloadSupertonic()).rejects.toThrow("HTTP 404");
     await expect(preloadSupertonic()).resolves.toBeUndefined();
-    expect(
-      fetchAsset.mock.calls.filter(([path]) => String(path).endsWith("M1.json")),
-    ).toHaveLength(2);
+    expect(fetchAsset.mock.calls.filter(([path]) => String(path).endsWith("M1.json"))).toHaveLength(
+      2,
+    );
     expect(createSession).toHaveBeenCalledTimes(4);
   });
 });

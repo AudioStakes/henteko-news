@@ -15,12 +15,15 @@ test("a build precaches its chunks and updates only its own content-derived vers
     await writeFile(join(root, "public/supertonic/large.onnx"), "model");
     const plugin = pwaBuildPlugin();
     plugin.configResolved({ root, build: { outDir: "dist" } });
-    const bundle = { "assets/app-hash.js": { type: "chunk", code: "original-code" } };
+    const bundle = {
+      "assets/app-hash.js": { type: "chunk", code: "original-code" },
+      "assets/ort-hash.wasm": { type: "asset", source: new Uint8Array([1, 2, 3]) },
+    };
     plugin.writeBundle({}, bundle);
     const first = await readFile(join(root, "dist/sw.js"), "utf8");
     assert.match(first, /\/assets\/app-hash.js/);
     assert.match(first, /\/logo.svg/);
-    assert.doesNotMatch(first, /large.onnx|__BUILD_ID__/);
+    assert.doesNotMatch(first, /large.onnx|ort-hash.wasm|__BUILD_ID__/);
     plugin.writeBundle({}, bundle);
     assert.equal(await readFile(join(root, "dist/sw.js"), "utf8"), first);
     bundle["assets/app-hash.js"].code = "changed-code";

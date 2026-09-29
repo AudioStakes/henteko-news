@@ -37,7 +37,10 @@ export function pwaBuildPlugin() {
         hash.update(file).update(output.type === "chunk" ? output.code : output.source);
       }
       const version = hash.digest("hex").slice(0, 20);
-      const precache = [...publicFiles, ...generatedFiles].map((file) => `/${file}`);
+      // Vite can also emit the large WASM asset referenced by ONNX Runtime.
+      // Text-only offline use should not download it during worker installation.
+      const precache = [...publicFiles, ...generatedFiles.filter((file) => !file.endsWith(".wasm"))]
+        .map((file) => `/${file}`);
       if (!template.includes('const VERSION = "__BUILD_ID__";') || !template.includes("const PRECACHE_ASSETS = [];")) {
         throw new Error("Service Worker build placeholders are missing");
       }

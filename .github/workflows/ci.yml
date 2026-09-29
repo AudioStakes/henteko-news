@@ -8,6 +8,21 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  dependency-refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --save-dev vite@^8.3.1 @vitejs/plugin-react@^6.0.2
+      - run: npm audit fix
+      - name: Show dependency changes
+        if: always()
+        run: git diff --no-ext-diff -- package.json package-lock.json
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15

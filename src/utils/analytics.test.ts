@@ -1,8 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ANALYTICS_EVENT_NAMES, setAnalyticsTransport, trackEvent } from "./analytics";
 
 describe("analytics", () => {
   beforeEach(() => {
+    setAnalyticsTransport(null);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
     setAnalyticsTransport(null);
   });
 
@@ -17,6 +23,7 @@ describe("analytics", () => {
   });
 
   it("does not throw even if transport fails", () => {
+    vi.stubEnv("PROD", true);
     setAnalyticsTransport(() => {
       throw new Error("failed");
     });
@@ -24,6 +31,15 @@ describe("analytics", () => {
     expect(() => {
       trackEvent(ANALYTICS_EVENT_NAMES.gameStart, { source: "test" });
     }).not.toThrow();
+  });
+
+  it("handles rejected asynchronous transports without an unhandled rejection", async () => {
+    vi.stubEnv("PROD", true);
+    const transport = vi.fn().mockRejectedValue(new Error("offline"));
+    setAnalyticsTransport(transport);
+    trackEvent(ANALYTICS_EVENT_NAMES.gameStart);
+    await Promise.resolve();
+    expect(transport).toHaveBeenCalledTimes(1);
   });
 
   it("debug logging path is safe in development", () => {

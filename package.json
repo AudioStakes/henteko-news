@@ -3,23 +3,31 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
   "scripts": {
+    "predev": "node scripts/prepare-runtime.mjs",
     "dev": "vite",
-    "build": "VITE_APP_VERSION=$npm_package_version tsc -b && vite build",
+    "prebuild": "node scripts/prepare-runtime.mjs",
+    "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:scripts": "node --test scripts/*.test.mjs",
     "lint": "biome check .",
     "format": "biome format --write .",
     "check": "biome check --write .",
     "typecheck": "tsc -b --noEmit",
     "check:words": "node scripts/check-words.mjs",
     "sort:words": "node scripts/sort-words.mjs",
-    "test:layout": "playwright test"
+    "test:layout": "playwright test tests/layout",
+    "test:e2e": "playwright test",
+    "setup:speech": "node scripts/download-speech-assets.mjs",
+    "check:speech-assets": "node scripts/download-speech-assets.mjs --check"
   },
   "dependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "fft.js": "^4.0.4",
     "onnxruntime-web": "^1.23.2"
   },
   "devDependencies": {

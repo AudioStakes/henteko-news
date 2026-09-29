@@ -1,26 +1,39 @@
-type TensorDType = "float32" | "int64";
-type Session = { run: (feeds: Record<string, unknown>) => Promise<Record<string, OrtTensor>> };
-type SessionOptions = Record<string, unknown>;
-type OrtTensor = { data: unknown; dims: number[] };
+import * as ort from "onnxruntime-web/wasm";
 
-type OrtNamespace = {
-  Tensor: new (dtype: TensorDType, data: Float32Array | BigInt64Array, dims: number[]) => OrtTensor;
-  InferenceSession: { create: (path: string, options?: SessionOptions) => Promise<Session> };
-};
+// Serve the runtime from the same origin. One thread also works without COOP/COEP headers.
+ort.env.wasm.wasmPaths = `${import.meta.env.BASE_URL}onnxruntime/`;
+ort.env.wasm.numThreads = 1;
 
 type Cfgs = {
   ae: { sample_rate: number; base_chunk_size: number };
   ttl: { chunk_compress_factor: number; latent_dim: number };
 };
 
-function getOrt(): OrtNamespace {
-  const ort = (window as unknown as { ort?: OrtNamespace }).ort;
-  if (!ort) throw new Error("onnxruntime-web is not loaded");
-  return ort;
+type VoiceStyle = {
+  style_ttl: { dims: number[]; data: number[][][] };
+  style_dp: { dims: number[]; data: number[][][] };
+};
+
+async function loadJson<T>(path: string): Promise<T> {
+  const controller = new AbortController();
+  const timeout = globalThis.setTimeout(() => controller.abort(), 60_000);
+  try {
+    const response = await fetch(path, { signal: controller.signal });
+    if (!response.ok) throw new Error(`Failed to load ${path}: HTTP ${response.status}`);
+    return await response.json();
+  } finally {
+    globalThis.clearTimeout(timeout);
+  }
+}
+
+export function preprocessSpeechText(text: string, lang: string) {
+  const normalized = text.normalize("NFKD").replace(/\s+/g, " ").trim();
+  const punctuated = /[.!?。！？]$/.test(normalized) ? normalized : `${normalized}.`;
+  return `<${lang}>${punctuated}</${lang}>`;
 }
 
 export type WavData = Float32Array | number[];
-export type Style = { ttl: OrtTensor; dp: OrtTensor };
+export type Style = { ttl: ort.Tensor; dp: ort.Tensor };
 
 export type TextToSpeech = {
   sampleRate: number;
@@ -62,8 +75,8 @@ export function writeWavFile(samples: WavData, sampleRate: number) {
 }
 
 export async function loadVoiceStyle(paths: string[]): Promise<Style> {
-  const ort = getOrt();
-  const styles = await Promise.all(paths.map((p) => fetch(p).then((r) => r.json())));
+  if (paths.length === 0) throw new Error("At least one voice style is required");
+  const styles = await Promise.all(paths.map((path) => loadJson<VoiceStyle>(path)));
   const ttlDims = styles[0].style_ttl.dims as number[];
   const dpDims = styles[0].style_dp.dims as number[];
   const ttl = new Float32Array(paths.length * ttlDims[1] * ttlDims[2]);
@@ -79,23 +92,32 @@ export async function loadVoiceStyle(paths: string[]): Promise<Style> {
 }
 
 export async function loadTextToSpeech(onnxDir: string) {
-  const ort = getOrt();
-  const cfgs = (await fetch(`${onnxDir}/tts.json`).then((r) => r.json())) as Cfgs;
-  const indexer = await fetch(`${onnxDir}/unicode_indexer.json`).then((r) => r.json());
-  const options: SessionOptions = { executionProviders: ["webgpu", "wasm"] };
-  const [dp, enc, vec, vocoder] = await Promise.all([
-    ort.InferenceSession.create(`${onnxDir}/duration_predictor.onnx`, options),
-    ort.InferenceSession.create(`${onnxDir}/text_encoder.onnx`, options),
-    ort.InferenceSession.create(`${onnxDir}/vector_estimator.onnx`, options),
-    ort.InferenceSession.create(`${onnxDir}/vocoder.onnx`, options),
+  const [cfgs, indexer] = await Promise.all([
+    loadJson<Cfgs>(`${onnxDir}/tts.json`),
+    loadJson<number[]>(`${onnxDir}/unicode_indexer.json`),
   ]);
+  const sessions: ort.InferenceSession[] = [];
+  try {
+    for (const name of ["duration_predictor", "text_encoder", "vector_estimator", "vocoder"]) {
+      sessions.push(
+        await ort.InferenceSession.create(`${onnxDir}/${name}.onnx`, {
+          executionProviders: ["wasm"],
+        }),
+      );
+    }
+  } catch (error) {
+    await Promise.allSettled(sessions.map((session) => session.release()));
+    throw error;
+  }
+  const [dp, enc, vec, vocoder] = sessions;
 
   const tts: TextToSpeech = {
     sampleRate: cfgs.ae.sample_rate,
     call: async (text, lang, style, totalStep, speed = 1) => {
-      const processed = `<${lang}>${text.normalize("NFKD")}`;
+      if (!Number.isFinite(speed) || speed <= 0) throw new Error("Invalid speech speed");
+      const processed = preprocessSpeechText(text, lang);
       const ids = Array.from(processed).map(
-        (c) => (indexer[String(c.codePointAt(0) ?? -1)] ?? -1) as number,
+        (c) => indexer[c.codePointAt(0) ?? -1] ?? -1,
       );
       const idTensor = new ort.Tensor("int64", new BigInt64Array(ids.map((v) => BigInt(v))), [
         1,
@@ -108,6 +130,9 @@ export async function loadTextToSpeech(onnxDir: string) {
       ]);
       const d = await dp.run({ text_ids: idTensor, style_dp: style.dp, text_mask: maskTensor });
       const duration = Array.from(d.duration.data as Float32Array).map((v) => v / speed);
+      if (!duration.length || duration.some((value) => !Number.isFinite(value) || value <= 0)) {
+        throw new Error("The speech model returned an invalid duration");
+      }
       const encOut = await enc.run({
         text_ids: idTensor,
         style_ttl: style.ttl,
@@ -122,8 +147,9 @@ export async function loadTextToSpeech(onnxDir: string) {
       );
       let xt: Float32Array = Float32Array.from(
         { length: cfgs.ttl.latent_dim * cfgs.ttl.chunk_compress_factor * latentLen },
-        () => Math.random() * 2 - 1,
-      ) as unknown as Float32Array;
+        // Supertonic expects Gaussian noise (Box-Muller), not a uniform distribution.
+        () => Math.sqrt(-2 * Math.log(Math.max(0.0001, Math.random()))) * Math.cos(2 * Math.PI * Math.random()),
+      );
       const latentMask = new ort.Tensor("float32", new Float32Array(latentLen).fill(1), [
         1,
         1,
@@ -143,7 +169,7 @@ export async function loadTextToSpeech(onnxDir: string) {
           current_step: new ort.Tensor("float32", new Float32Array([step]), [1]),
           total_step: new ort.Tensor("float32", new Float32Array([totalStep]), [1]),
         });
-        xt = out.denoised_latent.data as unknown as Float32Array;
+        xt = out.denoised_latent.data as Float32Array;
       }
       const wavOut = await vocoder.run({
         latent: new ort.Tensor("float32", xt, [

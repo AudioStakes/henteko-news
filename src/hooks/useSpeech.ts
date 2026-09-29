@@ -11,8 +11,8 @@ type SpeakOptions = {
   onError?: (reason: "timeout" | "error") => void;
 };
 
-const START_WATCHDOG_TIMEOUT_MS = 1500;
-const speechWarmupState = { warmed: false };
+export const SYNTHESIS_TIMEOUT_MS = 60_000;
+const PLAYBACK_START_TIMEOUT_MS = 10_000;
 
 function splitSpeechText(text: string) {
   return text
@@ -47,6 +47,7 @@ export function useSpeech() {
     if (activeAudioRef.current) {
       activeAudioRef.current.onended = null;
       activeAudioRef.current.onerror = null;
+      activeAudioRef.current.onplaying = null;
       activeAudioRef.current.pause();
       activeAudioRef.current = null;
     }
@@ -71,9 +72,10 @@ export function useSpeech() {
   }, [cleanupPlayback, isSupported, setSpeaking]);
 
   const warmup = useCallback(() => {
-    if (!isSupported || speechWarmupState.warmed) return;
-    speechWarmupState.warmed = true;
-    void preloadSupertonic();
+    if (!isSupported) return;
+    // A missing model or a failed download must not create an unhandled rejection.
+    // The client coalesces concurrent attempts and allows retry after failure.
+    void preloadSupertonic().catch(() => undefined);
   }, [isSupported]);
 
   const speak = useCallback(
@@ -86,10 +88,19 @@ export function useSpeech() {
       const requestId = requestIdRef.current;
       setSpeaking(true);
 
+      const fail = (reason: "timeout" | "error") => {
+        if (requestId !== requestIdRef.current) return;
+        requestIdRef.current += 1;
+        cleanupPlayback();
+        setSpeaking(false);
+        options.onError?.(reason);
+      };
+
       const playPart = async (index: number): Promise<void> => {
         if (requestId !== requestIdRef.current) return;
         if (index >= parts.length) {
           cleanupPlayback();
+          requestIdRef.current += 1;
           setSpeaking(false);
           options.onEnd?.();
           return;
@@ -97,13 +108,7 @@ export function useSpeech() {
 
         try {
           cleanupPlayback();
-          if (startWatchdogRef.current !== null) window.clearTimeout(startWatchdogRef.current);
-          startWatchdogRef.current = window.setTimeout(() => {
-            if (requestId !== requestIdRef.current) return;
-            cleanupPlayback();
-            setSpeaking(false);
-            options.onError?.("timeout");
-          }, START_WATCHDOG_TIMEOUT_MS);
+          startWatchdogRef.current = window.setTimeout(() => fail("timeout"), SYNTHESIS_TIMEOUT_MS);
 
           const result = await synthesizeSupertonicSpeech({
             text: parts[index],
@@ -122,24 +127,29 @@ export function useSpeech() {
           activeAudioRef.current = audio;
           activeRevokeRef.current = result.revoke;
 
+          startWatchdogRef.current = window.setTimeout(
+            () => fail("timeout"),
+            PLAYBACK_START_TIMEOUT_MS,
+          );
+          audio.onplaying = () => {
+            if (requestId !== requestIdRef.current) return;
+            if (startWatchdogRef.current !== null) window.clearTimeout(startWatchdogRef.current);
+            startWatchdogRef.current = window.setTimeout(
+              () => fail("timeout"),
+              Math.max(PLAYBACK_START_TIMEOUT_MS, result.durationSec * 1000 + 10_000),
+            );
+          };
+
           audio.onended = () => {
             if (requestId !== requestIdRef.current) return;
             cleanupPlayback();
             void playPart(index + 1);
           };
-          audio.onerror = () => {
-            if (requestId !== requestIdRef.current) return;
-            cleanupPlayback();
-            setSpeaking(false);
-            options.onError?.("error");
-          };
+          audio.onerror = () => fail("error");
 
           await audio.play();
         } catch {
-          if (requestId !== requestIdRef.current) return;
-          cleanupPlayback();
-          setSpeaking(false);
-          options.onError?.("error");
+          fail("error");
         }
       };
 

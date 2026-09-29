@@ -16,7 +16,7 @@
 
 ## npm依存関係
 
-React / React DOM、ONNX Runtime Webなど、使用するパッケージのバージョンは `package-lock.json` を参照してください。それぞれの配布物に含まれるLICENSEを保持します。Viteなどの開発用依存関係も別個の利用条件を持ちます。
+React / React DOM、ONNX Runtime Webなど、使用するパッケージのバージョンは `package-lock.json` を参照してください。それぞれの配布物に含まれるLICENSEを保持します。配布するONNX RuntimeのMIT許諾文は [LICENSES/ONNX-Runtime-MIT.txt](../LICENSES/ONNX-Runtime-MIT.txt) に保存し、ビルド時にランタイムと一緒にコピーします。Viteなどの開発用依存関係も別個の利用条件を持ちます。
 
 ## 画像素材（確認待ち）
 

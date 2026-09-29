@@ -78,10 +78,10 @@ mainの履歴のテキストblobと各ブランチ先頭を対象に、秘密鍵
 | TypeScript / TSXの構文 | 62ファイルを解析し、構文エラーなし |
 | JSON・差分 | package / lock / tsconfig / manifestのJSONを確認。`git diff --check` 成功 |
 | npm ci / 型チェック / Vitest / ビルド / E2E | ローカル環境からnpmへ接続できないため、GitHub Actionsで検証中。最終結果はPRのChecksと説明に記載 |
-| 実モデル取得 | GitHub Actionsで固定リビジョンのモデル取得とファイル存在確認が成功 |
+| 実モデル取得・音声生成 | GitHub Actionsで固定リビジョンのモデル取得、本番ビルド、ブラウザで非無音の44.1kHz PCM WAV生成が成功 |
 | 実音声品質・iPhone Safari | 未確認。WAV生成の自動テストと実機で聞く確認は異なる |
 | 依存関係audit | 更新後、CIの `npm audit --json` で0件。確定したlockによる再検証はPRのChecksを参照 |
-| Git履歴の秘密情報検査 | Gitleaksによる全取得履歴の検証中。最終結果はPRのChecksと説明に記載 |
+| Git履歴の秘密情報検査 | Gitleaks 8.30.1による全取得refの履歴検査が成功。検出0件（秘密情報が存在しない保証ではない） |
 
 ## 根拠となる上流資料
 

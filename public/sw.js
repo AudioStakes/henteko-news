@@ -1,21 +1,23 @@
-const SERVICE_WORKER_URL = new URL(self.location.href);
-const VERSION =
-  SERVICE_WORKER_URL.searchParams.get("v") ||
-  SERVICE_WORKER_URL.searchParams.get("version") ||
-  SERVICE_WORKER_URL.href;
+// Replaced by the Vite build plugin. Do not edit generated dist/sw.js.
+const VERSION = "__BUILD_ID__";
+const PRECACHE_ASSETS = [];
 const STATIC_CACHE = `henteko-static-${VERSION}`;
 const HTML_CACHE = `henteko-html-${VERSION}`;
 const STATIC_ASSETS = [
-  "/",
-  "/index.html",
-  "/manifest.webmanifest",
-  "/assets/bg-studio.webp",
-  "/assets/header-logo.webp",
-  "/icons/icon-192.png",
-  "/icons/icon-512.png",
-  "/icons/icon-512-maskable.png",
-  "/robots.txt",
-  "/sitemap.xml",
+  ...new Set([
+    "/",
+    "/index.html",
+    "/manifest.webmanifest",
+    "/assets/bg-studio.webp",
+    "/assets/header-logo.webp",
+    "/icons/icon-192.png",
+    "/icons/icon-192.svg",
+    "/icons/icon-512.png",
+    "/icons/icon-512-maskable.png",
+    "/robots.txt",
+    "/sitemap.xml",
+    ...PRECACHE_ASSETS,
+  ]),
 ];
 
 self.addEventListener("install", (event) => {
@@ -25,7 +27,6 @@ self.addEventListener("install", (event) => {
       caches.open(HTML_CACHE).then((cache) => cache.add("/index.html")),
     ]),
   );
-  self.skipWaiting();
 });
 self.addEventListener("activate", (event) => {
   event.waitUntil(
@@ -33,11 +34,17 @@ self.addEventListener("activate", (event) => {
       .keys()
       .then((keys) =>
         Promise.all(
-          keys.filter((k) => ![STATIC_CACHE, HTML_CACHE].includes(k)).map((k) => caches.delete(k)),
+          keys
+            .filter(
+              (key) =>
+                /^(henteko-static-|henteko-html-)/.test(key) &&
+                ![STATIC_CACHE, HTML_CACHE].includes(key),
+            )
+            .map((key) => caches.delete(key)),
         ),
-      ),
+      )
+      .then(() => self.clients.claim()),
   );
-  self.clients.claim();
 });
 self.addEventListener("fetch", (event) => {
   const { request } = event;
@@ -56,9 +63,7 @@ self.addEventListener("fetch", (event) => {
           return res;
         })
         .catch(async () => {
-          return (
-            (await caches.match("/index.html")) || (await caches.match("/")) || Response.error()
-          );
+          return (await (await caches.open(HTML_CACHE)).match("/index.html")) || Response.error();
         }),
     );
     return;

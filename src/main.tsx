@@ -6,8 +6,7 @@ import { ANALYTICS_EVENT_NAMES, trackError } from "./utils/analytics";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
-    const version = import.meta.env.VITE_APP_VERSION || "dev";
-    navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(version)}`).catch((error) => {
+    navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch((error) => {
       trackError(ANALYTICS_EVENT_NAMES.serviceWorkerError, {
         reason: error instanceof Error ? error.message : "register_failed",
       });

@@ -1,11 +1,13 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
+import { pwaBuildPlugin } from "./scripts/pwa-build.mjs";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), pwaBuildPlugin()],
+  optimizeDeps: { exclude: ["onnxruntime-web"] },
   test: {
     environment: "jsdom",
     setupFiles: "./src/test/setup.ts",
-    exclude: ["tests/layout/**", "node_modules/**"],
+    include: ["src/**/*.test.{ts,tsx}"],
   },
 });

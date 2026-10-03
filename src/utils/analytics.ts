@@ -21,8 +21,6 @@ type AnalyticsEntry = {
 
 type AnalyticsTransport = (entry: AnalyticsEntry) => void | Promise<void>;
 
-const isProd = import.meta.env.PROD;
-
 let transport: AnalyticsTransport | null = null;
 
 function sanitizePayload(payload?: AnalyticsPayload): AnalyticsPayload | undefined {
@@ -53,14 +51,14 @@ function createEntry(
 
 function emit(entry: AnalyticsEntry) {
   try {
-    if (!isProd) {
+    if (!import.meta.env.PROD) {
       if (import.meta.env.DEV) {
         console.debug("[analytics]", entry);
       }
       return;
     }
 
-    void transport?.(entry);
+    void Promise.resolve(transport?.(entry)).catch(() => undefined);
   } catch {
     // analytics errors must never affect UX
   }

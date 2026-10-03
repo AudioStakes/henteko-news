@@ -1,10 +1,4 @@
-import {
-  loadTextToSpeech,
-  loadVoiceStyle,
-  type Style,
-  type TextToSpeech,
-  writeWavFile,
-} from "./helper";
+import type { Style, TextToSpeech } from "./helper";
 
 type SupertonicInput = {
   text: string;
@@ -32,7 +26,13 @@ const styleCache = new Map<string, Promise<Style>>();
 
 async function getTts() {
   if (!ttsPromise) {
-    ttsPromise = loadTextToSpeech(ONNX_DIR).then((loaded) => loaded.textToSpeech);
+    ttsPromise = import("./helper")
+      .then(({ loadTextToSpeech }) => loadTextToSpeech(ONNX_DIR))
+      .then((loaded) => loaded.textToSpeech)
+      .catch((error) => {
+        ttsPromise = null;
+        throw error;
+      });
   }
   return ttsPromise;
 }
@@ -40,16 +40,24 @@ async function getTts() {
 function getStyle(path: string) {
   const cached = styleCache.get(path);
   if (cached) return cached;
-  const next = loadVoiceStyle([path]);
+  const next = import("./helper")
+    .then(({ loadVoiceStyle }) => loadVoiceStyle([path]))
+    .catch((error) => {
+      styleCache.delete(path);
+      throw error;
+    });
   styleCache.set(path, next);
   return next;
 }
 
 export async function preloadSupertonic() {
   if (!preloadPromise) {
-    preloadPromise = Promise.all([getTts(), getStyle(DEFAULT_VOICE_STYLE_PATH)]).then(
-      () => undefined,
-    );
+    preloadPromise = Promise.all([getTts(), getStyle(DEFAULT_VOICE_STYLE_PATH)])
+      .then(() => undefined)
+      .catch((error) => {
+        preloadPromise = null;
+        throw error;
+      });
   }
   return preloadPromise;
 }
@@ -62,8 +70,11 @@ export async function synthesizeSupertonicSpeech({
   speed = DEFAULT_SPEED,
 }: SupertonicInput): Promise<SynthesisResult> {
   if (!text.trim()) throw new Error("text is empty");
-  const tts = await getTts();
-  const style = await getStyle(voiceStylePath);
+  const [tts, style, { writeWavFile }] = await Promise.all([
+    getTts(),
+    getStyle(voiceStylePath),
+    import("./helper"),
+  ]);
   const result = await tts.call(text, lang, style, totalStep, speed);
   const durationSec = result.duration[0] ?? 0;
   const sampleCount = Math.max(1, Math.floor(tts.sampleRate * durationSec));

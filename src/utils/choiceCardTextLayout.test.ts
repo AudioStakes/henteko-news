@@ -58,29 +58,26 @@ describe("calculateChoiceCardTextLayout", () => {
         ...cardText,
       })),
     ),
-  )("$name", ({
-    gridWidth,
-    availableTextWidth,
-    text,
-    expectedCharacterCount,
-    expectedFontSizes,
-  }) => {
-    const layout = calculateChoiceCardTextLayout({
-      gridWidth,
-      text,
-      minFontSize: 18,
-      maxFontSize: 38,
-      glyphWidthRatio: 1,
-    });
+  )(
+    "$name",
+    ({ gridWidth, availableTextWidth, text, expectedCharacterCount, expectedFontSizes }) => {
+      const layout = calculateChoiceCardTextLayout({
+        gridWidth,
+        text,
+        minFontSize: 18,
+        maxFontSize: 38,
+        glyphWidthRatio: 1,
+      });
 
-    const expectedFontSize = expectedFontSizes[gridWidth as keyof typeof expectedFontSizes];
+      const expectedFontSize = expectedFontSizes[gridWidth as keyof typeof expectedFontSizes];
 
-    expect(layout.characterCount).toBe(expectedCharacterCount);
-    expect(layout.availableTextWidth).toBe(availableTextWidth);
-    expect(layout.fontSize).toBe(expectedFontSize);
-    expect(layout.measuredWidth).toBeLessThanOrEqual(availableTextWidth);
-    expect(layout.widthRule).toEqual(getChoiceCardWidthRule(gridWidth));
-  });
+      expect(layout.characterCount).toBe(expectedCharacterCount);
+      expect(layout.availableTextWidth).toBe(availableTextWidth);
+      expect(layout.fontSize).toBe(expectedFontSize);
+      expect(layout.measuredWidth).toBeLessThanOrEqual(availableTextWidth);
+      expect(layout.widthRule).toEqual(getChoiceCardWidthRule(gridWidth));
+    },
+  );
 
   test.each(GRID_WIDTHS)("caps short text font size on $label", ({ gridWidth, maxFontSize }) => {
     const layout = calculateChoiceCardTextLayout({

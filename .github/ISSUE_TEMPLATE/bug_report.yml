@@ -1,0 +1,23 @@
+name: 不具合の報告
+description: 再現手順と動作環境を教えてください。
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: 再現手順
+      description: 個人情報や認証情報は含めないでください。
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: 期待する動作と実際の動作
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: OS・ブラウザ・利用したコミット
+      placeholder: iOS / Safari / コミットSHAなど
+    validations:
+      required: true

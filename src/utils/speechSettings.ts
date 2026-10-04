@@ -15,13 +15,15 @@ export const DEFAULT_SPEECH_SETTINGS: SpeechSettings = {
 };
 
 export function isSpeechAssetPath(value: string, directory = false) {
-  if (!value.trim() || value.includes("#") || (directory && value.includes("?"))) return false;
+  if (value.trim().length === 0 || value.includes("#") || (directory && value.includes("?"))) {
+    return false;
+  }
   try {
     const url = new URL(value, "https://henteko-news.invalid");
     return (
       (url.protocol === "https:" || url.protocol === "http:") &&
-      !url.hash &&
-      (!directory || !url.search)
+      url.hash.length === 0 &&
+      (!directory || url.search.length === 0)
     );
   } catch {
     return false;
@@ -29,14 +31,17 @@ export function isSpeechAssetPath(value: string, directory = false) {
 }
 
 export function parseSpeechSettings(value: unknown): SpeechSettings {
-  if (!value || typeof value !== "object") return { ...DEFAULT_SPEECH_SETTINGS };
-  const candidate = value as Record<string, unknown>;
+  if (value === null || typeof value !== "object") {
+    return { ...DEFAULT_SPEECH_SETTINGS };
+  }
+  const candidateModelBasePath = "modelBasePath" in value ? value.modelBasePath : undefined;
+  const candidateVoiceStylePath = "voiceStylePath" in value ? value.voiceStylePath : undefined;
   const modelBasePath =
-    typeof candidate.modelBasePath === "string" ? candidate.modelBasePath.trim() : "";
+    typeof candidateModelBasePath === "string" ? candidateModelBasePath.trim() : "";
   const voiceStylePath =
-    typeof candidate.voiceStylePath === "string" ? candidate.voiceStylePath.trim() : "";
+    typeof candidateVoiceStylePath === "string" ? candidateVoiceStylePath.trim() : "";
   return {
-    provider: candidate.provider === "supertonic" ? "supertonic" : "web-speech",
+    provider: "provider" in value && value.provider === "supertonic" ? "supertonic" : "web-speech",
     modelBasePath: isSpeechAssetPath(modelBasePath, true)
       ? modelBasePath
       : DEFAULT_SPEECH_SETTINGS.modelBasePath,

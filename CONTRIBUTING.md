@@ -7,17 +7,12 @@
 [READMEの導入手順](README.md#ローカルで動かす)に従って `npm ci` で依存関係を揃えます。通常の単体テストに音声モデルは不要です。
 
 ```sh
-npm run lint
-npm run typecheck
-npm test
-npm run test:scripts
-npm run check:words
-npm run build
+npm run validate
 npx playwright install chromium
 npm run test:e2e
 ```
 
-変更に関係する確認を行い、PRに実行コマンドと結果を書いてください。実モデルに触る変更では `setup:speech` と実音声テストも実行します。CIの音声ジョブは外部モデル配布元への接続を必要とします。
+変更に関係する確認を行い、PRに実行コマンドと結果を書いてください。[品質基準](docs/agents/quality.md) に従い、警告も解消します。実モデルに触る変更では `setup:speech` と実音声テストも実行します。GitHub Actionsの自動実行は停止しています。
 
 ## 語彙の追加
 

@@ -26,7 +26,9 @@ export function SpeechSettingsProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       settings,
-      updateSettings: (next: SpeechSettings) => setSettings(parseSpeechSettings(next)),
+      updateSettings: (next: SpeechSettings) => {
+        setSettings(parseSpeechSettings(next));
+      },
     }),
     [settings, setSettings],
   );

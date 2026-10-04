@@ -14,7 +14,7 @@ const category: Category = {
 
 describe("wordSelectScreenHelpers", () => {
   test("buildShuffledChoices deterministically shuffles and caps choices", () => {
-    expect(buildShuffledChoices(category, 2, () => 0)).toEqual([
+    expect(buildShuffledChoices(category, 2, () => 0)).toStrictEqual([
       { id: "who-1-いぬ", option: { display: "いぬ", speech: "いぬ" } },
       { id: "who-2-とり", option: { display: "とり", speech: "とり" } },
     ]);

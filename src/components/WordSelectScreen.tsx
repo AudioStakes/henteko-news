@@ -47,7 +47,9 @@ export function WordSelectScreen({
   const selectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useLayoutEffect(() => {
-    if (!gridElement) return;
+    if (!gridElement) {
+      return;
+    }
 
     const updateGridWidth = () => {
       setChoiceGridWidth(Math.max(0, Math.floor(gridElement.clientWidth)));
@@ -57,13 +59,17 @@ export function WordSelectScreen({
 
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateGridWidth);
-      return () => window.removeEventListener("resize", updateGridWidth);
+      return () => {
+        window.removeEventListener("resize", updateGridWidth);
+      };
     }
 
     const observer = new ResizeObserver(updateGridWidth);
     observer.observe(gridElement);
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [gridElement]);
 
   useEffect(
@@ -102,7 +108,9 @@ export function WordSelectScreen({
     option: WordOption,
   ) => {
     const nextPickedId = computePickState(pickedIdRef.current, id);
-    if (nextPickedId === pickedIdRef.current) return;
+    if (nextPickedId === pickedIdRef.current) {
+      return;
+    }
 
     pickedIdRef.current = nextPickedId;
     event.currentTarget.blur();
@@ -114,7 +122,7 @@ export function WordSelectScreen({
       },
       option,
       260,
-      window.setTimeout,
+      (callback, delayMs) => window.setTimeout(callback, delayMs),
     );
   };
 
@@ -133,7 +141,11 @@ export function WordSelectScreen({
             data-testid="choice-card"
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
             disabled={Boolean(pickedId)}
-            onClick={withClickSound((event) => handlePick(event, choice.id, choice.option))}
+            onClick={(event) => {
+              withClickSound((clickEvent) => {
+                handlePick(clickEvent, choice.id, choice.option);
+              })(event);
+            }}
             onPointerDown={playOnPressStart}
             style={{
               ["--choice-card-font-size" as string]: `${choice.fontSize}px`,

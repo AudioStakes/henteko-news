@@ -96,7 +96,9 @@ describe("speech settings dialog", () => {
     expect(screen.getByLabelText("audio check choice").textContent).toBe(
       screen.getByLabelText("game choice").textContent,
     );
-    expect(JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null")).toEqual({
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual({
       provider: "supertonic",
       modelBasePath: "https://models.example.com/onnx",
       voiceStylePath: "voices/F1.json",

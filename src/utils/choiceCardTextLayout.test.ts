@@ -69,13 +69,13 @@ describe("calculateChoiceCardTextLayout", () => {
         glyphWidthRatio: 1,
       });
 
-      const expectedFontSize = expectedFontSizes[gridWidth as keyof typeof expectedFontSizes];
+      const expectedFontSize = expectedFontSizes[gridWidth];
 
       expect(layout.characterCount).toBe(expectedCharacterCount);
       expect(layout.availableTextWidth).toBe(availableTextWidth);
       expect(layout.fontSize).toBe(expectedFontSize);
       expect(layout.measuredWidth).toBeLessThanOrEqual(availableTextWidth);
-      expect(layout.widthRule).toEqual(getChoiceCardWidthRule(gridWidth));
+      expect(layout.widthRule).toStrictEqual(getChoiceCardWidthRule(gridWidth));
     },
   );
 
@@ -100,7 +100,9 @@ describe("calculateChoiceCardTextLayout", () => {
       glyphWidthRatio: 1,
     });
 
-    expect(layout.widthRule).toEqual(CHOICE_CARD_WIDTH_RULES[CHOICE_CARD_WIDTH_RULES.length - 1]);
+    expect(layout.widthRule).toStrictEqual(
+      CHOICE_CARD_WIDTH_RULES[CHOICE_CARD_WIDTH_RULES.length - 1],
+    );
     expect(layout.measuredWidth).toBeLessThanOrEqual(layout.availableTextWidth);
   });
 });

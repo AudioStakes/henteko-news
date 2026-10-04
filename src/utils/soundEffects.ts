@@ -8,7 +8,8 @@ function warnInDevelopment(message: string, error?: unknown) {
     return;
   }
 
-  if (error) {
+  const hasError = Boolean(error);
+  if (hasError) {
     console.warn(message, error);
     return;
   }
@@ -22,10 +23,9 @@ function getAudioContext(): AudioContext | null {
   }
 
   const AudioContextClass =
-    window.AudioContext ||
-    (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    typeof window.AudioContext === "function" ? window.AudioContext : window.webkitAudioContext;
 
-  if (!AudioContextClass) {
+  if (AudioContextClass === undefined) {
     return null;
   }
 
@@ -54,7 +54,7 @@ export function playChoiceSoundFromUserGesture(): void {
     // iOS/WebKit can require playback to start inside the original user activation,
     // so we resume and schedule the sound synchronously from the gesture handler.
     if (context.state === "suspended") {
-      void context.resume().catch((error) => {
+      void context.resume().catch((error: unknown) => {
         warnInDevelopment("Failed to resume AudioContext for button sound.", error);
       });
     }

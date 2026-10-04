@@ -30,15 +30,19 @@ const styleCache = new Map<string, Promise<Style>>();
 
 function trimModelCache() {
   for (const [path, entry] of modelCache) {
-    if (modelCache.size <= MAX_CACHED_MODELS) break;
+    if (modelCache.size <= MAX_CACHED_MODELS) {
+      break;
+    }
     // A pending or in-flight synthesis still owns these sessions.
-    if (!entry.loaded || entry.users > 0) continue;
+    if (!entry.loaded || entry.users > 0) {
+      continue;
+    }
     modelCache.delete(path);
     void entry.promise.then((tts) => tts.dispose()).catch(() => undefined);
   }
 }
 
-async function withModel<T>(modelBasePath: string, use: (tts: TextToSpeech) => Promise<T>) {
+async function withModel<T>(modelBasePath: string, run: (tts: TextToSpeech) => Promise<T>) {
   const path = modelBasePath.replace(/\/+$/, "");
   let entry = modelCache.get(path);
   if (!entry) {
@@ -49,8 +53,10 @@ async function withModel<T>(modelBasePath: string, use: (tts: TextToSpeech) => P
           next.loaded = true;
           return loaded.textToSpeech;
         })
-        .catch((error) => {
-          if (modelCache.get(path) === next) modelCache.delete(path);
+        .catch((error: unknown) => {
+          if (modelCache.get(path) === next) {
+            modelCache.delete(path);
+          }
           throw error;
         }),
       users: 0,
@@ -63,7 +69,7 @@ async function withModel<T>(modelBasePath: string, use: (tts: TextToSpeech) => P
   modelCache.set(path, entry);
   entry.users += 1;
   try {
-    return await use(await entry.promise);
+    return await run(await entry.promise);
   } finally {
     entry.users -= 1;
     trimModelCache();
@@ -79,21 +85,25 @@ function getStyle(path: string) {
   }
   const next = import("./helper")
     .then(({ loadVoiceStyle }) => loadVoiceStyle([path]))
-    .catch((error) => {
-      if (styleCache.get(path) === next) styleCache.delete(path);
+    .catch((error: unknown) => {
+      if (styleCache.get(path) === next) {
+        styleCache.delete(path);
+      }
       throw error;
     });
   styleCache.set(path, next);
   if (styleCache.size > MAX_CACHED_STYLES) {
     const oldestPath = styleCache.keys().next().value;
-    if (oldestPath) styleCache.delete(oldestPath);
+    if (oldestPath !== undefined && oldestPath !== "") {
+      styleCache.delete(oldestPath);
+    }
   }
   return next;
 }
 
 export async function preloadSupertonic(settings: ModelSettings = DEFAULT_SPEECH_SETTINGS) {
   await Promise.all([
-    withModel(settings.modelBasePath, async () => undefined),
+    withModel(settings.modelBasePath, () => Promise.resolve(undefined)),
     getStyle(settings.voiceStylePath),
   ]);
 }
@@ -106,7 +116,9 @@ export async function synthesizeSupertonicSpeech({
   totalStep = 8,
   speed = 1,
 }: SupertonicInput): Promise<SynthesisResult> {
-  if (!text.trim()) throw new Error("text is empty");
+  if (text.trim() === "") {
+    throw new Error("text is empty");
+  }
   return withModel(modelBasePath, async (tts) => {
     const [style, { writeWavFile }] = await Promise.all([
       getStyle(voiceStylePath),
@@ -122,7 +134,9 @@ export async function synthesizeSupertonicSpeech({
     return {
       url,
       durationSec,
-      revoke: () => URL.revokeObjectURL(url),
+      revoke: () => {
+        URL.revokeObjectURL(url);
+      },
     };
   });
 }

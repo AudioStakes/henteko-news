@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
+import { getVisibleBounds } from "../helpers";
 
 type Viewport = {
   name: string;
@@ -17,21 +18,24 @@ const VIEWPORTS: Viewport[] = [
 const TOLERANCE_PX = 2;
 
 async function expectInViewport(locator: Locator, viewport: Viewport, label: string) {
-  const box = await locator.boundingBox();
-  expect(box, `${viewport.name}: ${label} should have a visible bounding box`).not.toBeNull();
-  if (!box) return;
+  const box = await getVisibleBounds(
+    locator,
+    `${viewport.name}: ${label} should have a visible bounding box`,
+  );
 
   expect(box.width, `${viewport.name}: ${label} width should be > 0`).toBeGreaterThan(0);
   expect(box.height, `${viewport.name}: ${label} height should be > 0`).toBeGreaterThan(0);
-  expect(box.x, `${viewport.name}: ${label} left edge should be in viewport`).toBeGreaterThanOrEqual(
-    -TOLERANCE_PX,
-  );
+  expect(
+    box.x,
+    `${viewport.name}: ${label} left edge should be in viewport`,
+  ).toBeGreaterThanOrEqual(-TOLERANCE_PX);
   expect(box.y, `${viewport.name}: ${label} top edge should be in viewport`).toBeGreaterThanOrEqual(
     -TOLERANCE_PX,
   );
-  expect(box.x + box.width, `${viewport.name}: ${label} right edge should be in viewport`).toBeLessThanOrEqual(
-    viewport.width + TOLERANCE_PX,
-  );
+  expect(
+    box.x + box.width,
+    `${viewport.name}: ${label} right edge should be in viewport`,
+  ).toBeLessThanOrEqual(viewport.width + TOLERANCE_PX);
   expect(
     box.y + box.height,
     `${viewport.name}: ${label} bottom edge should be in viewport`,
@@ -44,12 +48,14 @@ async function expectInsideParent(
   viewport: Viewport,
   label: string,
 ) {
-  const childBox = await child.boundingBox();
-  const parentBox = await parent.boundingBox();
-
-  expect(childBox, `${viewport.name}: ${label} child box should exist`).not.toBeNull();
-  expect(parentBox, `${viewport.name}: ${label} parent box should exist`).not.toBeNull();
-  if (!childBox || !parentBox) return;
+  const childBox = await getVisibleBounds(
+    child,
+    `${viewport.name}: ${label} child box should exist`,
+  );
+  const parentBox = await getVisibleBounds(
+    parent,
+    `${viewport.name}: ${label} parent box should exist`,
+  );
 
   expect(childBox.x, `${viewport.name}: ${label} left edge inside parent`).toBeGreaterThanOrEqual(
     parentBox.x - TOLERANCE_PX,
@@ -57,9 +63,10 @@ async function expectInsideParent(
   expect(childBox.y, `${viewport.name}: ${label} top edge inside parent`).toBeGreaterThanOrEqual(
     parentBox.y - TOLERANCE_PX,
   );
-  expect(childBox.x + childBox.width, `${viewport.name}: ${label} right edge inside parent`).toBeLessThanOrEqual(
-    parentBox.x + parentBox.width + TOLERANCE_PX,
-  );
+  expect(
+    childBox.x + childBox.width,
+    `${viewport.name}: ${label} right edge inside parent`,
+  ).toBeLessThanOrEqual(parentBox.x + parentBox.width + TOLERANCE_PX);
   expect(
     childBox.y + childBox.height,
     `${viewport.name}: ${label} bottom edge inside parent`,
@@ -81,12 +88,14 @@ async function expectNoVerticalOverflow(page: Page, viewport: Viewport) {
     overflow.documentScrollHeight,
     `${viewport.name}: document.documentElement scrollHeight overflows viewport`,
   ).toBeLessThanOrEqual(overflow.innerHeight + TOLERANCE_PX);
-  expect(overflow.bodyScrollHeight, `${viewport.name}: body scrollHeight overflows viewport`).toBeLessThanOrEqual(
-    overflow.innerHeight + TOLERANCE_PX,
-  );
-  expect(overflow.rootScrollHeight, `${viewport.name}: #root scrollHeight overflows viewport`).toBeLessThanOrEqual(
-    overflow.innerHeight + TOLERANCE_PX,
-  );
+  expect(
+    overflow.bodyScrollHeight,
+    `${viewport.name}: body scrollHeight overflows viewport`,
+  ).toBeLessThanOrEqual(overflow.innerHeight + TOLERANCE_PX);
+  expect(
+    overflow.rootScrollHeight,
+    `${viewport.name}: #root scrollHeight overflows viewport`,
+  ).toBeLessThanOrEqual(overflow.innerHeight + TOLERANCE_PX);
 }
 
 test.describe("select screen layout", () => {
@@ -129,23 +138,25 @@ test.describe("select screen layout", () => {
         await expectInsideParent(choice, appMain, viewport, `${label} inside .app-shell__main`);
         await expectInsideParent(choice, appShell, viewport, `${label} inside .app-shell`);
 
-        const choiceBox = await choice.boundingBox();
-        expect(choiceBox, `${viewport.name}: ${label} should have box`).not.toBeNull();
-        if (!choiceBox) continue;
-        expect(choiceBox.height, `${viewport.name}: ${label} height should be practical`).toBeGreaterThanOrEqual(32);
-      }
-
-      const lastChoiceBox = await choiceCards.nth(4).boundingBox();
-      const footerBox = await footer.boundingBox();
-
-      expect(lastChoiceBox, `${viewport.name}: last choice should have box`).not.toBeNull();
-      expect(footerBox, `${viewport.name}: footer should have box`).not.toBeNull();
-      if (lastChoiceBox && footerBox) {
+        const choiceBox = await getVisibleBounds(
+          choice,
+          `${viewport.name}: ${label} should have box`,
+        );
         expect(
-          lastChoiceBox.y + lastChoiceBox.height,
-          `${viewport.name}: last choice should not overlap or pass footer top`,
-        ).toBeLessThanOrEqual(footerBox.y + TOLERANCE_PX);
+          choiceBox.height,
+          `${viewport.name}: ${label} height should be practical`,
+        ).toBeGreaterThanOrEqual(32);
       }
+
+      const lastChoiceBox = await getVisibleBounds(
+        choiceCards.nth(4),
+        `${viewport.name}: last choice should have box`,
+      );
+      const footerBox = await getVisibleBounds(footer, `${viewport.name}: footer should have box`);
+      expect(
+        lastChoiceBox.y + lastChoiceBox.height,
+        `${viewport.name}: last choice should not overlap or pass footer top`,
+      ).toBeLessThanOrEqual(footerBox.y + TOLERANCE_PX);
     });
   }
 });

@@ -16,9 +16,17 @@ type ResultScreenProps = {
   imageUrl: string;
   onReplayVoice: () => void;
   replayDisabled?: boolean;
-  replayDisabledReason?: string;
+  replayDisabledReason?: string | undefined;
   onRestartGame: () => void;
 };
+type ResultLayoutMetrics = {
+  frameWidth: number;
+  resultScreenHeight: number;
+  footerHeight: number;
+  rowGap: number;
+  bubblePaddingBlock: number;
+};
+
 const MAX_FONT_SIZE = 64;
 const RESULT_GLYPH_WIDTH_RATIO = 1;
 const RESULT_LINE_GAP_RATIO = 0.24;
@@ -36,7 +44,9 @@ const RESULT_BUBBLE_CHROME_HEIGHT = 8;
 
 function getResultBubbleMaxHeight(frameWidth: number) {
   for (const rule of RESULT_BUBBLE_HEIGHT_BY_WIDTH) {
-    if (frameWidth <= rule.maxFrameWidth) return rule.maxBubbleHeight;
+    if (frameWidth <= rule.maxFrameWidth) {
+      return rule.maxBubbleHeight;
+    }
   }
 
   return RESULT_BUBBLE_MAX_HEIGHT_FALLBACK;
@@ -71,6 +81,32 @@ function buildMascotLayout(
   });
 }
 
+function measureBubble(
+  element: HTMLElement | null,
+): Pick<ResultLayoutMetrics, "frameWidth" | "bubblePaddingBlock"> {
+  if (element === null) {
+    return { frameWidth: 0, bubblePaddingBlock: 0 };
+  }
+  const styles = window.getComputedStyle(element);
+  return {
+    frameWidth: Math.max(
+      0,
+      Math.floor(
+        element.clientWidth -
+          (Number.parseFloat(styles.paddingLeft) + Number.parseFloat(styles.paddingRight)),
+      ),
+    ),
+    bubblePaddingBlock: Math.max(
+      0,
+      Math.round(
+        Number.parseFloat(styles.paddingTop) +
+          Number.parseFloat(styles.paddingBottom) +
+          RESULT_BUBBLE_CHROME_HEIGHT,
+      ),
+    ),
+  };
+}
+
 export function ResultScreen({
   lines,
   speechError,
@@ -85,7 +121,7 @@ export function ResultScreen({
   const [resultScreenElement, setResultScreenElement] = useState<HTMLElement | null>(null);
   const [bubbleElement, setBubbleElement] = useState<HTMLElement | null>(null);
   const [footerElement, setFooterElement] = useState<HTMLElement | null>(null);
-  const [layoutMetrics, setLayoutMetrics] = useState({
+  const [layoutMetrics, setLayoutMetrics] = useState<ResultLayoutMetrics>({
     frameWidth: 0,
     resultScreenHeight: 0,
     footerHeight: 0,
@@ -94,31 +130,12 @@ export function ResultScreen({
   });
 
   useLayoutEffect(() => {
-    if (!resultScreenElement && !bubbleElement && !footerElement) return;
+    if (resultScreenElement === null && bubbleElement === null && footerElement === null) {
+      return;
+    }
 
     const updateLayoutMetrics = () => {
-      const bubbleStyles = bubbleElement ? window.getComputedStyle(bubbleElement) : null;
-      const frameWidth =
-        bubbleElement && bubbleStyles
-          ? Math.max(
-              0,
-              Math.floor(
-                bubbleElement.clientWidth -
-                  (Number.parseFloat(bubbleStyles.paddingLeft) +
-                    Number.parseFloat(bubbleStyles.paddingRight)),
-              ),
-            )
-          : 0;
-      const bubblePaddingBlock = bubbleStyles
-        ? Math.max(
-            0,
-            Math.round(
-              Number.parseFloat(bubbleStyles.paddingTop) +
-                Number.parseFloat(bubbleStyles.paddingBottom) +
-                RESULT_BUBBLE_CHROME_HEIGHT,
-            ),
-          )
-        : 0;
+      const { frameWidth, bubblePaddingBlock } = measureBubble(bubbleElement);
       const screenStyles = resultScreenElement
         ? window.getComputedStyle(resultScreenElement)
         : null;
@@ -145,18 +162,31 @@ export function ResultScreen({
 
     if (typeof ResizeObserver === "undefined") {
       window.addEventListener("resize", updateLayoutMetrics);
-      return () => window.removeEventListener("resize", updateLayoutMetrics);
+      return () => {
+        window.removeEventListener("resize", updateLayoutMetrics);
+      };
     }
 
     const observer = new ResizeObserver(updateLayoutMetrics);
-    if (resultScreenElement) observer.observe(resultScreenElement);
-    if (bubbleElement) observer.observe(bubbleElement);
-    if (footerElement) observer.observe(footerElement);
+    if (resultScreenElement) {
+      observer.observe(resultScreenElement);
+    }
+    if (bubbleElement) {
+      observer.observe(bubbleElement);
+    }
+    if (footerElement) {
+      observer.observe(footerElement);
+    }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, [bubbleElement, footerElement, resultScreenElement]);
 
-  const effectiveFrameWidth = layoutMetrics.frameWidth || RESULT_DEFAULT_FRAME_WIDTH;
+  const effectiveFrameWidth =
+    layoutMetrics.frameWidth === 0 || Number.isNaN(layoutMetrics.frameWidth)
+      ? RESULT_DEFAULT_FRAME_WIDTH
+      : layoutMetrics.frameWidth;
   const widthBasedMaxBubbleHeight = getResultBubbleMaxHeight(effectiveFrameWidth);
   const resolvedLayouts = useMemo(() => {
     let maxBubbleHeight = widthBasedMaxBubbleHeight;
@@ -180,7 +210,9 @@ export function ResultScreen({
         headerSafeTopGap: RESULT_HEADER_SAFE_TOP_GAP,
       });
 
-      if (nextMaxBubbleHeight === maxBubbleHeight) break;
+      if (nextMaxBubbleHeight === maxBubbleHeight) {
+        break;
+      }
 
       maxBubbleHeight = nextMaxBubbleHeight;
       resultLayout = buildResultTextLayout(lines, effectiveFrameWidth, maxBubbleHeight);
@@ -221,6 +253,8 @@ export function ResultScreen({
     lineKeyCount.set(line, seen);
     return { line, key: `${line}-${seen}` };
   });
+  const hasSpeechError = speechError.length > 0;
+  const hasSpeechStatusText = speechStatusText !== undefined && speechStatusText.length > 0;
 
   return (
     <section
@@ -256,16 +290,16 @@ export function ResultScreen({
         </div>
       </div>
       <div ref={setFooterElement} className="result-footer">
-        {speechStatusText ? (
+        {hasSpeechStatusText ? (
           <p
             className="speech-status"
-            role={speechError ? undefined : "status"}
-            aria-live={speechError ? undefined : "polite"}
+            role={hasSpeechError ? undefined : "status"}
+            aria-live={hasSpeechError ? undefined : "polite"}
           >
             {speechStatusText}
           </p>
         ) : null}
-        {speechError ? (
+        {hasSpeechError ? (
           <p className="speech-error" role="status" aria-live="polite">
             {speechError}
           </p>
@@ -275,7 +309,7 @@ export function ResultScreen({
             type="button"
             className="action-btn result-action replay"
             aria-label="もういちどよむ"
-            title={replayDisabled ? replayDisabledReason : undefined}
+            title={replayDisabled === true ? replayDisabledReason : undefined}
             onClick={withClickSound(onReplayVoice)}
             onPointerDown={playOnPressStart}
             disabled={replayDisabled}

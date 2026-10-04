@@ -17,7 +17,9 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
   const previousSettingsKey = useRef(settingsKey);
 
   useEffect(() => {
-    if (previousSettingsKey.current === settingsKey) return;
+    if (previousSettingsKey.current === settingsKey) {
+      return;
+    }
     previousSettingsKey.current = settingsKey;
     queueIdRef.current += 1;
     isPlayingRef.current = false;
@@ -43,7 +45,9 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
   };
 
   const failQueue = (queueId: number, message: string) => {
-    if (queueId !== queueIdRef.current || !isPlayingRef.current) return;
+    if (queueId !== queueIdRef.current || !isPlayingRef.current) {
+      return;
+    }
     isPlayingRef.current = false;
     setIsPlaying(false);
     setError(message);
@@ -64,8 +68,11 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
     setIsPlaying(true);
 
     const next = (idx: number) => {
-      if (!isPlayingRef.current || queueId !== queueIdRef.current) return;
-      if (idx >= items.length) {
+      if (!isPlayingRef.current || queueId !== queueIdRef.current) {
+        return;
+      }
+      const item = items[idx];
+      if (item === undefined) {
         isPlayingRef.current = false;
         setIsPlaying(false);
         setCurrentIndex(items.length - 1);
@@ -73,12 +80,18 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
         return;
       }
       setCurrentIndex(idx);
-      const ok = speak(items[idx], {
+      const ok = speak(item, {
         ...DEFAULT_NEWS_SPEECH_CONFIG,
-        onEnd: () => next(idx + 1),
-        onError: () => failQueue(queueId, ERR_PLAYBACK),
+        onEnd: () => {
+          next(idx + 1);
+        },
+        onError: () => {
+          failQueue(queueId, ERR_PLAYBACK);
+        },
       });
-      if (!ok) failQueue(queueId, ERR_PLAYBACK);
+      if (!ok) {
+        failQueue(queueId, ERR_PLAYBACK);
+      }
     };
 
     if (items.length === 0) {

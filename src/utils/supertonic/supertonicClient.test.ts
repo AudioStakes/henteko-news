@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { createSession } = vi.hoisted(() => ({ createSession: vi.fn() }));
+type TensorStub = { data?: Float32Array | Float64Array };
+type SessionStub = {
+  release: () => Promise<void>;
+  run?: () => Promise<Record<string, TensorStub>>;
+};
+
+const { createSession } = vi.hoisted(() => ({
+  createSession: vi.fn<(path: string) => Promise<SessionStub>>(),
+}));
 vi.mock("onnxruntime-web/wasm", () => ({
   env: { wasm: {} },
   Tensor: vi.fn(),
@@ -9,15 +17,20 @@ vi.mock("onnxruntime-web/wasm", () => ({
 
 describe("Supertonic initialization", () => {
   let rejectVoiceOnce = false;
-  const fetchAsset = vi.fn(async (input: RequestInfo | URL) => {
-    const path = String(input);
+  const assetPath = (input: RequestInfo | URL) =>
+    typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  const fetchAsset = vi.fn((input: RequestInfo | URL) => {
+    const path = assetPath(input);
     if (path.endsWith("M1.json") || path.endsWith("F2.json")) {
       if (rejectVoiceOnce) {
         rejectVoiceOnce = false;
-        return { ok: false, status: 404 };
+        return Promise.resolve({ ok: false, status: 404 });
       }
       const style = { dims: [1, 1, 1], data: [[[0]]] };
-      return { ok: true, json: async () => ({ style_ttl: style, style_dp: style }) };
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ style_ttl: style, style_dp: style }),
+      });
     }
     const data = path.endsWith("tts.json")
       ? {
@@ -25,14 +38,14 @@ describe("Supertonic initialization", () => {
           ttl: { latent_dim: 24, chunk_compress_factor: 6 },
         }
       : [];
-    return { ok: true, json: async () => data };
+    return Promise.resolve({ ok: true, json: () => Promise.resolve(data) });
   });
 
   beforeEach(() => {
     vi.resetModules();
     rejectVoiceOnce = false;
     fetchAsset.mockClear();
-    createSession.mockReset().mockResolvedValue({ release: vi.fn() });
+    createSession.mockReset().mockResolvedValue({ release: vi.fn(() => Promise.resolve()) });
     vi.stubGlobal("fetch", fetchAsset);
   });
 
@@ -54,9 +67,9 @@ describe("Supertonic initialization", () => {
     await expect(preloadSupertonic()).rejects.toThrow("offline");
     await expect(preloadSupertonic()).resolves.toBeUndefined();
     expect(createSession).toHaveBeenCalledTimes(5);
-    expect(fetchAsset.mock.calls.filter(([path]) => String(path).endsWith("M1.json"))).toHaveLength(
-      1,
-    );
+    expect(
+      fetchAsset.mock.calls.filter(([path]) => assetPath(path).endsWith("M1.json")),
+    ).toHaveLength(1);
   });
 
   it("retries a failed voice style without reloading successful models", async () => {
@@ -64,9 +77,9 @@ describe("Supertonic initialization", () => {
     const { preloadSupertonic } = await import("./supertonicClient");
     await expect(preloadSupertonic()).rejects.toThrow("HTTP 404");
     await expect(preloadSupertonic()).resolves.toBeUndefined();
-    expect(fetchAsset.mock.calls.filter(([path]) => String(path).endsWith("M1.json"))).toHaveLength(
-      2,
-    );
+    expect(
+      fetchAsset.mock.calls.filter(([path]) => assetPath(path).endsWith("M1.json")),
+    ).toHaveLength(2);
     expect(createSession).toHaveBeenCalledTimes(4);
   });
 
@@ -78,7 +91,7 @@ describe("Supertonic initialization", () => {
     };
     await Promise.all([preloadSupertonic(settings), preloadSupertonic(settings)]);
     expect(createSession).toHaveBeenCalledTimes(4);
-    expect(createSession.mock.calls.map(([path]) => path)).toEqual([
+    expect(createSession.mock.calls.map(([path]) => path)).toStrictEqual([
       "https://models.example/custom/onnx/duration_predictor.onnx",
       "https://models.example/custom/onnx/text_encoder.onnx",
       "https://models.example/custom/onnx/vector_estimator.onnx",
@@ -92,19 +105,23 @@ describe("Supertonic initialization", () => {
 
   it("uses configured assets during synthesis and reuses their warmup", async () => {
     const settings = { modelBasePath: "/custom/onnx", voiceStylePath: "/voices/F2.json" };
-    createSession.mockImplementation(async (path: string) => ({
-      release: vi.fn(),
-      run: vi.fn(async () => {
-        if (path.endsWith("duration_predictor.onnx")) {
-          return { duration: { data: new Float32Array([0.001]) } };
-        }
-        if (path.endsWith("text_encoder.onnx")) return { text_emb: {} };
-        if (path.endsWith("vector_estimator.onnx")) {
-          return { denoised_latent: { data: new Float32Array([0]) } };
-        }
-        return { wav_tts: { data: new Float32Array([0, 0]) } };
+    createSession.mockImplementation((path: string) =>
+      Promise.resolve({
+        release: vi.fn(() => Promise.resolve()),
+        run: vi.fn<() => Promise<Record<string, TensorStub>>>(() => {
+          if (path.endsWith("duration_predictor.onnx")) {
+            return Promise.resolve({ duration: { data: new Float32Array([0.001]) } });
+          }
+          if (path.endsWith("text_encoder.onnx")) {
+            return Promise.resolve({ text_emb: {} });
+          }
+          if (path.endsWith("vector_estimator.onnx")) {
+            return Promise.resolve({ denoised_latent: { data: new Float32Array([0]) } });
+          }
+          return Promise.resolve({ wav_tts: { data: new Float32Array([0, 0]) } });
+        }),
       }),
-    }));
+    );
     const createUrl = vi.fn(() => "blob:configured");
     const revokeUrl = vi.fn();
     vi.spyOn(URL, "createObjectURL").mockImplementation(createUrl);
@@ -119,12 +136,26 @@ describe("Supertonic initialization", () => {
     expect(revokeUrl).toHaveBeenCalledWith("blob:configured");
   });
 
+  it.each([
+    { name: "missing", output: {} },
+    { name: "wrong datatype", output: { duration: { data: new Float64Array([0.001]) } } },
+  ])("rejects $name duration tensors instead of trusting model output", async ({ output }) => {
+    createSession.mockResolvedValue({
+      release: vi.fn(() => Promise.resolve()),
+      run: vi.fn<() => Promise<Record<string, TensorStub>>>().mockResolvedValue(output),
+    });
+    const { synthesizeSupertonicSpeech } = await import("./supertonicClient");
+    await expect(synthesizeSupertonicSpeech({ text: "こんにちは" })).rejects.toThrow(
+      "duration tensor",
+    );
+  });
+
   it("releases old model sessions when the retained directory limit is exceeded", async () => {
-    const releases: ReturnType<typeof vi.fn>[] = [];
-    createSession.mockImplementation(async () => {
-      const release = vi.fn();
+    const releases: ReturnType<typeof vi.fn<() => Promise<void>>>[] = [];
+    createSession.mockImplementation(() => {
+      const release = vi.fn(() => Promise.resolve());
       releases.push(release);
-      return { release };
+      return Promise.resolve({ release });
     });
     const { preloadSupertonic } = await import("./supertonicClient");
     for (const modelBasePath of ["/one", "/two", "/three"]) {
@@ -136,31 +167,36 @@ describe("Supertonic initialization", () => {
   });
 
   it("keeps sessions owned by an in-flight synthesis while evicting an idle model", async () => {
-    const releases = new Map<string, ReturnType<typeof vi.fn>>();
-    let finishDuration!: (value: { duration: { data: Float32Array } }) => void;
-    let started!: () => void;
+    const releases = new Map<string, ReturnType<typeof vi.fn<() => Promise<void>>>>();
+    let finishDuration: ((value: { duration: { data: Float32Array } }) => void) | undefined;
+    let started: (() => void) | undefined;
     const firstStarted = new Promise<void>((resolve) => {
       started = resolve;
     });
-    createSession.mockImplementation(async (path: string) => {
-      const release = vi.fn();
+    createSession.mockImplementation((path: string) => {
+      const release = vi.fn(() => Promise.resolve());
       releases.set(path, release);
-      return {
+      return Promise.resolve({
         release,
-        run: vi.fn(async () => {
+        run: vi.fn<() => Promise<Record<string, TensorStub>>>(() => {
           if (path === "/one/duration_predictor.onnx") {
+            if (!started) {
+              throw new Error("The synthesis start observer is not initialized");
+            }
             started();
-            return new Promise((resolve) => {
+            return new Promise<{ duration: { data: Float32Array } }>((resolve) => {
               finishDuration = resolve;
             });
           }
-          if (path.endsWith("text_encoder.onnx")) return { text_emb: {} };
-          if (path.endsWith("vector_estimator.onnx")) {
-            return { denoised_latent: { data: new Float32Array([0]) } };
+          if (path.endsWith("text_encoder.onnx")) {
+            return Promise.resolve({ text_emb: {} });
           }
-          return { wav_tts: { data: new Float32Array([0]) } };
+          if (path.endsWith("vector_estimator.onnx")) {
+            return Promise.resolve({ denoised_latent: { data: new Float32Array([0]) } });
+          }
+          return Promise.resolve({ wav_tts: { data: new Float32Array([0]) } });
         }),
-      };
+      });
     });
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:active");
     const { preloadSupertonic, synthesizeSupertonicSpeech } = await import("./supertonicClient");
@@ -173,6 +209,9 @@ describe("Supertonic initialization", () => {
     expect(releases.get("/one/duration_predictor.onnx")).not.toHaveBeenCalled();
     expect(releases.get("/two/duration_predictor.onnx")).toHaveBeenCalledTimes(1);
     expect(releases.get("/three/duration_predictor.onnx")).not.toHaveBeenCalled();
+    if (!finishDuration) {
+      throw new Error("The duration predictor has not started");
+    }
     finishDuration({ duration: { data: new Float32Array([0.001]) } });
     await expect(pending).resolves.toMatchObject({ url: "blob:active" });
   });

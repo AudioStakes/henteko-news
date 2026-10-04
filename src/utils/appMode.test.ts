@@ -3,7 +3,7 @@ import { getDebugSelections, parseDebugWord, resolveAppMode } from "./appMode";
 
 describe("appMode", () => {
   test("parseDebugWord trims and maps to display/speech", () => {
-    expect(parseDebugWord(" テスト太郎 ")).toEqual({
+    expect(parseDebugWord(" テスト太郎 ")).toStrictEqual({
       display: "テスト太郎",
       speech: "テスト太郎",
     });
@@ -20,7 +20,7 @@ describe("appMode", () => {
   });
 
   test("getDebugSelections keeps empty query values as undefined", () => {
-    expect(getDebugSelections("?debugResult=1&who=&when=%20%20%20")).toEqual({
+    expect(getDebugSelections("?debugResult=1&who=&when=%20%20%20")).toStrictEqual({
       who: undefined,
       when: undefined,
       where: undefined,
@@ -30,7 +30,7 @@ describe("appMode", () => {
   });
 
   test("resolveAppMode combines route and debug query decisions", () => {
-    expect(resolveAppMode("/words-audio-check", "?debugResult=1&who=テスト太郎")).toEqual({
+    expect(resolveAppMode("/words-audio-check", "?debugResult=1&who=テスト太郎")).toStrictEqual({
       isWordsAudioCheckRoute: true,
       debugSelections: {
         who: { display: "テスト太郎", speech: "テスト太郎" },
@@ -43,7 +43,7 @@ describe("appMode", () => {
   });
 
   test("resolveAppMode marks non /words-audio-check routes as normal", () => {
-    expect(resolveAppMode("/", "?debugResult=1")).toEqual({
+    expect(resolveAppMode("/", "?debugResult=1")).toStrictEqual({
       isWordsAudioCheckRoute: false,
       debugSelections: {
         who: undefined,

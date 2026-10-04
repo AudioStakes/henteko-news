@@ -1,6 +1,6 @@
 import { copyFile, cp, mkdir, rm } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
+import { dirname, resolve } from "node:path";
 
 const require = createRequire(import.meta.url);
 const source = dirname(require.resolve("onnxruntime-web/wasm"));

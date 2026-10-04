@@ -1,10 +1,16 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { deferred } from "../test/deferred";
+import { requiredArrayElement } from "../test/requiredArrayElement";
+import type {
+  preloadSupertonic,
+  synthesizeSupertonicSpeech,
+} from "../utils/supertonic/supertonicClient";
 import { SYNTHESIS_TIMEOUT_MS, useModelSpeech } from "./useModelSpeech";
 
 const { mockPreload, mockSynthesize } = vi.hoisted(() => ({
-  mockPreload: vi.fn(),
-  mockSynthesize: vi.fn(),
+  mockPreload: vi.fn<typeof preloadSupertonic>(),
+  mockSynthesize: vi.fn<typeof synthesizeSupertonicSpeech>(),
 }));
 
 vi.mock("../utils/supertonic/supertonicClient", () => ({
@@ -16,8 +22,8 @@ describe("useModelSpeech", () => {
   const audioInstances: Array<{
     onended: (() => void) | null;
     onerror: (() => void) | null;
-    play: ReturnType<typeof vi.fn>;
-    pause: ReturnType<typeof vi.fn>;
+    play: ReturnType<typeof vi.fn<() => Promise<void>>>;
+    pause: ReturnType<typeof vi.fn<() => void>>;
   }> = [];
 
   beforeEach(() => {
@@ -28,13 +34,13 @@ describe("useModelSpeech", () => {
       const audio = {
         onended: null,
         onerror: null,
-        play: vi.fn(async () => {}),
-        pause: vi.fn(),
+        play: vi.fn(() => Promise.resolve()),
+        pause: vi.fn<() => void>(),
       };
       audioInstances.push(audio);
       return audio;
     };
-    vi.stubGlobal("Audio", MockAudio as unknown as typeof Audio);
+    vi.stubGlobal("Audio", MockAudio);
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn(() => "blob:mock"),
       revokeObjectURL: vi.fn(),
@@ -59,7 +65,9 @@ describe("useModelSpeech", () => {
 
   it("warmup calls preloadSupertonic", () => {
     const { result } = renderHook(() => useModelSpeech());
-    act(() => result.current.warmup());
+    act(() => {
+      result.current.warmup();
+    });
     expect(mockPreload).toHaveBeenCalledTimes(1);
   });
 
@@ -69,9 +77,13 @@ describe("useModelSpeech", () => {
     mockSynthesize.mockResolvedValue({ url: "blob:ok", revoke, durationSec: 1 });
 
     const { result } = renderHook(() => useModelSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd });
+    });
     await Promise.resolve();
-    act(() => audioInstances[0].onended?.());
+    act(() => {
+      requiredArrayElement(audioInstances, 0).onended?.();
+    });
 
     expect(onEnd).toHaveBeenCalledTimes(1);
     expect(revoke).toHaveBeenCalledTimes(1);
@@ -82,7 +94,9 @@ describe("useModelSpeech", () => {
     mockSynthesize.mockRejectedValue(new Error("boom"));
     const { result } = renderHook(() => useModelSpeech());
 
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onError }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onError });
+    });
     await Promise.resolve();
 
     expect(onError).toHaveBeenCalledWith("error");
@@ -94,10 +108,16 @@ describe("useModelSpeech", () => {
     mockSynthesize.mockResolvedValue({ url: "blob:cancel", revoke, durationSec: 1 });
 
     const { result } = renderHook(() => useModelSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd });
+    });
     await Promise.resolve();
-    act(() => result.current.cancel());
-    act(() => audioInstances[0].onended?.());
+    act(() => {
+      result.current.cancel();
+    });
+    act(() => {
+      requiredArrayElement(audioInstances, 0).onended?.();
+    });
 
     expect(onEnd).not.toHaveBeenCalled();
     expect(revoke).toHaveBeenCalledTimes(1);
@@ -108,7 +128,9 @@ describe("useModelSpeech", () => {
     mockSynthesize.mockReturnValue(new Promise(() => {}));
     const onError = vi.fn();
     const { result } = renderHook(() => useModelSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onError }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onError });
+    });
     await act(async () => vi.advanceTimersByTimeAsync(2_000));
     expect(onError).not.toHaveBeenCalled();
     expect(result.current.isSpeaking).toBe(true);
@@ -117,24 +139,21 @@ describe("useModelSpeech", () => {
   it("revokes a late synthesis result after timeout without playing it", async () => {
     vi.useFakeTimers();
     const revoke = vi.fn();
-    let resolveSynthesis!: (value: {
-      url: string;
-      revoke: () => void;
-      durationSec: number;
-    }) => void;
-    mockSynthesize.mockReturnValue(
-      new Promise((resolve) => {
-        resolveSynthesis = resolve;
-      }),
-    );
+    const synthesis = deferred<Awaited<ReturnType<typeof synthesizeSupertonicSpeech>>>();
+    mockSynthesize.mockReturnValue(synthesis.promise);
     const onError = vi.fn();
     const onEnd = vi.fn();
     const { result } = renderHook(() => useModelSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onError, onEnd }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onError, onEnd });
+    });
     await act(async () => vi.advanceTimersByTimeAsync(SYNTHESIS_TIMEOUT_MS));
     expect(onError).toHaveBeenCalledExactlyOnceWith("timeout");
     expect(result.current.isSpeaking).toBe(false);
-    await act(async () => resolveSynthesis({ url: "blob:late", revoke, durationSec: 1 }));
+    await act(async () => {
+      synthesis.resolve({ url: "blob:late", revoke, durationSec: 1 });
+      await synthesis.promise;
+    });
     expect(audioInstances).toHaveLength(0);
     expect(revoke).toHaveBeenCalledTimes(1);
     expect(onEnd).not.toHaveBeenCalled();
@@ -142,44 +161,48 @@ describe("useModelSpeech", () => {
 
   it("ignores a late synthesis rejection after timeout", async () => {
     vi.useFakeTimers();
-    let rejectSynthesis!: (reason: Error) => void;
-    mockSynthesize.mockReturnValue(
-      new Promise((_resolve, reject) => {
-        rejectSynthesis = reject;
-      }),
-    );
+    const synthesis = deferred<Awaited<ReturnType<typeof synthesizeSupertonicSpeech>>>();
+    mockSynthesize.mockReturnValue(synthesis.promise);
     const onError = vi.fn();
     const { result } = renderHook(() => useModelSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onError }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onError });
+    });
     await act(async () => vi.advanceTimersByTimeAsync(SYNTHESIS_TIMEOUT_MS));
-    await act(async () => rejectSynthesis(new Error("late failure")));
+    await act(async () => {
+      synthesis.reject(new Error("late failure"));
+      await Promise.resolve();
+    });
     expect(onError).toHaveBeenCalledExactlyOnceWith("timeout");
   });
 
   it("handles warmup failures and permits another warmup attempt", async () => {
     mockPreload.mockRejectedValueOnce(new Error("missing models"));
     const { result } = renderHook(() => useModelSpeech());
-    await act(async () => result.current.warmup());
-    await act(async () => result.current.warmup());
+    await act(async () => {
+      result.current.warmup();
+      await Promise.resolve();
+    });
+    await act(async () => {
+      result.current.warmup();
+      await Promise.resolve();
+    });
     expect(mockPreload).toHaveBeenCalledTimes(2);
   });
 
   it("revokes a pending synthesis after unmount", async () => {
     const revoke = vi.fn();
-    let resolveSynthesis!: (value: {
-      url: string;
-      revoke: () => void;
-      durationSec: number;
-    }) => void;
-    mockSynthesize.mockReturnValue(
-      new Promise((resolve) => {
-        resolveSynthesis = resolve;
-      }),
-    );
+    const synthesis = deferred<Awaited<ReturnType<typeof synthesizeSupertonicSpeech>>>();
+    mockSynthesize.mockReturnValue(synthesis.promise);
     const { result, unmount } = renderHook(() => useModelSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1 }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1 });
+    });
     unmount();
-    await act(async () => resolveSynthesis({ url: "blob:late", revoke, durationSec: 1 }));
+    await act(async () => {
+      synthesis.resolve({ url: "blob:late", revoke, durationSec: 1 });
+      await synthesis.promise;
+    });
     expect(revoke).toHaveBeenCalledTimes(1);
     expect(audioInstances).toHaveLength(0);
   });

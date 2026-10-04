@@ -25,22 +25,26 @@ describe("SpeechSettingsProvider", () => {
   it("defaults to browser speech and safely supports hooks outside the provider", () => {
     const { result } = renderHook(useSpeechSettings);
 
-    expect(result.current.settings).toEqual(DEFAULT_SPEECH_SETTINGS);
-    expect(() => result.current.updateSettings(modelSettings)).not.toThrow();
+    expect(result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(() => {
+      result.current.updateSettings(modelSettings);
+    }).not.toThrow();
   });
 
   it("persists the shared choice and restores it when the app mounts again", () => {
     const first = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
-    expect(first.result.current.settings).toEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(first.result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
 
-    act(() => first.result.current.updateSettings(modelSettings));
-    expect(JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null")).toEqual(
-      modelSettings,
-    );
+    act(() => {
+      first.result.current.updateSettings(modelSettings);
+    });
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual(modelSettings);
     first.unmount();
 
     const second = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
-    expect(second.result.current.settings).toEqual(modelSettings);
+    expect(second.result.current.settings).toStrictEqual(modelSettings);
   });
 
   it("recovers from corrupt stored JSON with browser defaults", () => {
@@ -48,10 +52,10 @@ describe("SpeechSettingsProvider", () => {
 
     const { result } = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
 
-    expect(result.current.settings).toEqual(DEFAULT_SPEECH_SETTINGS);
-    expect(JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null")).toEqual(
-      DEFAULT_SPEECH_SETTINGS,
-    );
+    expect(result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
   });
 
   it("keeps settings usable for this session when storage access is blocked", () => {
@@ -62,10 +66,12 @@ describe("SpeechSettingsProvider", () => {
       throw new Error("blocked");
     });
     const { result } = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
-    expect(result.current.settings).toEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
 
-    act(() => result.current.updateSettings(modelSettings));
+    act(() => {
+      result.current.updateSettings(modelSettings);
+    });
 
-    expect(result.current.settings).toEqual(modelSettings);
+    expect(result.current.settings).toStrictEqual(modelSettings);
   });
 });

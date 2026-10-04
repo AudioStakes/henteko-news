@@ -1,15 +1,21 @@
 import type { Selections, WordOption } from "../types/game";
 
 export function parseDebugWord(value: string | null): WordOption | undefined {
-  if (!value) return undefined;
+  if (value === null || value.length === 0) {
+    return undefined;
+  }
   const decoded = value.trim();
-  if (!decoded) return undefined;
+  if (decoded.length === 0) {
+    return undefined;
+  }
   return { display: decoded, speech: decoded };
 }
 
 export function getDebugSelections(search: string): Selections | null {
   const params = new URLSearchParams(search);
-  if (params.get("debugResult") !== "1") return null;
+  if (params.get("debugResult") !== "1") {
+    return null;
+  }
 
   return {
     who: parseDebugWord(params.get("who")),

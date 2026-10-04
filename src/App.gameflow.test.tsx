@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from "@testing-library/react";
-import { act } from "react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 import { CATEGORIES } from "./data/words";
-import type { SpeechAvailability } from "./hooks/useNewsSpeech";
+import type { useNewsSpeech } from "./hooks/useNewsSpeech";
+import { requiredArrayElement } from "./test/requiredArrayElement";
+import type { trackEvent } from "./utils/analytics";
 
 vi.mock("./hooks/useButtonSound", () => ({
   useButtonSound: () => ({
@@ -13,7 +14,7 @@ vi.mock("./hooks/useButtonSound", () => ({
 }));
 
 const { mockTrackEvent } = vi.hoisted(() => ({
-  mockTrackEvent: vi.fn(),
+  mockTrackEvent: vi.fn<typeof trackEvent>(),
 }));
 
 vi.mock("./utils/analytics", () => ({
@@ -29,15 +30,15 @@ vi.mock("./utils/analytics", () => ({
   trackEvent: mockTrackEvent,
 }));
 
-const speechState = {
+const speechState: ReturnType<typeof useNewsSpeech> = {
   speechError: "",
-  setSpeechError: vi.fn(),
+  setSpeechError: vi.fn<ReturnType<typeof useNewsSpeech>["setSpeechError"]>(),
   isSupported: true,
-  warmup: vi.fn(),
-  cancel: vi.fn(),
-  speakNews: vi.fn(),
+  warmup: vi.fn<ReturnType<typeof useNewsSpeech>["warmup"]>(),
+  cancel: vi.fn<ReturnType<typeof useNewsSpeech>["cancel"]>(),
+  speakNews: vi.fn<ReturnType<typeof useNewsSpeech>["speakNews"]>(),
   isSpeaking: false,
-  speechAvailability: "ready" as SpeechAvailability,
+  speechAvailability: "ready",
 };
 
 vi.mock("./hooks/useNewsSpeech", () => ({
@@ -65,7 +66,7 @@ function restoreNavigatorOnline() {
 function completeOneGame() {
   for (let i = 0; i < CATEGORIES.length; i += 1) {
     const choices = screen.getAllByTestId("choice-card");
-    fireEvent.click(choices[0]);
+    fireEvent.click(requiredArrayElement(choices, 0));
     act(() => {
       vi.advanceTimersByTime(300);
     });
@@ -116,7 +117,7 @@ describe("App game flow", () => {
 
     for (let i = 0; i < CATEGORIES.length - 1; i += 1) {
       const choices = screen.getAllByTestId("choice-card");
-      fireEvent.click(choices[0]);
+      fireEvent.click(requiredArrayElement(choices, 0));
       act(() => {
         vi.advanceTimersByTime(300);
       });

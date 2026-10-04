@@ -1,5 +1,5 @@
-import { compareJapanese, readTsConstArray } from "./words-utils.mjs";
 import { WORD_CHECK_RULES } from "./word-rules.mjs";
+import { compareJapanese, readTsStringArray, readTsWordOptions } from "./words-utils.mjs";
 
 const groups = [
   { key: "who", file: "src/data/words/who.ts", name: "WHO_WORDS", type: "string" },
@@ -8,19 +8,25 @@ const groups = [
   { key: "what", file: "src/data/words/what.ts", name: "WHAT_WORDS", type: "string" },
   { key: "action", file: "src/data/words/action.ts", name: "ACTION_WORDS", type: "action" },
 ];
+/** @param {string} value */
 const normalizeForCompare = (value) => value.replace(/\s+/gu, "").trim();
-const speakablePattern = /^[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}ー〜～・、。！？!?\s0-9A-Za-z]+$/u;
+const speakablePattern =
+  /^[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}ー〜～・、。！？!?\s0-9A-Za-z]+$/u;
 
 let errors = 0;
 let warnings = 0;
 for (const group of groups) {
-  const items = await readTsConstArray(group.file, group.name);
+  const items =
+    group.type === "action"
+      ? await readTsWordOptions(group.file, group.name)
+      : await readTsStringArray(group.file, group.name);
   const displays = items.map((item) => (typeof item === "string" ? item : item.display));
   const sorted = [...displays].sort(compareJapanese);
   if (JSON.stringify(displays) !== JSON.stringify(sorted)) {
     console.error(`[error] ${group.key}: words are not sorted`);
     errors += 1;
   }
+  /** @type {Set<string>} */
   const seen = new Set();
   if (items.length < WORD_CHECK_RULES.minWordsPerCategory) {
     console.error(`[error] ${group.key}: too few words (${items.length})`);
@@ -28,38 +34,55 @@ for (const group of groups) {
   }
   for (const item of items) {
     const display = typeof item === "string" ? item : item.display;
-    if (!display) {
-      console.error(`[error] ${group.key}: display empty`); errors++; continue;
+    if (display.length === 0) {
+      console.error(`[error] ${group.key}: display empty`);
+      errors++;
+      continue;
     }
     if (display !== display.trim()) {
-      console.error(`[error] ${group.key}: display has leading/trailing spaces: "${display}"`); errors++;
+      console.error(`[error] ${group.key}: display has leading/trailing spaces: "${display}"`);
+      errors++;
     }
     if (seen.has(normalizeForCompare(display))) {
-      console.error(`[error] ${group.key}: duplicate display "${display}"`); errors++;
+      console.error(`[error] ${group.key}: duplicate display "${display}"`);
+      errors++;
     }
     seen.add(normalizeForCompare(display));
     if (display.length > WORD_CHECK_RULES.maxDisplayLength) {
-      console.warn(`[warn] ${group.key}: long display (${display.length}) ${display}`); warnings++;
+      console.warn(`[warn] ${group.key}: long display (${display.length}) ${display}`);
+      warnings++;
     }
-    if (group.type === "action") {
-      const speech = item.speech ?? "";
-      if (!speech.trim()) { console.error(`[error] action: speech empty for "${display}"`); errors++; }
-      if (speech !== speech.trim()) { console.error(`[error] action: speech has leading/trailing spaces for "${display}"`); errors++; }
+    if (typeof item !== "string") {
+      const speech = item.speech;
+      if (speech.trim().length === 0) {
+        console.error(`[error] action: speech empty for "${display}"`);
+        errors++;
+      }
+      if (speech !== speech.trim()) {
+        console.error(`[error] action: speech has leading/trailing spaces for "${display}"`);
+        errors++;
+      }
       if (normalizeForCompare(speech) === normalizeForCompare(display)) {
         // valid and expected for many words
       } else if (Math.abs(display.length - speech.length) > 8) {
-        console.warn(`[warn] action: display/speech length gap is large for "${display}"`); warnings++;
+        console.warn(`[warn] action: display/speech length gap is large for "${display}"`);
+        warnings++;
       }
-      const speechCodePoints = [...speech];
+      const speechCodePoints = Array.from(speech);
       const strangeChars = speechCodePoints.filter((char) => !speakablePattern.test(char)).length;
       if (
         speechCodePoints.length > 0 &&
         strangeChars / speechCodePoints.length > WORD_CHECK_RULES.suspiciousCharRatio
       ) {
-        console.warn(`[warn] action: speech has many unusual characters for "${display}"`); warnings++;
+        console.warn(`[warn] action: speech has many unusual characters for "${display}"`);
+        warnings++;
       }
     }
   }
 }
-console.log(`check:words completed: ${groups.length} groups checked, ${errors} errors, ${warnings} warnings`);
-if (errors > 0) process.exit(1);
+console.log(
+  `check:words completed: ${groups.length} groups checked, ${errors} errors, ${warnings} warnings`,
+);
+if (errors > 0) {
+  process.exit(1);
+}

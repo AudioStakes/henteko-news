@@ -24,12 +24,14 @@ async function checkAssets() {
   for (const file of files) {
     try {
       await access(resolve(target, file));
-      if ((await stat(resolve(target, file))).size === 0) missing.push(file);
+      if ((await stat(resolve(target, file))).size === 0) {
+        missing.push(file);
+      }
     } catch {
       missing.push(file);
     }
   }
-  if (missing.length) {
+  if (missing.length > 0) {
     throw new Error(`Missing speech assets: ${missing.join(", ")}. Run npm run setup:speech.`);
   }
   console.log("All required Supertonic speech assets are present.");
@@ -49,11 +51,13 @@ if (process.argv.includes("--check")) {
       const response = await fetch(`${baseUrl}/${file}`, {
         signal: AbortSignal.timeout(300_000),
       });
-      if (!response.ok || !response.body) {
+      if (!(response.ok && response.body)) {
         throw new Error(`Failed to download ${file}: HTTP ${response.status}`);
       }
       await pipeline(Readable.fromWeb(response.body), createWriteStream(temporary));
-      if ((await stat(temporary)).size === 0) throw new Error(`Empty model file: ${file}`);
+      if ((await stat(temporary)).size === 0) {
+        throw new Error(`Empty model file: ${file}`);
+      }
       await rename(temporary, output);
       console.log(`Downloaded ${file}`);
     } finally {

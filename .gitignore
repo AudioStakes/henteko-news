@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Reproducible repository toolchain (may be ignored by a global Git config)
+!.tool-versions
+!.npmrc
+
 # Build outputs
 dist/
 dist-ssr/

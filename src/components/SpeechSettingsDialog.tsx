@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useId, useRef, useState } from "react";
+import { type SubmitEvent, useEffect, useId, useRef, useState } from "react";
 import { useSpeechSettings } from "../context/SpeechSettingsContext";
 import {
   DEFAULT_SPEECH_SETTINGS,
@@ -15,18 +15,27 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
   const { settings, updateSettings } = useSpeechSettings();
   const [draft, setDraft] = useState<SpeechSettings>(settings);
   const [errors, setErrors] = useState({ modelBasePath: "", voiceStylePath: "" });
+  const [previousProps, setPreviousProps] = useState({ isOpen, settings });
   const dialogRef = useRef<HTMLDialogElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
   const voiceInputRef = useRef<HTMLInputElement>(null);
   const id = useId();
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
+  if (previousProps.isOpen !== isOpen || previousProps.settings !== settings) {
+    setPreviousProps({ isOpen, settings });
     if (isOpen) {
       setDraft({ ...settings });
       setErrors({ modelBasePath: "", voiceStylePath: "" });
+    }
+  }
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) {
+      return;
+    }
+    if (isOpen) {
       if (!dialog.open) {
         openerRef.current =
           document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -38,7 +47,7 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
     }
   }, [isOpen, settings]);
 
-  const save = (event: FormEvent<HTMLFormElement>) => {
+  const save = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const next = {
       ...draft,
@@ -57,13 +66,15 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
       }
     }
     setErrors(nextErrors);
-    if (nextErrors.modelBasePath || nextErrors.voiceStylePath) {
-      (nextErrors.modelBasePath ? modelInputRef : voiceInputRef).current?.focus();
+    if (nextErrors.modelBasePath.length > 0 || nextErrors.voiceStylePath.length > 0) {
+      (nextErrors.modelBasePath.length > 0 ? modelInputRef : voiceInputRef).current?.focus();
       return;
     }
     updateSettings(next);
     onClose();
   };
+  const hasModelPathError = errors.modelBasePath.length > 0;
+  const hasVoicePathError = errors.voiceStylePath.length > 0;
 
   return (
     <dialog
@@ -93,12 +104,12 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
           <select
             id={`${id}-provider`}
             value={draft.provider}
-            onChange={(event) =>
+            onChange={(event) => {
               setDraft((current) => ({
                 ...current,
                 provider: event.target.value === "supertonic" ? "supertonic" : "web-speech",
-              }))
-            }
+              }));
+            }}
           >
             <option value="web-speech">ブラウザーの音声（Web Speech API）</option>
             <option value="supertonic">モデル音声（Supertonic）</option>
@@ -123,12 +134,12 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
                 spellCheck={false}
                 value={draft.modelBasePath}
                 aria-invalid={Boolean(errors.modelBasePath)}
-                aria-describedby={`${id}-path-help${errors.modelBasePath ? ` ${id}-model-error` : ""}`}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, modelBasePath: event.target.value }))
-                }
+                aria-describedby={`${id}-path-help${hasModelPathError ? ` ${id}-model-error` : ""}`}
+                onChange={(event) => {
+                  setDraft((current) => ({ ...current, modelBasePath: event.target.value }));
+                }}
               />
-              {errors.modelBasePath && (
+              {hasModelPathError && (
                 <p id={`${id}-model-error`} className="speech-settings-dialog__error" role="alert">
                   {errors.modelBasePath}
                 </p>
@@ -145,12 +156,12 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
                 spellCheck={false}
                 value={draft.voiceStylePath}
                 aria-invalid={Boolean(errors.voiceStylePath)}
-                aria-describedby={`${id}-path-help${errors.voiceStylePath ? ` ${id}-voice-error` : ""}`}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, voiceStylePath: event.target.value }))
-                }
+                aria-describedby={`${id}-path-help${hasVoicePathError ? ` ${id}-voice-error` : ""}`}
+                onChange={(event) => {
+                  setDraft((current) => ({ ...current, voiceStylePath: event.target.value }));
+                }}
               />
-              {errors.voiceStylePath && (
+              {hasVoicePathError && (
                 <p id={`${id}-voice-error`} className="speech-settings-dialog__error" role="alert">
                   {errors.voiceStylePath}
                 </p>

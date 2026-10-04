@@ -2,13 +2,27 @@ import { ACTION_POLITE_MAP } from "../data/actions";
 import type { Selections, WordOption } from "../types/game";
 
 function toSpeech(word?: WordOption) {
-  if (!word) return "";
-  if (word.speech?.trim()) return word.speech.trim();
+  if (!word) {
+    return "";
+  }
+  const speech = word.speech?.trim();
+  if (speech !== undefined && speech.length > 0) {
+    return speech;
+  }
   const normalized = word.display.replace(/[！!]/g, "").trim();
-  if (!normalized) return "";
-  if (ACTION_POLITE_MAP[normalized]) return ACTION_POLITE_MAP[normalized];
-  if (normalized.endsWith("しました") || normalized.endsWith("ました")) return normalized;
-  if (normalized.endsWith("した")) return `${normalized.slice(0, -2)}しました`;
+  if (normalized.length === 0) {
+    return "";
+  }
+  const politeAction = ACTION_POLITE_MAP[normalized];
+  if (politeAction !== undefined && politeAction.length > 0) {
+    return politeAction;
+  }
+  if (normalized.endsWith("しました") || normalized.endsWith("ました")) {
+    return normalized;
+  }
+  if (normalized.endsWith("した")) {
+    return `${normalized.slice(0, -2)}しました`;
+  }
   return normalized;
 }
 

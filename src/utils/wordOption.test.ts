@@ -3,7 +3,7 @@ import { toWordOption, wordDisplay } from "./wordOption";
 
 describe("wordOption", () => {
   test("converts string to display/speech object", () => {
-    expect(toWordOption("ねこ")).toEqual({ display: "ねこ", speech: "ねこ" });
+    expect(toWordOption("ねこ")).toStrictEqual({ display: "ねこ", speech: "ねこ" });
   });
   test("keeps WordOption object", () => {
     const option = { display: "ねこ", speech: "ネコ" };

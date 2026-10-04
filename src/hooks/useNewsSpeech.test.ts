@@ -1,15 +1,18 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { requiredArrayElement } from "../test/requiredArrayElement";
 import type { Selections } from "../types/game";
+import type { trackError, trackEvent } from "../utils/analytics";
 import { useNewsSpeech } from "./useNewsSpeech";
+import type { useSpeech } from "./useSpeech";
 
 const { mockTrackEvent, mockTrackError } = vi.hoisted(() => ({
-  mockTrackEvent: vi.fn(),
-  mockTrackError: vi.fn(),
+  mockTrackEvent: vi.fn<typeof trackEvent>(),
+  mockTrackError: vi.fn<typeof trackError>(),
 }));
-const mockSpeak = vi.fn();
-const mockWarmup = vi.fn();
-const mockCancel = vi.fn();
+const mockSpeak = vi.fn<ReturnType<typeof useSpeech>["speak"]>();
+const mockWarmup = vi.fn<ReturnType<typeof useSpeech>["warmup"]>();
+const mockCancel = vi.fn<ReturnType<typeof useSpeech>["cancel"]>();
 
 let mockIsSupported = true;
 let mockIsSpeaking = false;
@@ -100,12 +103,10 @@ describe("useNewsSpeech", () => {
       result.current.speakNews(fullSelections);
     });
 
-    const options = mockSpeak.mock.calls[0]?.[1] as
-      | { onError?: (reason: string) => void }
-      | undefined;
+    const options = requiredArrayElement(mockSpeak.mock.calls, 0)[1];
 
     act(() => {
-      options?.onError?.("timeout");
+      options.onError?.("timeout");
     });
 
     expect(result.current.speechError).toContain("文字");
@@ -126,11 +127,17 @@ describe("useNewsSpeech", () => {
 
   it("reports one analytics error when speak calls onError synchronously and returns false", () => {
     mockSpeak.mockImplementationOnce((_text, options) => {
+      expect(options.onError).toBeDefined();
+      if (options.onError === undefined) {
+        throw new Error("Expected synchronous speech error callback");
+      }
       options.onError("error");
       return false;
     });
     const { result } = renderHook(() => useNewsSpeech());
-    act(() => result.current.speakNews(fullSelections));
+    act(() => {
+      result.current.speakNews(fullSelections);
+    });
     expect(result.current.speechAvailability).toBe("error");
     expect(mockTrackError).toHaveBeenCalledExactlyOnceWith("speech_error", { reason: "error" });
   });

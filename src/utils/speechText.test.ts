@@ -10,7 +10,7 @@ describe("speechText", () => {
       what: { display: "パンを" },
       action: { display: "あつめた" },
     };
-    expect(buildNewsLines(selections)).toEqual([
+    expect(buildNewsLines(selections)).toStrictEqual([
       "ねこが",
       "いま",
       "そらで",
@@ -26,7 +26,7 @@ describe("speechText", () => {
     expect(toSpeechText(selections)).toBe("ニュースです！ネコ、ダンスした！");
   });
   test("does not crash with missing categories", () => {
-    expect(buildNewsLines({ action: { display: "あつめた" } })).toEqual(["あつめました！"]);
+    expect(buildNewsLines({ action: { display: "あつめた" } })).toStrictEqual(["あつめました！"]);
     expect(toSpeechText({})).toBe("ニュースです！");
   });
 });

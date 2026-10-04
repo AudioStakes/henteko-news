@@ -11,4 +11,4 @@ export type Category = {
   words: Array<string | WordOption>;
 };
 
-export type Selections = Partial<Record<CategoryKey, WordOption>>;
+export type Selections = Partial<Record<CategoryKey, WordOption | undefined>>;

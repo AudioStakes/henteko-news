@@ -22,7 +22,7 @@ export type ChoiceCardTextLayout = {
   widthRule: ChoiceCardWidthRule;
 };
 
-export const CHOICE_CARD_WIDTH_RULES: readonly ChoiceCardWidthRule[] = [
+export const CHOICE_CARD_WIDTH_RULES = [
   {
     label: "minimum screen width",
     maxGridWidth: 304,
@@ -44,7 +44,7 @@ export const CHOICE_CARD_WIDTH_RULES: readonly ChoiceCardWidthRule[] = [
     maxFontSize: 35,
     fontSizeAdjustment: 3,
   },
-] as const;
+] as const satisfies readonly ChoiceCardWidthRule[];
 
 function countCharacters(text: string) {
   return Array.from(text).length;
@@ -52,12 +52,16 @@ function countCharacters(text: string) {
 
 export function getChoiceCardWidthRule(gridWidth: number): ChoiceCardWidthRule {
   const safeGridWidth = Math.max(0, gridWidth);
+  let fallbackRule: ChoiceCardWidthRule = CHOICE_CARD_WIDTH_RULES[0];
 
   for (const rule of CHOICE_CARD_WIDTH_RULES) {
-    if (safeGridWidth <= rule.maxGridWidth) return rule;
+    fallbackRule = rule;
+    if (safeGridWidth <= rule.maxGridWidth) {
+      return rule;
+    }
   }
 
-  return CHOICE_CARD_WIDTH_RULES[CHOICE_CARD_WIDTH_RULES.length - 1];
+  return fallbackRule;
 }
 
 export function calculateChoiceCardTextLayout({

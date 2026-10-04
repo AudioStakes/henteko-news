@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "node": "^22.13.0 || >=24.0.0"
+    "node": "^24.18.0"
   },
   "scripts": {
     "predev": "node scripts/prepare-runtime.mjs",
@@ -14,9 +14,15 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:scripts": "node --test scripts/*.test.mjs",
-    "lint": "biome check .",
-    "format": "biome format --write .",
-    "check": "biome check --write .",
+    "lint": "npm run lint:biome && npm run lint:eslint && npm run lint:docs",
+    "lint:biome": "biome lint --error-on-warnings .",
+    "lint:eslint": "eslint --max-warnings 0 .",
+    "lint:docs": "markdownlint --dot --config .markdownlint.jsonc \"**/*.md\"",
+    "format": "biome check --write --error-on-warnings . && prettier --write .",
+    "format:check": "biome check --error-on-warnings . && prettier --check .",
+    "lint:fix": "eslint --fix --max-warnings 0 .",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run test:scripts && npm run check:words",
+    "validate": "npm run check && npm run build",
     "typecheck": "tsc -b --noEmit",
     "check:words": "node scripts/check-words.mjs",
     "sort:words": "node scripts/sort-words.mjs",
@@ -25,21 +31,34 @@
     "setup:speech": "node scripts/download-speech-assets.mjs",
     "check:speech-assets": "node scripts/download-speech-assets.mjs --check"
   },
+  "overrides": {
+    "markdownlint-cli": {
+      "js-yaml": "5.4.1"
+    }
+  },
   "dependencies": {
     "onnxruntime-web": "^1.23.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
+    "@biomejs/biome": "2.5.14",
     "@playwright/test": "^1.60.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/node": "24.19.1",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/eslint-plugin": "1.6.27",
+    "eslint": "10.12.0",
+    "eslint-plugin-playwright": "2.12.0",
+    "eslint-plugin-react-hooks": "7.1.1",
     "jsdom": "^29.1.1",
-    "typescript": "^6.0.3",
+    "markdownlint-cli": "0.49.1",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
     "vite": "^8.3.1",
     "vitest": "^4.1.7"
   }

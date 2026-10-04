@@ -224,6 +224,132 @@ h1 {
   object-fit: contain;
 }
 
+.app-header__speech-settings {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  min-inline-size: 64px;
+  min-block-size: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--color-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Speech settings stays in the native modal layer, independent of app sizing. */
+.speech-settings-dialog {
+  inline-size: min(420px, calc(100vw - 24px));
+  max-inline-size: calc(100vw - 24px);
+  max-block-size: calc(var(--viewport-block-size) - 32px);
+  margin: auto;
+  padding: 20px;
+  overflow: auto;
+  border: 2px solid var(--color-line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--color-white);
+  color: var(--color-ink);
+  box-shadow: var(--elevation-soft);
+  text-align: start;
+}
+
+.speech-settings-dialog::backdrop {
+  background: rgba(47, 23, 0, 0.48);
+}
+
+.speech-settings-dialog__form,
+.speech-settings-dialog__field {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.speech-settings-dialog__form {
+  gap: 16px;
+}
+
+.speech-settings-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.speech-settings-dialog__header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.speech-settings-dialog button {
+  min-block-size: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.speech-settings-dialog__header .speech-settings-dialog__close {
+  min-inline-size: 44px;
+  padding: 4px;
+  background: var(--color-white);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.speech-settings-dialog__field label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.speech-settings-dialog__field input,
+.speech-settings-dialog__field select {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  padding: 10px 8px;
+  border: 1px solid var(--color-ink);
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 16px;
+}
+
+.speech-settings-dialog__field input:focus-visible,
+.speech-settings-dialog__field select:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+.speech-settings-dialog__help,
+.speech-settings-dialog__error {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.speech-settings-dialog__error {
+  color: #9f280c;
+}
+
+.speech-settings-dialog__actions {
+  display: flex;
+  justify-content: end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.speech-settings-dialog__actions .speech-settings-dialog__save {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
 .offline-notice {
   position: absolute;
   inset-block-start: max(var(--safe-top), 8px);

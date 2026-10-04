@@ -4,7 +4,7 @@
 
 **[ブラウザで遊ぶ](https://henteko-news.netlify.app/)** · [開発への参加](CONTRIBUTING.md) · [公開準備のレビュー](docs/public-readiness-review.md)
 
-音声モデルを配置するとニュースを読み上げます。音声が使えないときも文字で遊べます。サーバー、APIキー、利用者アカウントは必要ありません。
+標準ではブラウザーの Web Speech API でニュースを読み上げます。モデルのダウンロードやAPIキーは必要ありません。音声が使えないときも文字で遊べます。
 
 ## ローカルで動かす
 
@@ -17,9 +17,18 @@ npm ci
 npm run dev
 ```
 
-表示されたローカルURLを開きます。この時点では文字で遊べます。音声に必要な ONNX Runtime のファイルは `predev` / `prebuild` が自動配置します。
+表示されたローカルURLを開きます。ブラウザーが読み上げに対応していれば、そのまま音声を使えます。日本語の声は端末・ブラウザーの設定に依存します。
 
-## 読み上げを有効にする
+## 音声方式を選ぶ
+
+画面上の「音声設定」で読み上げ方式を選び、「設定を保存」を押します。設定はこのブラウザーに保存され、ニュースと `/words-audio-check` の両方に反映されます。方式やモデルを変更すると、再生中の音声は停止します。
+
+- **ブラウザーの音声（Web Speech API）**: 初期設定。端末で利用できる日本語の声を使います。ブラウザーや声によってはネットワーク接続が必要です。
+- **モデル音声（Supertonic）**: 対応するONNXモデルでブラウザー内に音声を生成します。モデルのフォルダーと声のJSONファイルを指定できます。
+
+モデル方式に自動で切り替えることはありません。Web Speech APIが使えない場合は文字で遊ぶか、設定でモデル方式を選んでください。
+
+## モデル音声を使う（任意）
 
 ```sh
 npm run setup:speech
@@ -29,7 +38,7 @@ npm run dev
 
 `setup:speech` は、[Supertonic 3 のアーカイブ](https://github.com/supertone-oss-archive/supertonic)で案内されている固定リビジョン `aafc6e32416a594460b32413efc49d7fe4ce6d46` から、4つの ONNX モデル、設定、Unicodeインデックス、M1音声スタイルを取得します。大きなファイルをダウンロードするため、時間と空き容量が必要です。取得途中のファイルは最終ファイル名で保存しません。
 
-配置先は次のとおりです。手動配置する場合も、同じリビジョンのファイルを揃えてください。
+配置先は次のとおりです。設定で「モデル音声（Supertonic）」を選び、標準のフォルダー `/supertonic/onnx` と声のJSONファイル `/supertonic/voice_styles/M1.json` を保存します。手動配置する場合も、互換性のあるモデル一式を揃えてください。
 
 ```text
 public/supertonic/
@@ -44,6 +53,8 @@ public/supertonic/
   voice_styles/
     M1.json
 ```
+
+別の配置先を使う場合は、設定の「モデルのフォルダー」にONNXモデル4個と `tts.json`・`unicode_indexer.json` のあるディレクトリを指定し、「声のJSONファイル」に互換性のある音声スタイルを指定します。配布済みのパス（例: `/custom-model/onnx`）またはHTTP(S) URLを使えます。別ドメインでは配布元のCORS設定も必要です。端末のファイルを直接アップロードする機能や、Supertonic以外のモデル形式には対応していません。
 
 モデルと生成したランタイムは Git の対象外です。モデル配布条件はコードのライセンスと別なので、[第三者素材・依存関係の案内](docs/THIRD_PARTY_NOTICES.md)を確認してください。Supertonic の開発・サポートは終了しており、このアプリで使う互換性と配布元は継続的な確認が必要です。
 
@@ -64,7 +75,7 @@ public/supertonic/
 
 ブラウザテストは先に `npm run build` と `npx playwright install chromium` を実行します。LinuxでOS依存ライブラリも必要な場合は `npx playwright install --with-deps chromium` を使います。`test:layout` は画面サイズのテストだけを実行します。
 
-実モデルの音声テストはモデル配置・ビルド後、`RUN_SPEECH_SMOKE=1 npm run test:e2e -- tests/speech.spec.ts` で実行します（PowerShellでは先に `$env:RUN_SPEECH_SMOKE="1"` を設定）。通常のテストはモデルをダウンロードせず実行できます。CIの音声ジョブはモデルを取得し、実際に音声WAVを生成します。
+実モデルの音声テストはモデル配置・ビルド後、`RUN_SPEECH_SMOKE=1 npm run test:e2e -- tests/speech.spec.ts` で実行します（PowerShellでは先に `$env:RUN_SPEECH_SMOKE="1"` を設定）。このテストは設定でモデル方式を選んでから音声WAVを生成します。通常のテストはモデルをダウンロードせず実行できます。GitHub Actionsはリポジトリ設定で停止しており、ワークフローにもpush・PRの自動起動条件はありません。
 
 ## 配布・PWA
 
@@ -73,7 +84,7 @@ npm run build
 npm run preview
 ```
 
-静的ホスティングには **`dist/` 全体**を配布します。第三者のライセンス表示を入れた `dist/licenses/` も保持してください。音声を使う配布では、ビルドの前に `setup:speech` を実行してください。ホストのビルド設定はビルドコマンド `npm run build`、公開ディレクトリ `dist` です。
+静的ホスティングには **`dist/` 全体**を配布します。第三者のライセンス表示を入れた `dist/licenses/` も保持してください。モデル音声を使う配布では、ビルドの前に `setup:speech` を実行するか、設定で指定する配布先に対応モデルを配置します。Web Speech APIだけを使う場合、モデルは不要です。ONNX Runtimeのファイルは `predev` / `prebuild` が自動配置しますが、標準の読み上げ時にモデルを取得することはありません。ホストのビルド設定はビルドコマンド `npm run build`、公開ディレクトリ `dist` です。
 
 現在は**ドメイン直下への配布**をサポートします。サブディレクトリへの配布には、画像・音声・Service Worker・manifestの絶対パス対応が必要です。独自ドメインやフォークでは `index.html` の canonical / OGP / JSON-LD、`public/robots.txt`、`public/sitemap.xml` にあるURLも更新してください。`/words-audio-check` を直接開けるよう、ホスト側で存在しない画面パスを `index.html` にフォールバックさせます。
 
@@ -91,7 +102,7 @@ PWAはHTTPSまたはlocalhostで動作します。開発サーバーでは登録
 - `scripts/`: モデル取得、ランタイム配置、PWA生成、語彙チェック。
 - `tests/`: 本番ブラウザでのE2Eテスト。
 
-React、TypeScript、Vite、CSS、Supertonic / ONNX Runtime Webを使用します。現状、分析用の関数はありますが外部送信先は接続していません。選んだ言葉はブラウザ内で処理します。
+React、TypeScript、Vite、CSS、Web Speech API、任意のSupertonic / ONNX Runtime Webを使用します。現状、分析用の関数はありますが外部送信先は接続していません。モデル方式では選んだ言葉をブラウザー内で処理します。Web Speech APIの音声処理先はブラウザーと選ばれた声に依存します。
 
 ## 利用条件
 

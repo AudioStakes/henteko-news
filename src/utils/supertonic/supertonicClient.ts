@@ -1,8 +1,12 @@
+import { DEFAULT_SPEECH_SETTINGS, type SpeechSettings } from "../speechSettings";
 import type { Style, TextToSpeech } from "./helper";
+
+type ModelSettings = Pick<SpeechSettings, "modelBasePath" | "voiceStylePath">;
 
 type SupertonicInput = {
   text: string;
   lang?: string;
+  modelBasePath?: string;
   voiceStylePath?: string;
   totalStep?: number;
   speed?: number;
@@ -14,77 +18,111 @@ type SynthesisResult = {
   durationSec: number;
 };
 
-const DEFAULT_VOICE_STYLE_PATH = "/supertonic/voice_styles/M1.json";
-const DEFAULT_LANG = "ja";
-const DEFAULT_TOTAL_STEP = 8;
-const DEFAULT_SPEED = 1;
-const ONNX_DIR = "/supertonic/onnx";
-
-let preloadPromise: Promise<void> | null = null;
-let ttsPromise: Promise<TextToSpeech> | null = null;
+const MAX_CACHED_MODELS = 2;
+const MAX_CACHED_STYLES = 4;
+type ModelEntry = {
+  promise: Promise<TextToSpeech>;
+  users: number;
+  loaded: boolean;
+};
+const modelCache = new Map<string, ModelEntry>();
 const styleCache = new Map<string, Promise<Style>>();
 
-async function getTts() {
-  if (!ttsPromise) {
-    ttsPromise = import("./helper")
-      .then(({ loadTextToSpeech }) => loadTextToSpeech(ONNX_DIR))
-      .then((loaded) => loaded.textToSpeech)
-      .catch((error) => {
-        ttsPromise = null;
-        throw error;
-      });
+function trimModelCache() {
+  for (const [path, entry] of modelCache) {
+    if (modelCache.size <= MAX_CACHED_MODELS) break;
+    // A pending or in-flight synthesis still owns these sessions.
+    if (!entry.loaded || entry.users > 0) continue;
+    modelCache.delete(path);
+    void entry.promise.then((tts) => tts.dispose()).catch(() => undefined);
   }
-  return ttsPromise;
+}
+
+async function withModel<T>(modelBasePath: string, use: (tts: TextToSpeech) => Promise<T>) {
+  const path = modelBasePath.replace(/\/+$/, "");
+  let entry = modelCache.get(path);
+  if (!entry) {
+    const next: ModelEntry = {
+      promise: import("./helper")
+        .then(({ loadTextToSpeech }) => loadTextToSpeech(path))
+        .then((loaded) => {
+          next.loaded = true;
+          return loaded.textToSpeech;
+        })
+        .catch((error) => {
+          if (modelCache.get(path) === next) modelCache.delete(path);
+          throw error;
+        }),
+      users: 0,
+      loaded: false,
+    };
+    entry = next;
+  }
+  // Move the requested model to the most recently used end of the cache.
+  modelCache.delete(path);
+  modelCache.set(path, entry);
+  entry.users += 1;
+  try {
+    return await use(await entry.promise);
+  } finally {
+    entry.users -= 1;
+    trimModelCache();
+  }
 }
 
 function getStyle(path: string) {
   const cached = styleCache.get(path);
-  if (cached) return cached;
+  if (cached) {
+    styleCache.delete(path);
+    styleCache.set(path, cached);
+    return cached;
+  }
   const next = import("./helper")
     .then(({ loadVoiceStyle }) => loadVoiceStyle([path]))
     .catch((error) => {
-      styleCache.delete(path);
+      if (styleCache.get(path) === next) styleCache.delete(path);
       throw error;
     });
   styleCache.set(path, next);
+  if (styleCache.size > MAX_CACHED_STYLES) {
+    const oldestPath = styleCache.keys().next().value;
+    if (oldestPath) styleCache.delete(oldestPath);
+  }
   return next;
 }
 
-export async function preloadSupertonic() {
-  if (!preloadPromise) {
-    preloadPromise = Promise.all([getTts(), getStyle(DEFAULT_VOICE_STYLE_PATH)])
-      .then(() => undefined)
-      .catch((error) => {
-        preloadPromise = null;
-        throw error;
-      });
-  }
-  return preloadPromise;
+export async function preloadSupertonic(settings: ModelSettings = DEFAULT_SPEECH_SETTINGS) {
+  await Promise.all([
+    withModel(settings.modelBasePath, async () => undefined),
+    getStyle(settings.voiceStylePath),
+  ]);
 }
 
 export async function synthesizeSupertonicSpeech({
   text,
-  lang = DEFAULT_LANG,
-  voiceStylePath = DEFAULT_VOICE_STYLE_PATH,
-  totalStep = DEFAULT_TOTAL_STEP,
-  speed = DEFAULT_SPEED,
+  lang = "ja",
+  modelBasePath = DEFAULT_SPEECH_SETTINGS.modelBasePath,
+  voiceStylePath = DEFAULT_SPEECH_SETTINGS.voiceStylePath,
+  totalStep = 8,
+  speed = 1,
 }: SupertonicInput): Promise<SynthesisResult> {
   if (!text.trim()) throw new Error("text is empty");
-  const [tts, style, { writeWavFile }] = await Promise.all([
-    getTts(),
-    getStyle(voiceStylePath),
-    import("./helper"),
-  ]);
-  const result = await tts.call(text, lang, style, totalStep, speed);
-  const durationSec = result.duration[0] ?? 0;
-  const sampleCount = Math.max(1, Math.floor(tts.sampleRate * durationSec));
-  const wav = result.wav.slice(0, sampleCount);
+  return withModel(modelBasePath, async (tts) => {
+    const [style, { writeWavFile }] = await Promise.all([
+      getStyle(voiceStylePath),
+      import("./helper"),
+    ]);
+    const result = await tts.call(text, lang, style, totalStep, speed);
+    const durationSec = result.duration[0] ?? 0;
+    const sampleCount = Math.max(1, Math.floor(tts.sampleRate * durationSec));
+    const wav = result.wav.slice(0, sampleCount);
 
-  const blob = writeWavFile(wav, tts.sampleRate);
-  const url = URL.createObjectURL(blob);
-  return {
-    url,
-    durationSec,
-    revoke: () => URL.revokeObjectURL(url),
-  };
+    const blob = writeWavFile(wav, tts.sampleRate);
+    const url = URL.createObjectURL(blob);
+    return {
+      url,
+      durationSec,
+      revoke: () => URL.revokeObjectURL(url),
+    };
+  });
 }

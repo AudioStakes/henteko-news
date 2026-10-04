@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DEFAULT_NEWS_SPEECH_CONFIG } from "../constants/speech";
 import { CATEGORIES } from "../data/words";
 import type { Selections } from "../types/game";
@@ -22,7 +22,14 @@ function buildSpeechError(reason: "unsupported" | "timeout" | "error") {
 
 export function useNewsSpeech() {
   const [speechError, setSpeechError] = useState("");
-  const { speak, isSupported, isSpeaking, warmup, cancel } = useSpeech();
+  const { speak, isSupported, isSpeaking, warmup, cancel, settingsKey } = useSpeech();
+  const previousSettingsKey = useRef(settingsKey);
+
+  useEffect(() => {
+    if (previousSettingsKey.current === settingsKey) return;
+    previousSettingsKey.current = settingsKey;
+    setSpeechError("");
+  }, [settingsKey]);
 
   useEffect(() => {
     trackEvent(
@@ -47,17 +54,20 @@ export function useNewsSpeech() {
     }
 
     setSpeechError("");
+    let failureReported = false;
+    const reportFailure = (reason: "timeout" | "error") => {
+      if (failureReported) return;
+      failureReported = true;
+      setSpeechError(buildSpeechError(reason));
+      trackError(ANALYTICS_EVENT_NAMES.speechError, { reason });
+    };
     const ok = speak(toSpeechText(nextSelections), {
       ...DEFAULT_NEWS_SPEECH_CONFIG,
-      onError: (reason) => {
-        setSpeechError(buildSpeechError(reason));
-        trackError(ANALYTICS_EVENT_NAMES.speechError, { reason });
-      },
+      onError: reportFailure,
     });
 
     if (!ok && !isSpeaking) {
-      setSpeechError(buildSpeechError("error"));
-      trackError(ANALYTICS_EVENT_NAMES.speechError, { reason: "error" });
+      reportFailure("error");
     }
   };
 

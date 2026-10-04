@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEFAULT_NEWS_SPEECH_CONFIG } from "../constants/speech";
 import { useSpeech } from "./useSpeech";
 
@@ -8,12 +8,31 @@ const ERR_UNSUPPORTED = "このブラウザでは よみあげが つかえま�
 const ERR_PLAYBACK = "よみあげが とちゅうで とまりました。もういちど はじめてください。";
 
 export function useSpeechQueue(items: string[], options: Options = {}) {
-  const { speak, cancel, isSupported } = useSpeech();
+  const { speak, cancel, isSupported, settingsKey } = useSpeech();
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState("");
   const queueIdRef = useRef(0);
   const isPlayingRef = useRef(false);
+  const previousSettingsKey = useRef(settingsKey);
+
+  useEffect(() => {
+    if (previousSettingsKey.current === settingsKey) return;
+    previousSettingsKey.current = settingsKey;
+    queueIdRef.current += 1;
+    isPlayingRef.current = false;
+    setIsPlaying(false);
+    setCurrentIndex(-1);
+    setError("");
+  }, [settingsKey]);
+
+  useEffect(
+    () => () => {
+      queueIdRef.current += 1;
+      isPlayingRef.current = false;
+    },
+    [],
+  );
 
   const stop = () => {
     queueIdRef.current += 1;
@@ -24,7 +43,7 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
   };
 
   const failQueue = (queueId: number, message: string) => {
-    if (queueId !== queueIdRef.current) return;
+    if (queueId !== queueIdRef.current || !isPlayingRef.current) return;
     isPlayingRef.current = false;
     setIsPlaying(false);
     setError(message);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "./assets/imageUrls";
 import { AppView } from "./components/AppView";
+import { SpeechSettingsProvider } from "./context/SpeechSettingsContext";
 import { CATEGORIES } from "./data/words";
 import { useGameFlow } from "./hooks/useGameFlow";
 import { useNewsSpeech } from "./hooks/useNewsSpeech";
@@ -10,6 +11,14 @@ import { preloadImagesWhenIdle } from "./utils/preload";
 import { buildNewsLines } from "./utils/speechText";
 
 export default function App() {
+  return (
+    <SpeechSettingsProvider>
+      <AppContent />
+    </SpeechSettingsProvider>
+  );
+}
+
+function AppContent() {
   const [isOffline, setIsOffline] = useState(() => {
     if (typeof navigator === "undefined") return false;
     return !navigator.onLine;

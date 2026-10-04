@@ -15,7 +15,7 @@ export const DEFAULT_SPEECH_SETTINGS: SpeechSettings = {
 };
 
 export function isSpeechAssetPath(value: string, directory = false) {
-  if (!value.trim()) return false;
+  if (!value.trim() || value.includes("#") || (directory && value.includes("?"))) return false;
   try {
     const url = new URL(value, "https://henteko-news.invalid");
     return (

@@ -34,4 +34,22 @@ describe("speech settings", () => {
       parseSpeechSettings({ provider: "supertonic", modelBasePath: "file:///models" }),
     ).toEqual({ ...DEFAULT_SPEECH_SETTINGS, provider: "supertonic" });
   });
+
+  it("rejects empty query and fragment delimiters before appending model filenames", () => {
+    for (const modelBasePath of [
+      "/models?",
+      "/models#",
+      "https://models.example.com/onnx?",
+      "https://models.example.com/onnx#",
+    ]) {
+      expect(isSpeechAssetPath(modelBasePath, true)).toBe(false);
+      expect(parseSpeechSettings({ provider: "supertonic", modelBasePath }).modelBasePath).toBe(
+        DEFAULT_SPEECH_SETTINGS.modelBasePath,
+      );
+    }
+    expect(isSpeechAssetPath("/voices/M1.json#")).toBe(false);
+    expect(parseSpeechSettings({ voiceStylePath: "/voices/M1.json#" }).voiceStylePath).toBe(
+      DEFAULT_SPEECH_SETTINGS.voiceStylePath,
+    );
+  });
 });

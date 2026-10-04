@@ -136,24 +136,49 @@ describe("speech settings dialog", () => {
     expect(screen.getByLabelText("モデルのフォルダー")).toHaveValue("/supertonic/onnx");
   });
 
-  it("announces invalid paths, focuses the first invalid field, and keeps saved settings", () => {
-    renderSettings();
-    openSettings();
-    chooseModel();
-    fireEvent.change(screen.getByLabelText("モデルのフォルダー"), {
-      target: { value: "javascript:alert(1)" },
-    });
-    fireEvent.change(screen.getByLabelText("声のJSONファイル"), { target: { value: "" } });
+  it.each([
+    { model: "javascript:alert(1)", voice: "", modelInvalid: true, voiceInvalid: true },
+    {
+      model: "/custom/onnx?",
+      voice: "/voices/M1.json",
+      modelInvalid: true,
+      voiceInvalid: false,
+    },
+    {
+      model: "/custom/onnx#",
+      voice: "/voices/M1.json",
+      modelInvalid: true,
+      voiceInvalid: false,
+    },
+    {
+      model: "/custom/onnx",
+      voice: "/voices/M1.json#",
+      modelInvalid: false,
+      voiceInvalid: true,
+    },
+  ])(
+    "rejects invalid paths ($model, $voice) and focuses the first invalid field",
+    ({ model, voice, modelInvalid, voiceInvalid }) => {
+      renderSettings();
+      openSettings();
+      chooseModel();
+      const modelInput = screen.getByLabelText("モデルのフォルダー");
+      const voiceInput = screen.getByLabelText("声のJSONファイル");
+      fireEvent.change(modelInput, { target: { value: model } });
+      fireEvent.change(voiceInput, { target: { value: voice } });
 
-    fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
+      fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
 
-    expect(screen.getByRole("dialog", { name: "音声設定" })).toBeInTheDocument();
-    expect(screen.getAllByRole("alert")).toHaveLength(2);
-    expect(screen.getByLabelText("モデルのフォルダー")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByLabelText("モデルのフォルダー")).toHaveFocus();
-    expect(screen.getByLabelText("声のJSONファイル")).toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"web-speech"');
-  });
+      expect(screen.getByRole("dialog", { name: "音声設定" })).toBeInTheDocument();
+      expect(screen.getAllByRole("alert")).toHaveLength(
+        Number(modelInvalid) + Number(voiceInvalid),
+      );
+      expect(modelInput).toHaveAttribute("aria-invalid", String(modelInvalid));
+      expect(voiceInput).toHaveAttribute("aria-invalid", String(voiceInvalid));
+      expect(modelInvalid ? modelInput : voiceInput).toHaveFocus();
+      expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"web-speech"');
+    },
+  );
 
   it("resets to browser defaults only after saving", () => {
     window.localStorage.setItem(

@@ -22,7 +22,12 @@ export const HIYOKO_IMAGE_URLS = [
   hiyoko10,
 ] as const;
 
-export const getRandomHiyokoImageUrl = () =>
-  HIYOKO_IMAGE_URLS[Math.floor(Math.random() * HIYOKO_IMAGE_URLS.length)];
+export const getRandomHiyokoImageUrl = () => {
+  const imageUrl = HIYOKO_IMAGE_URLS[Math.floor(Math.random() * HIYOKO_IMAGE_URLS.length)];
+  if (imageUrl === undefined) {
+    throw new RangeError("Random image index is out of bounds");
+  }
+  return imageUrl;
+};
 
 export const NEXT_SCREEN_IMAGE_URLS = [...HIYOKO_IMAGE_URLS];

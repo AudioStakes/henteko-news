@@ -16,7 +16,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .tool-versions
           cache: npm
       - run: npm ci
       - run: npm audit --audit-level=high
@@ -25,11 +25,12 @@ jobs:
       - name: Show suggested formatting changes after a lint failure
         if: failure() && steps.lint.outcome == 'failure'
         run: |
-          npm run check || true
+          npm run format || true
           git diff --no-ext-diff
       - run: npm run test
       - run: npm run test:scripts
       - run: npm run typecheck
+      - run: npm run format:check
       - run: npm run build
       - run: npm run check:words
       - run: npx playwright install --with-deps chromium
@@ -49,7 +50,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version-file: .tool-versions
           cache: npm
       - run: npm ci
       - run: npm run setup:speech

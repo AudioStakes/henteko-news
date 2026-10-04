@@ -4,7 +4,7 @@ import { DEFAULT_SPEECH_SETTINGS, isSpeechAssetPath, parseSpeechSettings } from 
 describe("speech settings", () => {
   it("defaults to browser speech for missing or corrupt saved settings", () => {
     for (const value of [null, undefined, "supertonic", [], { provider: "unknown" }]) {
-      expect(parseSpeechSettings(value)).toEqual(DEFAULT_SPEECH_SETTINGS);
+      expect(parseSpeechSettings(value)).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
     }
   });
 
@@ -15,7 +15,7 @@ describe("speech settings", () => {
         modelBasePath: " https://models.example.com/custom/onnx/ ",
         voiceStylePath: " /voices/F1.json ",
       }),
-    ).toEqual({
+    ).toStrictEqual({
       provider: "supertonic",
       modelBasePath: "https://models.example.com/custom/onnx/",
       voiceStylePath: "/voices/F1.json",
@@ -32,7 +32,7 @@ describe("speech settings", () => {
     expect(isSpeechAssetPath("/voices/M1.json?version=2")).toBe(true);
     expect(
       parseSpeechSettings({ provider: "supertonic", modelBasePath: "file:///models" }),
-    ).toEqual({ ...DEFAULT_SPEECH_SETTINGS, provider: "supertonic" });
+    ).toStrictEqual({ ...DEFAULT_SPEECH_SETTINGS, provider: "supertonic" });
   });
 
   it("rejects empty query and fragment delimiters before appending model filenames", () => {

@@ -20,7 +20,9 @@ export default function App() {
 
 function AppContent() {
   const [isOffline, setIsOffline] = useState(() => {
-    if (typeof navigator === "undefined") return false;
+    if (typeof navigator === "undefined") {
+      return false;
+    }
     return !navigator.onLine;
   });
   const pathname = typeof window !== "undefined" ? window.location.pathname : "/";
@@ -48,17 +50,16 @@ function AppContent() {
   } = useNewsSpeech();
   const effectiveSelections = debugSelections ?? selections;
   const lines = useMemo(() => buildNewsLines(effectiveSelections), [effectiveSelections]);
-  const hiyokoImageUrl = useMemo(() => {
-    void screen;
-    return getRandomHiyokoImageUrl();
-  }, [screen]);
+  const screenImage = useMemo(() => ({ screen, imageUrl: getRandomHiyokoImageUrl() }), [screen]);
 
   useEffect(() => {
     preloadImagesWhenIdle(NEXT_SCREEN_IMAGE_URLS);
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return undefined;
+    if (typeof window === "undefined") {
+      return undefined;
+    }
 
     const handleOnline = () => {
       setIsOffline(false);
@@ -90,7 +91,9 @@ function AppContent() {
   const handleSelect = (word: Parameters<typeof handleSelectWord>[0]) => {
     warmup();
     const next = handleSelectWord(word);
-    if (isLastSelectStep) speakNews(next);
+    if (isLastSelectStep) {
+      speakNews(next);
+    }
   };
 
   return (
@@ -115,10 +118,12 @@ function AppContent() {
       }
       isSupported={isSupported}
       isSpeaking={isSpeaking}
-      imageUrl={hiyokoImageUrl}
+      imageUrl={screenImage.imageUrl}
       onStart={start}
       onSelectWord={handleSelect}
-      onReplayVoice={() => speakNews(effectiveSelections)}
+      onReplayVoice={() => {
+        speakNews(effectiveSelections);
+      }}
       onRestartGame={start}
     />
   );

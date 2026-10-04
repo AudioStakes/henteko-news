@@ -1,4 +1,5 @@
 {
+  "$schema": "https://biomejs.dev/schemas/2.5.14/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -6,6 +7,7 @@
   },
   "formatter": {
     "enabled": true,
+    "useEditorconfig": true,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 100
@@ -13,7 +15,112 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "preset": "recommended",
+      "a11y": {
+        "noAccessKey": "error",
+        "noAmbiguousAnchorText": "error",
+        "noAriaHiddenOnFocusable": "error",
+        "noAriaUnsupportedElements": "error",
+        "noAutofocus": "error",
+        "noDistractingElements": "error",
+        "noHeaderScope": "error",
+        "noInteractiveElementToNoninteractiveRole": "error",
+        "noLabelWithoutControl": "error",
+        "noNoninteractiveElementInteractions": "error",
+        "noNoninteractiveElementToInteractiveRole": "error",
+        "noNoninteractiveTabindex": "error",
+        "noPositiveTabindex": "error",
+        "noRedundantAlt": "error",
+        "noRedundantRoles": "error",
+        "noStaticElementInteractions": "error",
+        "noSvgWithoutTitle": "error",
+        "useAltText": "error",
+        "useAnchorContent": "error",
+        "useAriaActivedescendantWithTabindex": "error",
+        "useAriaPropsForRole": "error",
+        "useAriaPropsSupportedByRole": "error",
+        "useButtonType": "error",
+        "useFocusableInteractive": "error",
+        "useGenericFontNames": "error",
+        "useHeadingContent": "error",
+        "useHtmlLang": "error",
+        "useIframeTitle": "error",
+        "useKeyWithClickEvents": "error",
+        "useKeyWithMouseEvents": "error",
+        "useMediaCaption": "error",
+        "useSemanticElements": "error",
+        "useValidAnchor": "error",
+        "useValidAriaProps": "error",
+        "useValidAriaRole": "error",
+        "useValidAriaValues": "error",
+        "useValidAutocomplete": "error",
+        "useValidLang": "error"
+      },
+      "security": {
+        "preset": "all",
+        "noBlankTarget": "error",
+        "noDangerouslySetInnerHtml": "error",
+        "noDangerouslySetInnerHtmlWithChildren": "error",
+        "noGlobalEval": "error",
+        "noScriptUrl": "error",
+        "noSecrets": "off"
+      },
+      "complexity": {
+        "useLiteralKeys": "off",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 20
+          }
+        },
+        "noImplicitCoercions": "error",
+        "noUselessStringConcat": "error",
+        "useSimplifiedLogicExpression": "error"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off",
+        "useHookAtTopLevel": "off",
+        "noNestedComponentDefinitions": "off",
+        "noReactPropAssignments": "off",
+        "noUnusedFunctionParameters": "error",
+        "noUndeclaredDependencies": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "error"
+      },
+      "style": {
+        "noCommonJs": "error",
+        "noEnum": "error",
+        "noNonNullAssertion": "error",
+        "noParameterAssign": "error",
+        "noParameterProperties": "error",
+        "noUnusedTemplateLiteral": "error",
+        "useBlockStatements": "error",
+        "useConst": "error",
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": {
+            "syntax": "shorthand"
+          }
+        },
+        "useDefaultParameterLast": "error",
+        "useExportType": "error",
+        "useImportType": "error",
+        "useNodeAssertStrict": "error",
+        "useNodejsImportProtocol": "error",
+        "useSelfClosingElements": "error",
+        "useThrowNewError": "error",
+        "useThrowOnlyError": "off"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noTsIgnore": "off",
+        "noFocusedTests": "off",
+        "noSkippedTests": "off",
+        "noDuplicateTestHooks": "off",
+        "noMisplacedAssertion": "off",
+        "useAwait": "off"
+      }
     }
   },
   "assist": {
@@ -25,19 +132,24 @@
     }
   },
   "files": {
-    "includes": [
-      "src/**/*",
-      "public/**/*",
-      "*.html",
-      "*.ts",
-      "*.tsx",
-      "*.json",
-      "*.css",
-      "*.md",
-      "!dist",
-      "!node_modules"
-    ]
+    "ignoreUnknown": true,
+    "includes": ["src/**", "tests/**", "scripts/**", "public/**", "*.*", "!package-lock.json"]
   },
+  "overrides": [
+    {
+      "includes": ["src/**/*.test.{ts,tsx}", "tests/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDoneCallback": "off"
+          },
+          "complexity": {
+            "noExcessiveNestedTestSuites": "off"
+          }
+        }
+      }
+    }
+  ],
   "html": {
     "formatter": {
       "enabled": true,

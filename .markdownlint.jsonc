@@ -1,0 +1,6 @@
+{
+  "extends": "./node_modules/markdownlint/style/prettier.json",
+  "default": true,
+  "MD024": { "siblings_only": true },
+  "MD033": { "allowed_elements": ["br", "kbd", "details", "summary"] }
+}

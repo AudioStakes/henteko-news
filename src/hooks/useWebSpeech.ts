@@ -20,11 +20,18 @@ export function useWebSpeech() {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null);
   const watchdogRef = useRef<number | null>(null);
-  const synthesis = typeof window === "undefined" ? undefined : window.speechSynthesis;
-  const isSupported = !!synthesis && typeof window.SpeechSynthesisUtterance === "function";
+  const speechWindow: { speechSynthesis?: SpeechSynthesis | null } | undefined =
+    typeof window === "undefined" ? undefined : window;
+  const synthesis = speechWindow?.speechSynthesis;
+  const isSupported =
+    synthesis !== undefined &&
+    synthesis !== null &&
+    typeof window.SpeechSynthesisUtterance === "function";
 
   const refreshVoices = useCallback(() => {
-    if (!isSupported || !synthesis) return;
+    if (!isSupported) {
+      return;
+    }
     try {
       voiceRef.current = japaneseVoice(synthesis.getVoices());
     } catch {
@@ -44,7 +51,9 @@ export function useWebSpeech() {
         utteranceRef.current.onend = null;
         utteranceRef.current.onerror = null;
         utteranceRef.current = null;
-        if (cancelPlayback) synthesis?.cancel();
+        if (cancelPlayback) {
+          synthesis?.cancel();
+        }
       }
       speakingRef.current = false;
     },
@@ -58,7 +67,9 @@ export function useWebSpeech() {
   }, [cleanup]);
 
   useEffect(() => {
-    if (!isSupported || !synthesis) return;
+    if (!isSupported) {
+      return;
+    }
     refreshVoices();
     synthesis.addEventListener("voiceschanged", refreshVoices);
     return () => {
@@ -72,30 +83,36 @@ export function useWebSpeech() {
     (text: string, options: SpeakOptions) => {
       if (
         !isSupported ||
-        !synthesis ||
         speakingRef.current ||
         synthesis.speaking ||
         synthesis.pending ||
-        !text.trim()
+        text.trim().length === 0
       ) {
         return false;
       }
 
       const requestId = ++requestIdRef.current;
       const finish = (reason?: "timeout" | "error") => {
-        if (requestId !== requestIdRef.current) return;
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
         requestIdRef.current += 1;
-        cleanup(!!reason);
+        cleanup(reason !== undefined);
         setIsSpeaking(false);
-        if (reason) options.onError?.(reason);
-        else options.onEnd?.();
+        if (reason !== undefined) {
+          options.onError?.(reason);
+        } else {
+          options.onEnd?.();
+        }
       };
 
       try {
         refreshVoices();
         const utterance = new window.SpeechSynthesisUtterance(text.trim());
         utterance.lang = "ja-JP";
-        if (voiceRef.current) utterance.voice = voiceRef.current;
+        if (voiceRef.current) {
+          utterance.voice = voiceRef.current;
+        }
         utterance.rate = Number.isFinite(options.rate)
           ? Math.max(0.1, Math.min(10, options.rate))
           : 1;
@@ -105,21 +122,30 @@ export function useWebSpeech() {
         utteranceRef.current = utterance;
         speakingRef.current = true;
         setIsSpeaking(true);
-        watchdogRef.current = window.setTimeout(
-          () => finish("timeout"),
-          WEB_SPEECH_START_TIMEOUT_MS,
-        );
+        watchdogRef.current = window.setTimeout(() => {
+          finish("timeout");
+        }, WEB_SPEECH_START_TIMEOUT_MS);
         utterance.onstart = () => {
-          if (requestId !== requestIdRef.current) return;
-          if (watchdogRef.current !== null) window.clearTimeout(watchdogRef.current);
+          if (requestId !== requestIdRef.current) {
+            return;
+          }
+          if (watchdogRef.current !== null) {
+            window.clearTimeout(watchdogRef.current);
+          }
           // Bound playback even when a browser never dispatches its end/error event.
           watchdogRef.current = window.setTimeout(
-            () => finish("timeout"),
+            () => {
+              finish("timeout");
+            },
             Math.max(WEB_SPEECH_START_TIMEOUT_MS, (text.length * 300) / utterance.rate + 10_000),
           );
         };
-        utterance.onend = () => finish();
-        utterance.onerror = () => finish("error");
+        utterance.onend = () => {
+          finish();
+        };
+        utterance.onerror = () => {
+          finish("error");
+        };
         synthesis.speak(utterance);
         return true;
       } catch {

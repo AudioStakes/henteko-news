@@ -1,0 +1,15 @@
+**/*
+!**/
+!**/*.md
+!**/*.yml
+!**/*.yaml
+.agents/**
+.codex/**
+node_modules/**
+dist/**
+public/supertonic/**
+public/onnxruntime/**
+public/licenses/**
+test-results/**
+playwright-report/**
+blob-report/**

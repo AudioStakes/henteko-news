@@ -68,11 +68,11 @@ export function AppView({
               onRestartGame={() => {}}
             />
           )}
-          {!isWordsAudioCheckRoute && !debugSelections && screen.name === "start" && (
+          {!isWordsAudioCheckRoute && debugSelections === null && screen.name === "start" && (
             <StartScreen onStart={onStart} imageUrl={imageUrl} />
           )}
           {!isWordsAudioCheckRoute &&
-            !debugSelections &&
+            debugSelections === null &&
             screen.name === "select" &&
             currentCategory && (
               <WordSelectScreen
@@ -84,7 +84,7 @@ export function AppView({
                 onSelect={onSelectWord}
               />
             )}
-          {!isWordsAudioCheckRoute && !debugSelections && screen.name === "result" && (
+          {!isWordsAudioCheckRoute && debugSelections === null && screen.name === "result" && (
             <ResultScreen
               lines={lines}
               speechError={isSupported ? speechError : ""}

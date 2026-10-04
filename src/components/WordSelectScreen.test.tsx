@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { requiredArrayElement } from "../test/requiredArrayElement";
 import type { Category } from "../types/game";
 import { WordSelectScreen } from "./WordSelectScreen";
 
@@ -40,8 +41,10 @@ describe("WordSelectScreen", () => {
       />,
     );
 
-    const [firstChoice, secondChoice] = screen.getAllByTestId("choice-card");
-    const firstLabel = firstChoice.textContent ?? "";
+    const choices = screen.getAllByTestId("choice-card");
+    const firstChoice = requiredArrayElement(choices, 0);
+    const secondChoice = requiredArrayElement(choices, 1);
+    const firstLabel = firstChoice.textContent;
 
     fireEvent.click(firstChoice);
     fireEvent.click(secondChoice);
@@ -67,7 +70,7 @@ describe("WordSelectScreen", () => {
       />,
     );
 
-    fireEvent.click(screen.getAllByTestId("choice-card")[0]);
+    fireEvent.click(requiredArrayElement(screen.getAllByTestId("choice-card"), 0));
     unmount();
 
     act(() => {

@@ -77,15 +77,20 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function getMascotPreset(frameWidth: number): MascotPreset {
-  const safeFrameWidth = Math.max(1, frameWidth || DEFAULT_FRAME_WIDTH);
+  const safeFrameWidth = Math.max(
+    1,
+    frameWidth === 0 || Number.isNaN(frameWidth) ? DEFAULT_FRAME_WIDTH : frameWidth,
+  );
+  let fallbackPreset: MascotPreset = MASCOT_PRESETS[0];
 
   for (const preset of MASCOT_PRESETS) {
+    fallbackPreset = preset;
     if (safeFrameWidth <= preset.maxFrameWidth) {
       return preset;
     }
   }
 
-  return MASCOT_PRESETS[MASCOT_PRESETS.length - 1];
+  return fallbackPreset;
 }
 
 export function calculateResultMascotLayout({

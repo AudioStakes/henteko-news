@@ -10,11 +10,18 @@ export function AppHeader() {
       <button
         type="button"
         className="app-header__speech-settings"
-        onClick={() => setIsSettingsOpen(true)}
+        onClick={() => {
+          setIsSettingsOpen(true);
+        }}
       >
         音声設定
       </button>
-      <SpeechSettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SpeechSettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => {
+          setIsSettingsOpen(false);
+        }}
+      />
     </header>
   );
 }

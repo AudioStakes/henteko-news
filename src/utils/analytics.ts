@@ -15,7 +15,7 @@ export type AnalyticsPayload = Record<string, unknown>;
 type AnalyticsEntry = {
   type: "event" | "error";
   name: AnalyticsEventName;
-  payload?: AnalyticsPayload;
+  payload?: AnalyticsPayload | undefined;
   timestamp: number;
 };
 
@@ -24,11 +24,15 @@ type AnalyticsTransport = (entry: AnalyticsEntry) => void | Promise<void>;
 let transport: AnalyticsTransport | null = null;
 
 function sanitizePayload(payload?: AnalyticsPayload): AnalyticsPayload | undefined {
-  if (!payload) return undefined;
+  if (!payload) {
+    return undefined;
+  }
 
   const sanitized = Object.fromEntries(
     Object.entries(payload).filter(([, value]) => {
-      if (value === undefined) return false;
+      if (value === undefined) {
+        return false;
+      }
       return ["string", "number", "boolean", "object"].includes(typeof value) || value === null;
     }),
   );

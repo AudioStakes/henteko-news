@@ -34,13 +34,18 @@ function normalizeActionLine(line: string) {
 }
 
 function getLineCharacterCount(line: string, index: number, lineCount: number) {
-  if (index !== lineCount - 1) return countCharacters(line);
+  if (index !== lineCount - 1) {
+    return countCharacters(line);
+  }
 
   const politeAction = ACTION_POLITE_MAP[normalizeActionLine(line)];
   const lineHasExclamation = /[！!]$/.test(line);
   const displayCharacterCount = countCharacters(line) + (lineHasExclamation ? 0 : 1);
 
-  return Math.max(displayCharacterCount, politeAction ? countCharacters(politeAction) : 0);
+  return Math.max(
+    displayCharacterCount,
+    politeAction !== undefined && politeAction.length > 0 ? countCharacters(politeAction) : 0,
+  );
 }
 
 export function calculateResultTextLayout({
@@ -56,10 +61,11 @@ export function calculateResultTextLayout({
   const safeMaxBubbleHeight =
     maxBubbleHeight === undefined ? Number.POSITIVE_INFINITY : Math.max(0, maxBubbleHeight);
   const safeGlyphWidthRatio = Math.max(Number.EPSILON, glyphWidthRatio);
-  const lineCharacterCounts = lines.map((line, index) =>
-    getLineCharacterCount(line, index, lines.length),
-  );
-  const maxCharacterCount = Math.max(0, ...lineCharacterCounts);
+  const countedLines = lines.map((text, index) => ({
+    text,
+    characterCount: getLineCharacterCount(text, index, lines.length),
+  }));
+  const maxCharacterCount = Math.max(0, ...countedLines.map((line) => line.characterCount));
   const widthLimitedFontSize =
     safeFrameWidth > 0 && maxCharacterCount > 0
       ? Math.floor(safeFrameWidth / (maxCharacterCount * safeGlyphWidthRatio))
@@ -84,16 +90,12 @@ export function calculateResultTextLayout({
     contentHeight,
     bubbleHeight: contentHeight,
     maxCharacterCount,
-    lineLayouts: lines.map((line, index) => {
-      const characterCount = lineCharacterCounts[index];
-
-      return {
-        text: line,
-        characterCount,
-        measuredWidth: characterCount * fontSize * safeGlyphWidthRatio,
-        fontSize,
-      };
-    }),
+    lineLayouts: countedLines.map(({ text, characterCount }) => ({
+      text,
+      characterCount,
+      measuredWidth: characterCount * fontSize * safeGlyphWidthRatio,
+      fontSize,
+    })),
   };
 }
 
@@ -103,8 +105,12 @@ function findHeightLimitedFontSize(
   lineGapRatio: number,
   maxFontSize: number,
 ) {
-  if (!Number.isFinite(maxBubbleHeight)) return maxFontSize;
-  if (lineCount <= 0) return maxFontSize;
+  if (!Number.isFinite(maxBubbleHeight)) {
+    return maxFontSize;
+  }
+  if (lineCount <= 0) {
+    return maxFontSize;
+  }
 
   let low = 0;
   let high = maxFontSize;

@@ -65,12 +65,14 @@ export function WordsAudioCheckScreen() {
           <p>カテゴリ: {currentItem?.categoryLabel ?? "まだ さいせいしていません"}</p>
           <p>いまのことば: {currentItem?.displayText ?? "「かいし」を おしてください"}</p>
         </div>
-        {error && <p className="speech-error words-audio-check__error">{error}</p>}
+        {error.length > 0 && <p className="speech-error words-audio-check__error">{error}</p>}
         <div className="action-stack">
           <button
             type="button"
             className="action-btn orange small"
-            onClick={() => playFrom(0)}
+            onClick={() => {
+              playFrom(0);
+            }}
             disabled={isPlaying}
           >
             さいしょから かいし
@@ -78,7 +80,9 @@ export function WordsAudioCheckScreen() {
           <button
             type="button"
             className="action-btn orange small"
-            onClick={() => playFrom(resumeIndexRef.current)}
+            onClick={() => {
+              playFrom(resumeIndexRef.current);
+            }}
             disabled={isPlaying || queue.length === 0}
           >
             とまったところから さいかい
@@ -98,7 +102,9 @@ export function WordsAudioCheckScreen() {
               key={category.key}
               type="button"
               className="sound-choice"
-              onClick={() => playFrom(category.startIndex)}
+              onClick={() => {
+                playFrom(category.startIndex);
+              }}
               disabled={isPlaying || category.startIndex < 0}
             >
               {category.label} から

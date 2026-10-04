@@ -20,12 +20,20 @@ export function useGameFlow() {
     setScreen({ name: "select", step: 0 });
   };
   const handleSelectWord = (word: string | WordOption) => {
-    if (screen.name !== "select") return selections;
+    if (screen.name !== "select") {
+      return selections;
+    }
     const category = CATEGORIES[screen.step];
+    if (category === undefined) {
+      return selections;
+    }
     const nextSelections = { ...selections, [category.key]: toWordOption(word) };
     setSelections(nextSelections);
-    if (screen.step === CATEGORIES.length - 1) setScreen({ name: "result" });
-    else setScreen({ name: "select", step: screen.step + 1 });
+    if (screen.step === CATEGORIES.length - 1) {
+      setScreen({ name: "result" });
+    } else {
+      setScreen({ name: "select", step: screen.step + 1 });
+    }
     return nextSelections;
   };
   return {

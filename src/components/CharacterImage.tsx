@@ -9,20 +9,17 @@ type CharacterImageProps = {
 
 export function CharacterImage({ variant, src, className = "", alt }: CharacterImageProps) {
   const loading = variant === "home" ? undefined : "eager";
-  const fetchPriorityProps = { fetchpriority: variant === "home" ? "high" : "auto" } as Record<
-    string,
-    string
-  >;
+  const fetchPriority = variant === "home" ? "high" : "auto";
 
   return (
     <img
       className={`character character--${variant} ${className}`.trim()}
       src={src}
       alt={alt ?? ""}
-      aria-hidden={alt ? undefined : true}
+      aria-hidden={alt !== undefined && alt.length > 0 ? undefined : true}
       decoding="async"
       loading={loading}
-      {...fetchPriorityProps}
+      fetchPriority={fetchPriority}
     />
   );
 }

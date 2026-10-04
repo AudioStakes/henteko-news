@@ -1,4 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { getVisibleBounds } from "./helpers";
+
+interface BrowserSpeechCall {
+  text: string;
+  lang: string;
+  rate: number;
+  pitch: number;
+}
+
+declare global {
+  interface Window {
+    browserSpeechCalls?: BrowserSpeechCall[];
+  }
+}
 
 test("default browser speech reads news without requesting model assets", async ({ page }) => {
   const errors: string[] = [];
@@ -10,12 +24,14 @@ test("default browser speech reads news without requesting model assets", async 
     }
   });
   await page.addInitScript(() => {
-    const calls: Array<{ text: string; lang: string; rate: number; pitch: number }> = [];
-    Object.assign(window, { browserSpeechCalls: calls });
+    const calls: BrowserSpeechCall[] = [];
+    window.browserSpeechCalls = calls;
     let endTimer = 0;
     const synthesis = Object.assign(new EventTarget(), {
       getVoices: () => [],
-      cancel: () => window.clearTimeout(endTimer),
+      cancel: () => {
+        window.clearTimeout(endTimer);
+      },
       speak: (utterance: SpeechSynthesisUtterance) => {
         calls.push({
           text: utterance.text,
@@ -36,19 +52,12 @@ test("default browser speech reads news without requesting model assets", async 
     await page.getByTestId("choice-card").first().click();
   }
   await expect(page.getByRole("button", { name: "もういちどよむ", exact: true })).toBeEnabled();
-  const calls = await page.evaluate(
-    () =>
-      (
-        window as unknown as {
-          browserSpeechCalls: Array<{ text: string; lang: string; rate: number; pitch: number }>;
-        }
-      ).browserSpeechCalls,
-  );
+  const calls = await page.evaluate(() => window.browserSpeechCalls ?? []);
   expect(calls.length).toBeGreaterThan(0);
   expect(calls[0]).toMatchObject({ lang: "ja-JP", rate: 0.75, pitch: 1.25 });
-  expect(calls[0].text).not.toBe("");
-  expect(modelRequests).toEqual([]);
-  expect(errors).toEqual([]);
+  expect(calls[0]?.text.length).toBeGreaterThan(0);
+  expect(modelRequests).toStrictEqual([]);
+  expect(errors).toStrictEqual([]);
 });
 
 test("settings preserve the game and configured model paths across reloads", async ({ page }) => {
@@ -66,7 +75,7 @@ test("settings preserve the game and configured model paths across reloads", asy
   await page.getByLabel("モデルのフォルダー").fill("/custom-model/onnx");
   await page.getByLabel("声のJSONファイル").fill("/custom-model/voices/F1.json");
   await page.getByRole("button", { name: "設定を保存", exact: true }).click();
-  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await expect(page.getByRole("dialog")).toBeHidden();
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
 
   await page.reload();
@@ -96,15 +105,13 @@ test("settings remain usable on a narrow phone and return focus after saving", a
   await page.getByLabel("読み上げ方式").selectOption("supertonic");
   const dialog = page.getByRole("dialog", { name: "音声設定", exact: true });
   await expect(dialog).toBeVisible();
-  const bounds = await dialog.boundingBox();
-  expect(bounds).not.toBeNull();
-  if (!bounds) throw new Error("Settings dialog has no visible bounds");
+  const bounds = await getVisibleBounds(dialog, "Settings dialog has no visible bounds");
   expect(bounds.x).toBeGreaterThanOrEqual(0);
   expect(bounds.y).toBeGreaterThanOrEqual(0);
   expect(bounds.x + bounds.width).toBeLessThanOrEqual(320);
   expect(bounds.y + bounds.height).toBeLessThanOrEqual(568);
   await page.screenshot({ path: test.info().outputPath("speech-settings-phone.png") });
   await page.getByRole("button", { name: "設定を保存", exact: true }).click();
-  await expect(dialog).not.toBeVisible();
+  await expect(dialog).toBeHidden();
   await expect(settingsButton).toBeFocused();
 });

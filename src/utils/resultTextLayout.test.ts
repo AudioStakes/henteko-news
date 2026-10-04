@@ -58,14 +58,14 @@ describe("calculateResultTextLayout", () => {
         glyphWidthRatio: 1,
       });
 
-      const expectedFontSize = expectedFontSizes[frameWidth as keyof typeof expectedFontSizes];
+      const expectedFontSize = expectedFontSizes[frameWidth];
 
       expect(layout.maxCharacterCount).toBe(expectedMaxCharacterCount);
       expect(layout.fontSize).toBe(expectedFontSize);
       expect(layout.lineGap).toBe(Math.ceil(expectedFontSize * 0.24));
       expect(layout.bubbleHeight).toBe(layout.contentHeight);
       expect(layout.lineLayouts).toHaveLength(5);
-      expect(new Set(layout.lineLayouts.map((line) => line.fontSize))).toEqual(
+      expect(new Set(layout.lineLayouts.map((line) => line.fontSize))).toStrictEqual(
         new Set([expectedFontSize]),
       );
 

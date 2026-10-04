@@ -26,7 +26,9 @@ export function useNewsSpeech() {
   const previousSettingsKey = useRef(settingsKey);
 
   useEffect(() => {
-    if (previousSettingsKey.current === settingsKey) return;
+    if (previousSettingsKey.current === settingsKey) {
+      return;
+    }
     previousSettingsKey.current = settingsKey;
     setSpeechError("");
   }, [settingsKey]);
@@ -38,14 +40,22 @@ export function useNewsSpeech() {
   }, [isSupported]);
 
   const speechAvailability: SpeechAvailability = useMemo(() => {
-    if (!isSupported) return "unsupported";
-    if (isSpeaking) return "speaking";
-    if (speechError) return "error";
+    if (!isSupported) {
+      return "unsupported";
+    }
+    if (isSpeaking) {
+      return "speaking";
+    }
+    if (speechError.length > 0) {
+      return "error";
+    }
     return "ready";
   }, [isSupported, isSpeaking, speechError]);
 
   const speakNews = (nextSelections: Selections) => {
-    if (buildNewsLines(nextSelections).length !== CATEGORIES.length) return;
+    if (buildNewsLines(nextSelections).length !== CATEGORIES.length) {
+      return;
+    }
 
     if (!isSupported) {
       setSpeechError(buildSpeechError("unsupported"));
@@ -56,7 +66,9 @@ export function useNewsSpeech() {
     setSpeechError("");
     let failureReported = false;
     const reportFailure = (reason: "timeout" | "error") => {
-      if (failureReported) return;
+      if (failureReported) {
+        return;
+      }
       failureReported = true;
       setSpeechError(buildSpeechError(reason));
       trackError(ANALYTICS_EVENT_NAMES.speechError, { reason });
@@ -66,7 +78,7 @@ export function useNewsSpeech() {
       onError: reportFailure,
     });
 
-    if (!ok && !isSpeaking) {
+    if (!(ok || isSpeaking)) {
       reportFailure("error");
     }
   };

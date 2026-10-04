@@ -15,14 +15,20 @@ export function buildShuffledChoices(
 
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(randomFn() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    const currentChoice = shuffled[i];
+    const randomChoice = shuffled[j];
+    if (currentChoice === undefined || randomChoice === undefined) {
+      throw new RangeError("Random choice index is out of bounds");
+    }
+    shuffled[i] = randomChoice;
+    shuffled[j] = currentChoice;
   }
 
   return shuffled.slice(0, maxChoices);
 }
 
 export function computePickState(prevPickedId: string, nextId: string): string {
-  return prevPickedId || nextId;
+  return prevPickedId.length > 0 ? prevPickedId : nextId;
 }
 
 export function scheduleSelection(

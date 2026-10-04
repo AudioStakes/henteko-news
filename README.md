@@ -8,7 +8,7 @@
 
 ## ローカルで動かす
 
-Node.js **22.13以上の22系、または24以上**と npm を使います。`.nvmrc` は22系です。
+Node.js **24.18.0（24系LTS）**と npm を使います。`.nvmrc` と `.tool-versions` でバージョンを揃え、`engine-strict` で非対応環境のインストールを拒否します。
 
 ```sh
 git clone https://github.com/AudioStakes/henteko-news.git
@@ -62,18 +62,24 @@ public/supertonic/
 
 ## 検証コマンド
 
-| コマンド | 確認する内容 |
-| --- | --- |
-| `npm audit --audit-level=high` | 依存関係の既知の重大な脆弱性 |
-| `npm run lint` | Biomeによる静的解析・整形確認 |
-| `npm run typecheck` | TypeScriptの型チェック |
-| `npm test` | ゲーム・音声・レイアウト計算などの単体テスト |
-| `npm run test:scripts` | ビルド時のPWA生成・キャッシュ削除のテスト |
-| `npm run check:words` | 語彙の重複・並び順・読み上げ表記の確認 |
-| `npm run build` | 本番ビルド（出力先 `dist/`） |
-| `npm run test:e2e` | 本番ビルドのゲーム・オフライン・スマホ画面テスト |
+| コマンド                       | 確認する内容                                                  |
+| ------------------------------ | ------------------------------------------------------------- |
+| `npm audit --audit-level=high` | 依存関係の既知の重大な脆弱性                                  |
+| `npm run lint`                 | Biome、型情報を使うESLint、Hooks・テスト・Markdownの静的検証  |
+| `npm run format:check`         | コードと文書の整形・import整理の確認（書き換えなし）          |
+| `npm run format`               | Biomeでコード、PrettierでMarkdown/YAMLを整形                  |
+| `npm run typecheck`            | アプリ・E2E・Nodeスクリプト・Service Workerの厳格な型チェック |
+| `npm run check`                | lint・整形・型・単体テスト・スクリプト・語彙をまとめて検証    |
+| `npm run validate`             | `check` と本番ビルドをまとめて検証                            |
+| `npm test`                     | ゲーム・音声・レイアウト計算などの単体テスト                  |
+| `npm run test:scripts`         | ビルド時のPWA生成・キャッシュ削除のテスト                     |
+| `npm run check:words`          | 語彙の重複・並び順・読み上げ表記の確認                        |
+| `npm run build`                | 本番ビルド（出力先 `dist/`）                                  |
+| `npm run test:e2e`             | 本番ビルドのゲーム・オフライン・スマホ画面テスト              |
 
 ブラウザテストは先に `npm run build` と `npx playwright install chromium` を実行します。LinuxでOS依存ライブラリも必要な場合は `npx playwright install --with-deps chromium` を使います。`test:layout` は画面サイズのテストだけを実行します。
+
+品質ルールの分担、意図的な例外、修正手順は [品質基準](docs/agents/quality.md) にまとめています。`check` と `validate` はコードを書き換えません。
 
 実モデルの音声テストはモデル配置・ビルド後、`RUN_SPEECH_SMOKE=1 npm run test:e2e -- tests/speech.spec.ts` で実行します（PowerShellでは先に `$env:RUN_SPEECH_SMOKE="1"` を設定）。このテストは設定でモデル方式を選んでから音声WAVを生成します。通常のテストはモデルをダウンロードせず実行できます。GitHub Actionsはリポジトリ設定で停止しており、ワークフローにもpush・PRの自動起動条件はありません。
 

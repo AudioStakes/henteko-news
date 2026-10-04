@@ -1,11 +1,21 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { deferred } from "../test/deferred";
+import { requiredArrayElement } from "../test/requiredArrayElement";
+import { MockSpeechSynthesisEvent, MockSpeechSynthesisUtterance } from "../test/speechMocks";
 import { DEFAULT_SPEECH_SETTINGS, type SpeechSettings } from "../utils/speechSettings";
+import type {
+  preloadSupertonic,
+  synthesizeSupertonicSpeech,
+} from "../utils/supertonic/supertonicClient";
 import { useNewsSpeech } from "./useNewsSpeech";
 import { useSpeech } from "./useSpeech";
 import { useSpeechQueue } from "./useSpeechQueue";
 
-const { preload, synthesize } = vi.hoisted(() => ({ preload: vi.fn(), synthesize: vi.fn() }));
+const { preload, synthesize } = vi.hoisted(() => ({
+  preload: vi.fn<typeof preloadSupertonic>(),
+  synthesize: vi.fn<typeof synthesizeSupertonicSpeech>(),
+}));
 let settings: SpeechSettings = { ...DEFAULT_SPEECH_SETTINGS };
 vi.mock("../context/SpeechSettingsContext", () => ({
   useSpeechSettings: () => ({ settings }),
@@ -21,10 +31,10 @@ describe("speech provider selection", () => {
     onended: (() => void) | null;
     onerror: (() => void) | null;
     onplaying: (() => void) | null;
-    play: ReturnType<typeof vi.fn>;
-    pause: ReturnType<typeof vi.fn>;
+    play: ReturnType<typeof vi.fn<() => Promise<void>>>;
+    pause: ReturnType<typeof vi.fn<() => void>>;
   }> = [];
-  const cancelBrowser = vi.fn();
+  const cancelBrowser = vi.fn<SpeechSynthesis["cancel"]>();
 
   beforeEach(() => {
     settings = { ...DEFAULT_SPEECH_SETTINGS };
@@ -38,8 +48,8 @@ describe("speech provider selection", () => {
         onended: null,
         onerror: null,
         onplaying: null,
-        play: vi.fn(async () => {}),
-        pause: vi.fn(),
+        play: vi.fn(() => Promise.resolve()),
+        pause: vi.fn<() => void>(),
       };
       audioInstances.push(audio);
       return audio;
@@ -48,15 +58,19 @@ describe("speech provider selection", () => {
       "speechSynthesis",
       Object.assign(new EventTarget(), {
         cancel: cancelBrowser,
-        speak: vi.fn(),
+        speak: vi.fn<SpeechSynthesis["speak"]>(),
         getVoices: () => [],
       }),
     );
-    vi.stubGlobal("SpeechSynthesisUtterance", function Utterance() {
-      const utterance = {} as SpeechSynthesisUtterance;
-      utterances.push(utterance);
-      return utterance;
-    });
+    vi.stubGlobal(
+      "SpeechSynthesisUtterance",
+      class extends MockSpeechSynthesisUtterance {
+        constructor(text: string) {
+          super(text);
+          utterances.push(this);
+        }
+      },
+    );
   });
 
   afterEach(() => vi.unstubAllGlobals());
@@ -97,16 +111,25 @@ describe("speech provider selection", () => {
 
   it("cancels an active word queue on provider changes and ignores stale completion", () => {
     const { result, rerender } = renderHook(() => useSpeechQueue(["ひとつ", "ふたつ"]));
-    act(() => result.current.start(0));
-    const ended = utterances[0].onend;
+    act(() => {
+      result.current.start(0);
+    });
+    const ended = requiredArrayElement(utterances, 0).onend;
     settings = { ...settings, provider: "supertonic" };
     rerender();
     expect(cancelBrowser).toHaveBeenCalledTimes(1);
     expect(result.current.isPlaying).toBe(false);
     expect(result.current.currentIndex).toBe(-1);
-    act(() => ended?.call(utterances[0], new Event("end") as SpeechSynthesisEvent));
+    act(() => {
+      ended?.call(
+        requiredArrayElement(utterances, 0),
+        new MockSpeechSynthesisEvent("end", requiredArrayElement(utterances, 0)),
+      );
+    });
     expect(synthesize).not.toHaveBeenCalled();
-    act(() => result.current.start(0));
+    act(() => {
+      result.current.start(0);
+    });
     expect(synthesize).toHaveBeenCalledTimes(1);
     expect(result.current.isPlaying).toBe(true);
   });
@@ -117,11 +140,15 @@ describe("speech provider selection", () => {
     });
     const onError = vi.fn();
     const { result } = renderHook(() => useSpeechQueue(["ひとつ"], { onError }));
-    act(() => result.current.start(0));
+    act(() => {
+      result.current.start(0);
+    });
     expect(result.current.isPlaying).toBe(false);
     expect(result.current.error).toContain("とちゅうで");
     expect(onError).toHaveBeenCalledExactlyOnceWith(result.current.error);
-    act(() => result.current.start(0));
+    act(() => {
+      result.current.start(0);
+    });
     expect(result.current.isPlaying).toBe(true);
     expect(result.current.error).toBe("");
     expect(onError).toHaveBeenCalledTimes(1);
@@ -129,25 +156,29 @@ describe("speech provider selection", () => {
 
   it("cancels pending model speech when paths change and revokes its late result", async () => {
     settings = { ...settings, provider: "supertonic" };
-    let finish!: (value: { url: string; durationSec: number; revoke: () => void }) => void;
-    synthesize.mockReturnValue(
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-    );
+    const synthesis = deferred<Awaited<ReturnType<typeof synthesizeSupertonicSpeech>>>();
+    synthesize.mockReturnValue(synthesis.promise);
     const revoke = vi.fn();
     const onEnd = vi.fn();
     const { result, rerender } = renderHook(() => useSpeech());
-    act(() => result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd }));
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd });
+    });
     settings = { ...settings, modelBasePath: "/other/onnx" };
     rerender();
     expect(result.current.isSpeaking).toBe(false);
-    await act(async () => finish({ url: "blob:late", durationSec: 1, revoke }));
+    await act(async () => {
+      synthesis.resolve({ url: "blob:late", durationSec: 1, revoke });
+      await synthesis.promise;
+    });
     expect(revoke).toHaveBeenCalledTimes(1);
     expect(onEnd).not.toHaveBeenCalled();
-    await act(async () => result.current.speak("つぎ", { rate: 1, pitch: 1 }));
+    await act(async () => {
+      result.current.speak("つぎ", { rate: 1, pitch: 1 });
+      await synthesis.promise;
+    });
     expect(synthesize.mock.lastCall?.[0].modelBasePath).toBe("/other/onnx");
-    expect(audioInstances[0].play).toHaveBeenCalledTimes(1);
+    expect(requiredArrayElement(audioInstances, 0).play).toHaveBeenCalledTimes(1);
   });
 
   it("stops active model playback and its queue when switching to browser speech", async () => {
@@ -155,25 +186,34 @@ describe("speech provider selection", () => {
     const revoke = vi.fn();
     synthesize.mockResolvedValue({ url: "blob:model", durationSec: 1, revoke });
     const { result, rerender } = renderHook(() => useSpeechQueue(["ひとつ", "ふたつ"]));
-    await act(async () => result.current.start(0));
-    const ended = audioInstances[0].onended;
-    expect(audioInstances[0].play).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      result.current.start(0);
+      await Promise.resolve();
+    });
+    const ended = requiredArrayElement(audioInstances, 0).onended;
+    expect(requiredArrayElement(audioInstances, 0).play).toHaveBeenCalledTimes(1);
     rerender();
-    expect(audioInstances[0].pause).not.toHaveBeenCalled();
+    expect(requiredArrayElement(audioInstances, 0).pause).not.toHaveBeenCalled();
     settings = { ...settings, provider: "web-speech" };
     rerender();
-    expect(audioInstances[0].pause).toHaveBeenCalledTimes(1);
+    expect(requiredArrayElement(audioInstances, 0).pause).toHaveBeenCalledTimes(1);
     expect(revoke).toHaveBeenCalledTimes(1);
     expect(result.current.isPlaying).toBe(false);
-    act(() => ended?.());
+    act(() => {
+      ended?.();
+    });
     expect(synthesize).toHaveBeenCalledTimes(1);
-    act(() => result.current.start(0));
+    act(() => {
+      result.current.start(0);
+    });
     expect(utterances).toHaveLength(1);
   });
 
   it("preserves news errors on ordinary rerenders and clears them after settings change", () => {
     const { result, rerender } = renderHook(() => useNewsSpeech());
-    act(() => result.current.setSpeechError("以前のエラー"));
+    act(() => {
+      result.current.setSpeechError("以前のエラー");
+    });
     rerender();
     expect(result.current.speechError).toBe("以前のエラー");
     settings = { ...settings, voiceStylePath: "/voice/F1.json" };

@@ -26,7 +26,9 @@ export function useSpeech() {
   const previousSettingsKey = useRef(settingsKey);
 
   useEffect(() => {
-    if (previousSettingsKey.current === settingsKey) return;
+    if (previousSettingsKey.current === settingsKey) {
+      return;
+    }
     previousSettingsKey.current = settingsKey;
     cancelWeb();
     cancelModel();

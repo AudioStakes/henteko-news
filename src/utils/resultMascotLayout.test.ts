@@ -110,7 +110,7 @@ describe("calculateResultMascotLayout", () => {
         baseLayout,
         frameWidth: 373,
       }),
-    ).toEqual(baseLayout);
+    ).toStrictEqual(baseLayout);
   });
 
   test("expansion increases mascot height when more space is available", () => {

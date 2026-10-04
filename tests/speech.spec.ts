@@ -1,7 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-test("the real Supertonic models produce a non-silent PCM WAV in a production browser", async ({ page }) => {
-  test.skip(process.env.RUN_SPEECH_SMOKE !== "1", "Run setup:speech and enable RUN_SPEECH_SMOKE to test real models.");
+declare global {
+  interface Window {
+    speechWav?: { bytes: number; sampleRate: number; peak: number };
+    speechWavError?: string;
+  }
+}
+
+test("the real Supertonic models produce a non-silent PCM WAV in a production browser", async ({
+  page,
+}) => {
   test.setTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
@@ -9,14 +17,24 @@ test("the real Supertonic models produce a non-silent PCM WAV in a production br
     const original = URL.createObjectURL.bind(URL);
     URL.createObjectURL = (object) => {
       if (object instanceof Blob && object.type === "audio/wav") {
-        void object.arrayBuffer().then((buffer) => {
-          const view = new DataView(buffer);
-          let peak = 0;
-          for (let offset = 44; offset < buffer.byteLength; offset += 2) {
-            peak = Math.max(peak, Math.abs(view.getInt16(offset, true)));
-          }
-          Object.assign(window, { speechWav: { bytes: buffer.byteLength, sampleRate: view.getUint32(24, true), peak } });
-        });
+        object
+          .arrayBuffer()
+          .then((buffer) => {
+            const view = new DataView(buffer);
+            let peak = 0;
+            for (let offset = 44; offset < buffer.byteLength; offset += 2) {
+              peak = Math.max(peak, Math.abs(view.getInt16(offset, true)));
+            }
+            window.speechWav = {
+              bytes: buffer.byteLength,
+              sampleRate: view.getUint32(24, true),
+              peak,
+            };
+          })
+          .catch((error: unknown) => {
+            window.speechWavError =
+              error instanceof Error ? error.message : "Unable to inspect generated speech WAV";
+          });
       }
       return original(object);
     };
@@ -30,7 +48,18 @@ test("the real Supertonic models produce a non-silent PCM WAV in a production br
     await expect(page.locator(".speech-select")).toHaveText(label);
     await page.getByTestId("choice-card").first().click();
   }
-  await expect.poll(() => page.evaluate(() => (window as unknown as { speechWav?: { peak: number } }).speechWav?.peak ?? 0), { timeout: 90_000 }).toBeGreaterThan(0);
-  expect(await page.evaluate(() => (window as unknown as { speechWav: { bytes: number; sampleRate: number } }).speechWav)).toMatchObject({ sampleRate: 44_100 });
-  expect(errors).toEqual([]);
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          if (window.speechWavError !== undefined) {
+            throw new Error(window.speechWavError);
+          }
+          return window.speechWav?.peak ?? 0;
+        }),
+      { timeout: 90_000 },
+    )
+    .toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.speechWav)).toMatchObject({ sampleRate: 44_100 });
+  expect(errors).toStrictEqual([]);
 });

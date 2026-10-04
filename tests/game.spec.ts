@@ -9,12 +9,15 @@ async function completeNews(page: Page) {
   await expect(page.locator(".result-text")).toHaveCount(5);
 }
 
-test("completes and restarts a game without models or unhandled errors", async ({ page }) => {
+test("completes and restarts a game when browser speech is unavailable", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "speechSynthesis", { value: undefined, configurable: true });
+  });
   await page.goto("/");
   await completeNews(page);
-  await expect(page.locator(".speech-error")).toBeVisible();
+  await expect(page.locator(".speech-status")).toContainText("文字で遊べます");
   await page.getByRole("button", { name: "つぎのニュース →" }).click();
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
   expect(errors).toEqual([]);

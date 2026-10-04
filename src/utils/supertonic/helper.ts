@@ -37,6 +37,7 @@ export type Style = { ttl: ort.Tensor; dp: ort.Tensor };
 
 export type TextToSpeech = {
   sampleRate: number;
+  dispose: () => Promise<void>;
   call: (
     text: string,
     lang: string,
@@ -113,6 +114,9 @@ export async function loadTextToSpeech(onnxDir: string) {
 
   const tts: TextToSpeech = {
     sampleRate: cfgs.ae.sample_rate,
+    dispose: async () => {
+      await Promise.allSettled(sessions.map((session) => session.release()));
+    },
     call: async (text, lang, style, totalStep, speed = 1) => {
       if (!Number.isFinite(speed) || speed <= 0) throw new Error("Invalid speech speed");
       const processed = preprocessSpeechText(text, lang);

@@ -124,6 +124,17 @@ describe("useNewsSpeech", () => {
     expect(result.current.speechError).toContain("よみあげ");
   });
 
+  it("reports one analytics error when speak calls onError synchronously and returns false", () => {
+    mockSpeak.mockImplementationOnce((_text, options) => {
+      options.onError("error");
+      return false;
+    });
+    const { result } = renderHook(() => useNewsSpeech());
+    act(() => result.current.speakNews(fullSelections));
+    expect(result.current.speechAvailability).toBe("error");
+    expect(mockTrackError).toHaveBeenCalledExactlyOnceWith("speech_error", { reason: "error" });
+  });
+
   it("does not show unavailable message when speak fails but is currently speaking", () => {
     mockSpeak.mockReturnValue(false);
     mockIsSpeaking = true;

@@ -3,17 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deferred } from "../test/deferred";
 import { requiredArrayElement } from "../test/requiredArrayElement";
 import type {
+  invalidateSupertonic,
   preloadSupertonic,
   synthesizeSupertonicSpeech,
 } from "../utils/supertonic/supertonicClient";
 import { SYNTHESIS_TIMEOUT_MS, useModelSpeech } from "./useModelSpeech";
 
-const { mockPreload, mockSynthesize } = vi.hoisted(() => ({
+const { mockInvalidate, mockPreload, mockSynthesize } = vi.hoisted(() => ({
+  mockInvalidate: vi.fn<typeof invalidateSupertonic>(),
   mockPreload: vi.fn<typeof preloadSupertonic>(),
   mockSynthesize: vi.fn<typeof synthesizeSupertonicSpeech>(),
 }));
 
 vi.mock("../utils/supertonic/supertonicClient", () => ({
+  invalidateSupertonic: mockInvalidate,
   preloadSupertonic: mockPreload,
   synthesizeSupertonicSpeech: mockSynthesize,
 }));
@@ -29,6 +32,7 @@ describe("useModelSpeech", () => {
   beforeEach(() => {
     audioInstances.length = 0;
     mockPreload.mockReset().mockResolvedValue(undefined);
+    mockInvalidate.mockReset();
     mockSynthesize.mockReset();
     const MockAudio = function MockAudio() {
       const audio = {
@@ -174,6 +178,57 @@ describe("useModelSpeech", () => {
       await Promise.resolve();
     });
     expect(onError).toHaveBeenCalledExactlyOnceWith("timeout");
+  });
+
+  it("invalidates pending assets after timeout and allows a new speech request", async () => {
+    vi.useFakeTimers();
+    mockSynthesize.mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useModelSpeech());
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1 });
+    });
+    await act(async () => vi.advanceTimersByTimeAsync(SYNTHESIS_TIMEOUT_MS));
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    act(() => {
+      expect(result.current.speak("もういちど", { rate: 1, pitch: 1 })).toBe(true);
+    });
+    expect(mockSynthesize).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a newer synthesis pending when a cancelled request finishes", async () => {
+    const first = deferred<Awaited<ReturnType<typeof synthesizeSupertonicSpeech>>>();
+    mockSynthesize.mockReturnValueOnce(first.promise).mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useModelSpeech());
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1 });
+      result.current.cancel();
+      result.current.speak("もういちど", { rate: 1, pitch: 1 });
+    });
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    const revoke = vi.fn();
+    await act(async () => {
+      first.resolve({ url: "blob:stale", revoke, durationSec: 1 });
+      await first.promise;
+    });
+    act(() => {
+      result.current.cancel();
+    });
+    expect(mockInvalidate).toHaveBeenCalledTimes(2);
+    expect(revoke).toHaveBeenCalledTimes(1);
+    expect(audioInstances).toHaveLength(0);
+  });
+
+  it("keeps initialized assets when cancelling audio playback", async () => {
+    mockSynthesize.mockResolvedValue({ url: "blob:ready", revoke: vi.fn(), durationSec: 1 });
+    const { result } = renderHook(() => useModelSpeech());
+    await act(async () => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1 });
+      await Promise.resolve();
+    });
+    act(() => {
+      result.current.cancel();
+    });
+    expect(mockInvalidate).not.toHaveBeenCalled();
   });
 
   it("handles warmup failures and permits another warmup attempt", async () => {

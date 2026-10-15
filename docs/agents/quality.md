@@ -41,6 +41,11 @@ BiomeとPrettierは同じファイルを整形しません。ESLintは `strictTy
 
 検証ツールとTypeScriptはexact versionで固定します。[typescript-eslintのstrict preset](https://typescript-eslint.io/users/configs/#strict-type-checked) はminorでも規則が変わるため、更新後に全検証を実行します。未安定のBiome nurseryを一括有効にはしません。
 
-Markdown CLIの `js-yaml` だけは5.4.1へoverrideしています。CLIの指定範囲に含まれる旧版の脆弱性を避ける、同じmajorの [公式修正版](https://github.com/advisories/GHSA-r3ph-w7gj-g6xm) です。上流が修正版を許容したらoverrideを外して `npm audit` を確認します。
+Markdown CLI配下の `js-yaml` は5.4.1、`smol-toml` は1.9.1、`katex` は0.18.2へ限定してoverrideしています。
+それぞれの脆弱性に対する修正版です（[js-yaml](https://github.com/advisories/GHSA-r3ph-w7gj-g6xm)、[smol-toml](https://github.com/advisories/GHSA-r4xh-jqrq-34v2)、[KaTeX](https://github.com/advisories/GHSA-238p-pmpm-9mq7)）。
+上流の依存指定が修正版を許容したら、該当するoverrideを外して `npm audit` と文書の検証を実行します。
+
+Nodeの型定義は実行環境と同じ24系に揃えます。
+Dependabotでは `@types/node` のmajor更新を除外し、Node本体の更新と合わせて判断します。
 
 `scripts/quality-config.test.mjs` は代表的な不正コードを各ツールが拒否することと、整形対象・除外対象の分担を検証します。ルールや対象を変えたときもこの回帰検証を通します。

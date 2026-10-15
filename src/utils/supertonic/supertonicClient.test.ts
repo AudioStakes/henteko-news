@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { deferred } from "../../test/deferred";
 
 type TensorStub = { data?: Float32Array | Float64Array };
 type SessionStub = {
@@ -70,6 +71,58 @@ describe("Supertonic initialization", () => {
     expect(
       fetchAsset.mock.calls.filter(([path]) => assetPath(path).endsWith("M1.json")),
     ).toHaveLength(1);
+  });
+
+  it("retries an invalidated pending synthesis and releases its stale sessions", async () => {
+    const firstSession = deferred<SessionStub>();
+    const staleRelease = vi.fn(() => Promise.resolve());
+    const retryRelease = vi.fn(() => Promise.resolve());
+    const staleRun = vi.fn<() => Promise<Record<string, TensorStub>>>();
+    createSession.mockImplementationOnce(() => firstSession.promise);
+    createSession.mockResolvedValue({ release: retryRelease });
+    const { invalidateSupertonic, preloadSupertonic, synthesizeSupertonicSpeech } = await import(
+      "./supertonicClient"
+    );
+    const pending = synthesizeSupertonicSpeech({ text: "こんにちは" }).catch(
+      (error: unknown) => error,
+    );
+    await vi.waitFor(() => {
+      expect(createSession).toHaveBeenCalledTimes(1);
+    });
+
+    invalidateSupertonic();
+    await preloadSupertonic();
+    expect(createSession).toHaveBeenCalledTimes(5);
+    createSession.mockResolvedValue({ release: staleRelease, run: staleRun });
+    firstSession.resolve({ release: staleRelease, run: staleRun });
+    await expect(pending).resolves.toMatchObject({
+      message: "The speech model request was cancelled",
+    });
+    await vi.waitFor(() => {
+      expect(staleRelease).toHaveBeenCalledTimes(4);
+    });
+
+    await preloadSupertonic();
+    expect(createSession).toHaveBeenCalledTimes(8);
+    expect(staleRun).not.toHaveBeenCalled();
+    expect(retryRelease).not.toHaveBeenCalled();
+  });
+
+  it("does not evict a replacement model when an invalidated load rejects later", async () => {
+    const firstSession = deferred<SessionStub>();
+    createSession.mockImplementationOnce(() => firstSession.promise);
+    const { invalidateSupertonic, preloadSupertonic } = await import("./supertonicClient");
+    const pending = preloadSupertonic().catch((error: unknown) => error);
+    await vi.waitFor(() => {
+      expect(createSession).toHaveBeenCalledTimes(1);
+    });
+
+    invalidateSupertonic();
+    await preloadSupertonic();
+    firstSession.reject(new Error("old load failed"));
+    await expect(pending).resolves.toMatchObject({ message: "old load failed" });
+    await preloadSupertonic();
+    expect(createSession).toHaveBeenCalledTimes(5);
   });
 
   it("retries a failed voice style without reloading successful models", async () => {
@@ -166,7 +219,7 @@ describe("Supertonic initialization", () => {
     expect(releases.slice(4).every((release) => release.mock.calls.length === 0)).toBe(true);
   });
 
-  it("keeps sessions owned by an in-flight synthesis while evicting an idle model", async () => {
+  it("keeps in-flight sessions alive through cache eviction and invalidation", async () => {
     const releases = new Map<string, ReturnType<typeof vi.fn<() => Promise<void>>>>();
     let finishDuration: ((value: { duration: { data: Float32Array } }) => void) | undefined;
     let started: (() => void) | undefined;
@@ -198,9 +251,13 @@ describe("Supertonic initialization", () => {
         }),
       });
     });
-    vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:active");
-    const { preloadSupertonic, synthesizeSupertonicSpeech } = await import("./supertonicClient");
-    const pending = synthesizeSupertonicSpeech({ text: "こんにちは", modelBasePath: "/one" });
+    const createUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:active");
+    const { invalidateSupertonic, preloadSupertonic, synthesizeSupertonicSpeech } = await import(
+      "./supertonicClient"
+    );
+    const pending = synthesizeSupertonicSpeech({ text: "こんにちは", modelBasePath: "/one" }).catch(
+      (error: unknown) => error,
+    );
     await firstStarted;
     for (const modelBasePath of ["/two", "/three"]) {
       await preloadSupertonic({ modelBasePath, voiceStylePath: "/voices/M1.json" });
@@ -209,10 +266,18 @@ describe("Supertonic initialization", () => {
     expect(releases.get("/one/duration_predictor.onnx")).not.toHaveBeenCalled();
     expect(releases.get("/two/duration_predictor.onnx")).toHaveBeenCalledTimes(1);
     expect(releases.get("/three/duration_predictor.onnx")).not.toHaveBeenCalled();
+    invalidateSupertonic({ modelBasePath: "/one", voiceStylePath: "/voices/M1.json" });
+    expect(releases.get("/one/duration_predictor.onnx")).not.toHaveBeenCalled();
     if (!finishDuration) {
       throw new Error("The duration predictor has not started");
     }
     finishDuration({ duration: { data: new Float32Array([0.001]) } });
-    await expect(pending).resolves.toMatchObject({ url: "blob:active" });
+    await expect(pending).resolves.toMatchObject({
+      message: "The speech model request was cancelled",
+    });
+    await vi.waitFor(() => {
+      expect(releases.get("/one/duration_predictor.onnx")).toHaveBeenCalledTimes(1);
+    });
+    expect(createUrl).not.toHaveBeenCalled();
   });
 });

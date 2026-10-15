@@ -105,4 +105,17 @@ describe("calculateChoiceCardTextLayout", () => {
     );
     expect(layout.measuredWidth).toBeLessThanOrEqual(layout.availableTextWidth);
   });
+
+  test("uses the actual card width below the smallest reference screen", () => {
+    const layout = calculateChoiceCardTextLayout({
+      gridWidth: 250,
+      text: "くすぐられたあと",
+      minFontSize: 18,
+      maxFontSize: 38,
+      glyphWidthRatio: 1,
+    });
+
+    expect(layout.availableTextWidth).toBe(226);
+    expect(layout.measuredWidth).toBeLessThanOrEqual(layout.availableTextWidth);
+  });
 });

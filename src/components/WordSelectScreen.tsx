@@ -1,12 +1,4 @@
-import {
-  type KeyboardEvent,
-  type MouseEvent,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useButtonSound } from "../hooks/useButtonSound";
 import type { Category, WordOption } from "../types/game";
 import { calculateChoiceCardTextLayout } from "../utils/choiceCardTextLayout";
@@ -102,18 +94,13 @@ export function WordSelectScreen({
     [choiceGridWidth, shuffledWords],
   );
 
-  const handlePick = (
-    event: MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLButtonElement>,
-    id: string,
-    option: WordOption,
-  ) => {
+  const handlePick = (id: string, option: WordOption) => {
     const nextPickedId = computePickState(pickedIdRef.current, id);
     if (nextPickedId === pickedIdRef.current) {
       return;
     }
 
     pickedIdRef.current = nextPickedId;
-    event.currentTarget.blur();
     setPickedId(nextPickedId);
     selectTimeoutRef.current = scheduleSelection(
       (selectedWord) => {
@@ -131,7 +118,13 @@ export function WordSelectScreen({
       <StepIndicator current={currentStep} total={totalSteps} />
       <div className="hero hero-select">
         <CharacterImage variant="select" src={imageUrl} className="select-character" />
-        <div className="speech speech-select speech-select--from-hiyoko">{category.label}</div>
+        <h2
+          className="speech speech-select speech-select--from-hiyoko"
+          data-screen-heading
+          tabIndex={-1}
+        >
+          {category.label}
+        </h2>
       </div>
       <div className="choice-grid" ref={setGridElement}>
         {choiceCards.map((choice) => (
@@ -142,8 +135,8 @@ export function WordSelectScreen({
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
             disabled={Boolean(pickedId)}
             onClick={(event) => {
-              withClickSound((clickEvent) => {
-                handlePick(clickEvent, choice.id, choice.option);
+              withClickSound(() => {
+                handlePick(choice.id, choice.option);
               })(event);
             }}
             onPointerDown={playOnPressStart}

@@ -33,7 +33,7 @@ jobs:
       - run: npm run format:check
       - run: npm run build
       - run: npm run check:words
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v7
         if: failure()
@@ -57,7 +57,7 @@ jobs:
       - run: npm run check:speech-assets
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e -- tests/speech.spec.ts
+      - run: npm run test:e2e -- --project=chromium tests/speech.spec.ts
         env:
           RUN_SPEECH_SMOKE: "1"
   secrets:

@@ -5,6 +5,8 @@
 !**/*.yaml
 .agents/**
 .codex/**
+.serena/**
+.netlify/**
 node_modules/**
 dist/**
 public/supertonic/**

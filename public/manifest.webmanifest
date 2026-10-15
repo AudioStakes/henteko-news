@@ -1,13 +1,13 @@
 {
   "name": "へんてこニュース",
   "short_name": "へんてこニュース",
-  "description": "へんてこな言葉を選ぶと、宇宙人キャスターがニュースとして読み上げる、子ども向けのおふざけ言葉ゲームです。",
+  "description": "言葉を選んでへんてこなニュースを作る、5歳以上の子ども向けのおふざけ言葉ゲームです。文字と読み上げで楽しめます。",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#fff1be",
   "theme_color": "#fff1be",
-  "orientation": "portrait",
+  "orientation": "any",
   "icons": [
     {
       "src": "/icons/icon-192.png",

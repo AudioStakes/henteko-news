@@ -5,6 +5,7 @@ import { requiredArrayElement } from "../test/requiredArrayElement";
 import { MockSpeechSynthesisEvent, MockSpeechSynthesisUtterance } from "../test/speechMocks";
 import { DEFAULT_SPEECH_SETTINGS, type SpeechSettings } from "../utils/speechSettings";
 import type {
+  invalidateSupertonic,
   preloadSupertonic,
   synthesizeSupertonicSpeech,
 } from "../utils/supertonic/supertonicClient";
@@ -21,6 +22,7 @@ vi.mock("../context/SpeechSettingsContext", () => ({
   useSpeechSettings: () => ({ settings }),
 }));
 vi.mock("../utils/supertonic/supertonicClient", () => ({
+  invalidateSupertonic: vi.fn<typeof invalidateSupertonic>(),
   preloadSupertonic: preload,
   synthesizeSupertonicSpeech: synthesize,
 }));

@@ -76,10 +76,17 @@ export function calculateChoiceCardTextLayout({
   const safeGlyphWidthRatio = Math.max(Number.EPSILON, glyphWidthRatio);
   const characterCount = countCharacters(text);
   const widthRule = getChoiceCardWidthRule(gridWidth);
+  const availableTextWidth = Math.max(
+    0,
+    Math.min(
+      widthRule.availableTextWidth,
+      gridWidth - (widthRule.maxGridWidth - widthRule.availableTextWidth),
+    ),
+  );
   const effectiveMaxFontSize = Math.min(safeMaxFontSize, widthRule.maxFontSize);
   const widthLimitedFontSize =
     characterCount > 0
-      ? Math.floor(widthRule.availableTextWidth / (characterCount * safeGlyphWidthRatio))
+      ? Math.floor(availableTextWidth / (characterCount * safeGlyphWidthRatio))
       : effectiveMaxFontSize;
   const adjustedWidthLimitedFontSize = Math.max(
     0,
@@ -94,7 +101,7 @@ export function calculateChoiceCardTextLayout({
     fontSize,
     characterCount,
     measuredWidth: characterCount * fontSize * safeGlyphWidthRatio,
-    availableTextWidth: widthRule.availableTextWidth,
+    availableTextWidth,
     widthRule,
   };
 }

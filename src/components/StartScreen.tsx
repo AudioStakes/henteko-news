@@ -12,14 +12,14 @@ export function StartScreen({ onStart, imageUrl }: StartScreenProps) {
   return (
     <section className="screen home-screen">
       <div className="hero hero-home">
-        <div className="speech speech-home speech-home--guide">
+        <h2 className="speech speech-home speech-home--guide" data-screen-heading tabIndex={-1}>
           <span>
             えらんだ<span className="speech-home__highlight">ことば</span>が
           </span>
           <span>
             <span className="speech-home__highlight">ニュース</span>になるよ！
           </span>
-        </div>
+        </h2>
         <CharacterImage variant="home" src={imageUrl} className="home-character" />
       </div>
       <div className="action-stack">

@@ -24,7 +24,7 @@
 
 | 用途           | 使用技術                                           |
 | -------------- | -------------------------------------------------- |
-| 画面と状態管理 | React 19、TypeScript 6、CSS                        |
+| 画面と状態管理 | React 19、TypeScript 7、CSS                        |
 | 開発と配信     | Vite 8、Netlify、PWA（Service Worker）             |
 | 読み上げ       | Web Speech API、任意でSupertonicとONNX Runtime Web |
 | 検証           | Vitest、Testing Library、Playwright、Biome、ESLint |
@@ -36,6 +36,7 @@ PWAのキャッシュ版はビルド内容のハッシュから生成し、更�
 オフラインでの文字のゲームを対象とし、大きな音声モデルとWASMランタイムは事前キャッシュから除いています。
 
 型チェック、静的解析、単体テスト、本番ビルドを `npm run validate` にまとめています。
+型チェックにはTypeScript 7を使い、ESLintと語彙検証には公式のTypeScript 6互換APIを併用しています。
 ゲーム進行、音声、PWAの処理を個別に検証し、Playwrightで本番ビルドの操作と画面サイズを確認します。
 設計や検証の詳細は[開発ドキュメント](docs/DEVELOPMENT.md)にまとめています。
 ブラウザーごとの操作確認は[公開版の検証記録](docs/release-verification.md)を参照してください。

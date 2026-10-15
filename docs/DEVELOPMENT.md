@@ -18,6 +18,16 @@ npm run dev
 ブラウザーが読み上げに対応していれば、そのまま音声を使えます。
 日本語の声は端末やブラウザーの設定に依存します。
 
+### TypeScriptの実行系
+
+型チェックとビルドにはTypeScript 7の `tsc` を使います。
+ESLintと語彙検証はTypeScript 6のコンパイラーAPIを使うため、[Microsoft公式の併用方法](https://devblogs.microsoft.com/typescript/announcing-typescript-7-0/#running-side-by-side-with-typescript-6.0)に従ってnpm aliasで分けています。
+`@typescript/native` はTypeScript 7、`typescript` は公式互換パッケージ `@typescript/typescript6` を指します。
+互換パッケージの実行コマンドは `tsc6` なので、`tsc` と競合しません。
+バージョンは `package.json` とlockfileで固定し、どちらも `npm ci` で導入します。
+互換API本体は間接依存の `@typescript/old`（TypeScript 6系）です。
+依存を更新するときはこの間接依存のlockfile版も確認し、`npm run validate` でESLintと語彙検証の互換性を確かめます。
+
 ## 音声方式を選ぶ
 
 画面上の「音声設定」で読み上げ方式を選び、「設定を保存」を押します。

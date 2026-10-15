@@ -1,5 +1,8 @@
 import { expect, test } from "@playwright/test";
-import { getVisibleBounds } from "./helpers";
+import { getVisibleBounds, pressTab } from "./helpers";
+
+// Keep request interception independent of the worker; offline behavior has its own E2E coverage.
+test.use({ serviceWorkers: "block" });
 
 interface BrowserSpeechCall {
   text: string;
@@ -114,4 +117,71 @@ test("settings remain usable on a narrow phone and return focus after saving", a
   await page.getByRole("button", { name: "設定を保存", exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(settingsButton).toBeFocused();
+});
+
+test("the settings dialog keeps background controls inert and restores keyboard focus", async ({
+  page,
+  browserName,
+}) => {
+  await page.goto("/");
+  const settingsButton = page.getByRole("button", { name: "音声設定", exact: true });
+  await settingsButton.click();
+  const closeButton = page.getByRole("button", { name: "音声設定を閉じる", exact: true });
+  await expect(closeButton).toBeFocused();
+  await pressTab(page, browserName);
+  await expect(page.getByLabel("読み上げ方式")).toBeFocused();
+  await pressTab(page, browserName);
+  await expect(page.getByRole("button", { name: "ブラウザーの既定設定に戻す" })).toBeFocused();
+  await pressTab(page, browserName);
+  const cancelButton = page.getByRole("button", { name: "キャンセル", exact: true });
+  await expect(cancelButton).toBeFocused();
+  await pressTab(page, browserName);
+  await expect(page.getByRole("button", { name: "設定を保存", exact: true })).toBeFocused();
+  await pressTab(page, browserName, true);
+  await expect(cancelButton).toBeFocused();
+  await settingsButton.evaluate((button) => {
+    button.focus();
+  });
+  await expect(cancelButton).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(settingsButton).toBeFocused();
+});
+
+test("all model settings and dialog actions stay reachable in phone landscape", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 667, height: 375 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByLabel("読み上げ方式").selectOption("supertonic");
+  const dialog = page.getByRole("dialog", { name: "音声設定", exact: true });
+  const bounds = await getVisibleBounds(dialog, "The landscape settings dialog must be visible");
+  expect(bounds.y).toBeGreaterThanOrEqual(0);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(375);
+  await page.getByLabel("モデルのフォルダー").fill("/custom-model/onnx");
+  await page.getByLabel("声のJSONファイル").fill("/custom-model/voices/F1.json");
+  const save = page.getByRole("button", { name: "設定を保存", exact: true });
+  await save.scrollIntoViewIfNeeded();
+  await expect(save).toBeInViewport({ ratio: 1 });
+  await page.getByRole("button", { name: "キャンセル", exact: true }).click();
+  await expect(dialog).toBeHidden();
+  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await expect(page.getByRole("heading", { name: "だれが？", exact: true })).toBeVisible();
+});
+
+test("invalid model paths show an accessible error and cannot be saved", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByLabel("読み上げ方式").selectOption("supertonic");
+  const modelPath = page.getByLabel("モデルのフォルダー");
+  await modelPath.fill("javascript:alert(1)");
+  await page.getByRole("button", { name: "設定を保存", exact: true }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(modelPath).toHaveAttribute("aria-invalid", "true");
+  await expect(modelPath).toBeFocused();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await expect(page.getByLabel("読み上げ方式")).toHaveValue("web-speech");
 });

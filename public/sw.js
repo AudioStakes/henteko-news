@@ -63,17 +63,11 @@ serviceWorker.addEventListener("fetch", (event) => {
   }
 
   if (request.mode === "navigate") {
+    // Keep the installed HTML paired with this worker's precached assets.
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          if (res.ok) {
-            event.waitUntil(caches.open(HTML_CACHE).then((c) => c.put("/index.html", res.clone())));
-          }
-          return res;
-        })
-        .catch(async () => {
-          return (await (await caches.open(HTML_CACHE)).match("/index.html")) || Response.error();
-        }),
+      fetch(request).catch(async () => {
+        return (await (await caches.open(HTML_CACHE)).match("/index.html")) || Response.error();
+      }),
     );
     return;
   }

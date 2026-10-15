@@ -1,0 +1,6 @@
+[build]
+  command = "npm run validate"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "24.18.0"

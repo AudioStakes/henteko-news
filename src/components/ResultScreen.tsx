@@ -279,6 +279,9 @@ export function ResultScreen({
             ["--result-content-height" as string]: `${resultLayout.contentHeight}px`,
           }}
         >
+          <h2 className="visually-hidden" data-screen-heading tabIndex={-1}>
+            かんせいニュース
+          </h2>
           {keyedLines.map((item) => (
             <p className="result-text" key={item.key}>
               {item.line}

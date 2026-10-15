@@ -81,7 +81,9 @@ export function WordsAudioCheckScreen() {
             type="button"
             className="action-btn orange small"
             onClick={() => {
-              playFrom(resumeIndexRef.current);
+              playFrom(
+                error.length > 0 && currentIndex >= 0 ? currentIndex : resumeIndexRef.current,
+              );
             }}
             disabled={isPlaying || queue.length === 0}
           >

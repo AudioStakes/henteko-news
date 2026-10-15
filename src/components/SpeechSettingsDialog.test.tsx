@@ -27,7 +27,6 @@ function renderSettings() {
 
 function openSettings() {
   const button = screen.getByRole("button", { name: "音声設定" });
-  button.focus();
   fireEvent.click(button);
   return screen.getByRole("dialog", { name: "音声設定" });
 }

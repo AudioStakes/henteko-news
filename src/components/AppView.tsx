@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { ScreenState } from "../hooks/useGameFlow";
 import type { Category, Selections, WordOption } from "../types/game";
 import { AppFooter } from "./AppFooter";
@@ -46,6 +47,31 @@ export function AppView({
   onReplayVoice,
   onRestartGame,
 }: AppViewProps) {
+  const mainRef = useRef<HTMLElement>(null);
+  const screenKey = isWordsAudioCheckRoute
+    ? "audio-check"
+    : debugSelections !== null
+      ? "debug-result"
+      : screen.name === "select"
+        ? `select-${currentStep}`
+        : screen.name;
+  const previousScreenKey = useRef(screenKey);
+
+  useEffect(() => {
+    if (previousScreenKey.current === screenKey) {
+      return;
+    }
+    previousScreenKey.current = screenKey;
+    if (document.querySelector("dialog[open]")) {
+      return;
+    }
+    const main = mainRef.current;
+    main?.querySelector<HTMLElement>("[data-screen-heading]")?.focus({ preventScroll: true });
+    if (main) {
+      main.scrollTop = 0;
+    }
+  }, [screenKey]);
+
   return (
     <div className="viewport">
       <div className="app-shell">
@@ -55,7 +81,7 @@ export function AppView({
           </p>
         )}
         <AppHeader />
-        <main className="app-shell__main">
+        <main className="app-shell__main" ref={mainRef}>
           {isWordsAudioCheckRoute && <WordsAudioCheckScreen />}
           {!isWordsAudioCheckRoute && debugSelections && (
             <ResultScreen

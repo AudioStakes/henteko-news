@@ -32,6 +32,8 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+.serena/
+.netlify/
 
 # Playwright artifacts
 playwright-report/

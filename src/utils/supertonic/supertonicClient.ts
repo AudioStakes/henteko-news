@@ -28,6 +28,10 @@ type ModelEntry = {
 const modelCache = new Map<string, ModelEntry>();
 const styleCache = new Map<string, Promise<Style>>();
 
+function disposeModel(entry: ModelEntry) {
+  void entry.promise.then((tts) => tts.dispose()).catch(() => undefined);
+}
+
 function trimModelCache() {
   for (const [path, entry] of modelCache) {
     if (modelCache.size <= MAX_CACHED_MODELS) {
@@ -38,11 +42,14 @@ function trimModelCache() {
       continue;
     }
     modelCache.delete(path);
-    void entry.promise.then((tts) => tts.dispose()).catch(() => undefined);
+    disposeModel(entry);
   }
 }
 
-async function withModel<T>(modelBasePath: string, run: (tts: TextToSpeech) => Promise<T>) {
+async function withModel<T>(
+  modelBasePath: string,
+  run: (tts: TextToSpeech, ensureCurrent: () => void) => Promise<T>,
+) {
   const path = modelBasePath.replace(/\/+$/, "");
   let entry = modelCache.get(path);
   if (!entry) {
@@ -68,10 +75,20 @@ async function withModel<T>(modelBasePath: string, run: (tts: TextToSpeech) => P
   modelCache.delete(path);
   modelCache.set(path, entry);
   entry.users += 1;
+  const ensureCurrent = () => {
+    if (modelCache.get(path) !== entry) {
+      throw new Error("The speech model request was cancelled");
+    }
+  };
   try {
-    return await run(await entry.promise);
+    const tts = await entry.promise;
+    ensureCurrent();
+    return await run(tts, ensureCurrent);
   } finally {
     entry.users -= 1;
+    if (entry.users === 0 && modelCache.get(path) !== entry) {
+      disposeModel(entry);
+    }
     trimModelCache();
   }
 }
@@ -101,6 +118,18 @@ function getStyle(path: string) {
   return next;
 }
 
+export function invalidateSupertonic(settings: ModelSettings = DEFAULT_SPEECH_SETTINGS) {
+  const path = settings.modelBasePath.replace(/\/+$/, "");
+  const entry = modelCache.get(path);
+  modelCache.delete(path);
+  styleCache.delete(settings.voiceStylePath);
+  // Session creation and inference cannot be interrupted by this client. Keep
+  // their sessions alive until their owners settle, then release stale results.
+  if (entry && entry.users === 0) {
+    disposeModel(entry);
+  }
+}
+
 export async function preloadSupertonic(settings: ModelSettings = DEFAULT_SPEECH_SETTINGS) {
   await Promise.all([
     withModel(settings.modelBasePath, () => Promise.resolve(undefined)),
@@ -119,12 +148,14 @@ export async function synthesizeSupertonicSpeech({
   if (text.trim() === "") {
     throw new Error("text is empty");
   }
-  return withModel(modelBasePath, async (tts) => {
+  return withModel(modelBasePath, async (tts, ensureCurrent) => {
     const [style, { writeWavFile }] = await Promise.all([
       getStyle(voiceStylePath),
       import("./helper"),
     ]);
+    ensureCurrent();
     const result = await tts.call(text, lang, style, totalStep, speed);
+    ensureCurrent();
     const durationSec = result.duration[0] ?? 0;
     const sampleCount = Math.max(1, Math.floor(tts.sampleRate * durationSec));
     const wav = result.wav.slice(0, sampleCount);

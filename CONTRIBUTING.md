@@ -1,6 +1,6 @@
 # 開発への参加
 
-小さな不具合修正、語彙の追加、導入手順の改善を歓迎します。大きな機能追加や依存関係のメジャー更新は、実装前にIssueで目的と変更範囲を相談してください。利用・再配布条件は公開前の確定が必要です（[README](README.md#利用条件)）。
+小さな不具合修正、語彙の追加、導入手順の改善を歓迎します。大きな機能追加や依存関係のメジャー更新は、実装前にIssueで目的と変更範囲を相談してください。独自コードは [MITライセンス](LICENSE) です。画像と第三者コードの扱いは [THIRD_PARTY_NOTICES](docs/THIRD_PARTY_NOTICES.md) を確認してください。
 
 ## 開発と確認
 
@@ -8,7 +8,7 @@
 
 ```sh
 npm run validate
-npx playwright install chromium
+npx playwright install chromium firefox webkit
 npm run test:e2e
 ```
 

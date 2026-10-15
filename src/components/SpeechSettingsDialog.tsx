@@ -1,4 +1,4 @@
-import { type SubmitEvent, useEffect, useId, useRef, useState } from "react";
+import { type RefObject, type SubmitEvent, useEffect, useId, useRef, useState } from "react";
 import { useSpeechSettings } from "../context/SpeechSettingsContext";
 import {
   DEFAULT_SPEECH_SETTINGS,
@@ -9,15 +9,19 @@ import {
 type SpeechSettingsDialogProps = {
   isOpen: boolean;
   onClose: () => void;
+  returnFocusRef: RefObject<HTMLButtonElement | null>;
 };
 
-export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogProps) {
+export function SpeechSettingsDialog({
+  isOpen,
+  onClose,
+  returnFocusRef,
+}: SpeechSettingsDialogProps) {
   const { settings, updateSettings } = useSpeechSettings();
   const [draft, setDraft] = useState<SpeechSettings>(settings);
   const [errors, setErrors] = useState({ modelBasePath: "", voiceStylePath: "" });
   const [previousProps, setPreviousProps] = useState({ isOpen, settings });
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const openerRef = useRef<HTMLElement | null>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
   const voiceInputRef = useRef<HTMLInputElement>(null);
   const id = useId();
@@ -37,15 +41,13 @@ export function SpeechSettingsDialog({ isOpen, onClose }: SpeechSettingsDialogPr
     }
     if (isOpen) {
       if (!dialog.open) {
-        openerRef.current =
-          document.activeElement instanceof HTMLElement ? document.activeElement : null;
         dialog.showModal();
       }
     } else if (dialog.open) {
       dialog.close();
-      openerRef.current?.focus();
+      returnFocusRef.current?.focus();
     }
-  }, [isOpen, settings]);
+  }, [isOpen, settings, returnFocusRef]);
 
   const save = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();

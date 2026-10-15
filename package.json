@@ -1,6 +1,7 @@
 {
   "name": "henteko-news",
   "private": true,
+  "license": "MIT",
   "version": "0.0.0",
   "type": "module",
   "engines": {
@@ -8,11 +9,11 @@
   },
   "scripts": {
     "predev": "node scripts/prepare-runtime.mjs",
-    "dev": "vite",
+    "dev": "vite --config vite.config.ts",
     "prebuild": "node scripts/prepare-runtime.mjs",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "test": "vitest run",
+    "build": "tsc -b && vite build --config vite.config.ts",
+    "preview": "vite preview --config vite.config.ts",
+    "test": "vitest run --config vite.config.ts",
     "test:scripts": "node --test scripts/*.test.mjs",
     "lint": "npm run lint:biome && npm run lint:eslint && npm run lint:docs",
     "lint:biome": "biome lint --error-on-warnings .",
@@ -33,7 +34,9 @@
   },
   "overrides": {
     "markdownlint-cli": {
-      "js-yaml": "5.4.1"
+      "js-yaml": "5.4.1",
+      "smol-toml": "1.9.1",
+      "katex": "0.18.2"
     }
   },
   "dependencies": {
@@ -43,23 +46,23 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
-    "@playwright/test": "^1.64.0",
-    "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/node": "26.6.5",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
+    "@playwright/test": "1.64.0",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "24.19.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
     "@vitest/eslint-plugin": "1.6.27",
     "eslint": "10.12.0",
     "eslint-plugin-playwright": "2.12.1",
     "eslint-plugin-react-hooks": "7.1.1",
-    "jsdom": "^30.1.1",
+    "jsdom": "30.1.1",
     "markdownlint-cli": "0.49.1",
     "prettier": "3.9.9",
     "typescript": "6.0.3",
     "typescript-eslint": "8.71.1",
-    "vite": "^8.3.4",
-    "vitest": "^5.0.4"
+    "vite": "8.3.4",
+    "vitest": "5.0.4"
   }
 }

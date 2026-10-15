@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { SpeechSettings } from "../utils/speechSettings";
 import { DEFAULT_SPEECH_SETTINGS } from "../utils/speechSettings";
 import {
+  invalidateSupertonic,
   preloadSupertonic,
   synthesizeSupertonicSpeech,
 } from "../utils/supertonic/supertonicClient";
@@ -25,6 +26,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
   const startWatchdogRef = useRef<number | null>(null);
   const activeRevokeRef = useRef<(() => void) | null>(null);
+  const invalidatePendingRef = useRef<(() => void) | null>(null);
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -56,13 +58,19 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
     activeRevokeRef.current = null;
   }, [clearWatchdog]);
 
+  const invalidatePending = useCallback(() => {
+    invalidatePendingRef.current?.();
+    invalidatePendingRef.current = null;
+  }, []);
+
   useEffect(
     () => () => {
       requestIdRef.current += 1;
+      invalidatePending();
       cleanupPlayback();
       isSpeakingRef.current = false;
     },
-    [cleanupPlayback],
+    [cleanupPlayback, invalidatePending],
   );
 
   const cancel = useCallback(() => {
@@ -70,9 +78,10 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
       return;
     }
     requestIdRef.current += 1;
+    invalidatePending();
     cleanupPlayback();
     setSpeaking(false);
-  }, [cleanupPlayback, isSupported, setSpeaking]);
+  }, [cleanupPlayback, invalidatePending, isSupported, setSpeaking]);
 
   const warmup = useCallback(() => {
     if (!isSupported) {
@@ -102,6 +111,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
           return;
         }
         requestIdRef.current += 1;
+        invalidatePending();
         cleanupPlayback();
         setSpeaking(false);
         options.onError?.(reason);
@@ -126,6 +136,9 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
             fail("timeout");
           }, SYNTHESIS_TIMEOUT_MS);
 
+          invalidatePendingRef.current = () => {
+            invalidateSupertonic({ modelBasePath, voiceStylePath });
+          };
           const result = await synthesizeSupertonicSpeech({
             text: part,
             speed: options.rate,
@@ -136,6 +149,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
             result.revoke();
             return;
           }
+          invalidatePendingRef.current = null;
           clearWatchdog();
 
           const audio = new Audio(result.url);
@@ -182,7 +196,15 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
       });
       return true;
     },
-    [cleanupPlayback, clearWatchdog, isSupported, setSpeaking, modelBasePath, voiceStylePath],
+    [
+      cleanupPlayback,
+      clearWatchdog,
+      invalidatePending,
+      isSupported,
+      setSpeaking,
+      modelBasePath,
+      voiceStylePath,
+    ],
   );
 
   return { isSupported, isSpeaking, speak, warmup, cancel };

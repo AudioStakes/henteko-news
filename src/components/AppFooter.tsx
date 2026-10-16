@@ -11,6 +11,15 @@ export function AppFooter() {
         >
           @AudioStakes
         </a>
+        {" · "}
+        <a
+          className="app-footer__link"
+          href="https://github.com/AudioStakes/henteko-news/blob/main/docs/PRIVACY.md"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          プライバシー
+        </a>
       </p>
     </footer>
   );

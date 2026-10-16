@@ -151,6 +151,29 @@ Netlify向けの `public/_headers` も配布に含めます。
 大きい音声モデルとWASMランタイムはPWAの事前キャッシュ対象外です。
 更新版は既存のタブやインストールしたアプリを閉じて開き直すと反映されます。
 
+## アクセス解析
+
+Cloudflare Web Analyticsの標準beaconで、本番の `henteko-news.netlify.app` だけを集計する構成です。
+Reactの描画の外で一度だけ初期化し、hostnameが一致する場合だけCloudflare公式CDNのスクリプトを読み込みます。
+ページのload完了後に読み込みを始め、既存のService Worker登録を外部CDNの通信待ちにしないようにしています。
+初期化処理は [`src/utils/webAnalytics.ts`](../src/utils/webAnalytics.ts) の `initializeWebAnalytics` に分けています。
+localhost、E2E用のローカル環境、Netlifyのプレビューでは外部スクリプトを読み込みません。
+同じホスト名での再初期化でもスクリプトを重複して追加しない構成にします。
+
+Cloudflareで本番ホストを登録して得る公開サイトtokenを使用します。
+Cloudflareアカウントの認証に使うAPI tokenを設定するものではありません。
+配信はNetlifyを継続し、CloudflareへのDNSやホスティングの移行は不要です。[公式導入手順](https://developers.cloudflare.com/web-analytics/get-started/)
+
+計測対象は閲覧ページ、流入元、端末やブラウザー、表示速度などです。
+既存の `setAnalyticsTransport` には接続せず、ゲームの開始、選択した言葉、完成したニュースなどの独自イベントは送信しません。
+ゲーム内の画面切り替えではURLが変わらないため、各質問を個別のページ閲覧として扱いません。
+利用者向けの説明は[アクセス解析について](PRIVACY.md)にまとめています。
+
+Web Analyticsは無料で、外部ホストは10サイトまで、閲覧できる履歴は6か月です。
+7日を過ぎたデータはサンプリングされます。[上限](https://developers.cloudflare.com/web-analytics/limits/)、[FAQ](https://developers.cloudflare.com/web-analytics/faq/)
+広告ブロッカーやオフライン利用では欠測があるため、集計値を実利用者の完全な人数とは扱いません。
+別の本番ホストへ移す場合は、Cloudflare側の登録とアプリ側のhostname条件、公開サイトtokenを揃えて更新します。
+
 ## 構成と変更箇所
 
 - `src/data/words/`：言葉のリストです。追加後は `npm run sort:words`、`npm run check:words` を実行します。
@@ -162,6 +185,6 @@ Netlify向けの `public/_headers` も配布に含めます。
 - `tests/`：本番ブラウザーでのE2Eテストです。
 
 React、TypeScript、Vite、CSS、Web Speech API、任意のSupertonicとONNX Runtime Webを使用します。
-分析用の関数はありますが外部送信先は接続していません。
+独自イベント用の分析関数は未接続のままとし、アクセス解析は上記の標準beaconだけを使う構成です。
 モデル方式では選んだ言葉をブラウザー内で処理します。
 Web Speech APIの音声処理先はブラウザーと選ばれた声に依存します。

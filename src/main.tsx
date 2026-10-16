@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles/global.css";
 import { ANALYTICS_EVENT_NAMES, trackError } from "./utils/analytics";
+import { initializeWebAnalytics } from "./utils/webAnalytics";
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
@@ -24,4 +25,14 @@ if (rootElement) {
       <App />
     </React.StrictMode>,
   );
+}
+
+const initializePageAnalytics = () => {
+  initializeWebAnalytics("455f577fe845481a909807b7d1307deb");
+};
+
+if (document.readyState === "complete") {
+  initializePageAnalytics();
+} else {
+  window.addEventListener("load", initializePageAnalytics, { once: true });
 }

@@ -59,3 +59,4 @@ npm run dev
 独自コードは[MIT License](LICENSE)で公開しています。
 ひよこの画像はChatGPTで生成したものです。
 画像、音声モデル、第三者コードの扱いは[利用条件と出所](docs/THIRD_PARTY_NOTICES.md)を参照してください。
+アクセス解析で扱う情報は[プライバシーの説明](docs/PRIVACY.md)を参照してください。

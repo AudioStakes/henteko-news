@@ -95,6 +95,31 @@ describe("useNewsSpeech", () => {
     expect(result.current.speechError).toBe("");
   });
 
+  it("passes the entire reported news on the first reading and replay", () => {
+    const selections: Selections = {
+      who: { display: "モンスターが", speech: "モンスターが" },
+      when: { display: "おやつをたべたあと", speech: "おやつをたべたあと" },
+      where: { display: "テーブルのうえで", speech: "テーブルのうえで" },
+      what: { display: "やきそばを", speech: "やきそばを" },
+      action: { display: "みんなにわたした", speech: "みんなにわたしました" },
+    };
+    mockSpeak.mockReturnValue(true);
+    const { result, rerender } = renderHook(() => useNewsSpeech());
+
+    act(() => {
+      result.current.speakNews(selections);
+    });
+    rerender();
+    act(() => {
+      result.current.speakNews(selections);
+    });
+
+    expect(mockSpeak.mock.calls.map(([text]) => text)).toStrictEqual([
+      "ニュースです！モンスターが、おやつをたべたあと、テーブルのうえで、やきそばを、みんなにわたしました！",
+      "ニュースです！モンスターが、おやつをたべたあと、テーブルのうえで、やきそばを、みんなにわたしました！",
+    ]);
+  });
+
   it("shows unavailable message via speak onError callback", () => {
     mockSpeak.mockReturnValue(true);
     const { result } = renderHook(() => useNewsSpeech());

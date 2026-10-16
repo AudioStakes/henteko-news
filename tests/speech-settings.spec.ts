@@ -54,11 +54,17 @@ test("default browser speech reads news without requesting model assets", async 
     await expect(page.locator(".speech-select")).toHaveText(label);
     await page.getByTestId("choice-card").first().click();
   }
-  await expect(page.getByRole("button", { name: "もういちどよむ", exact: true })).toBeEnabled();
+  const replayButton = page.getByRole("button", { name: "もういちどよむ", exact: true });
+  await expect(replayButton).toBeEnabled();
+  const displayedLines = page.getByLabel("かんせいニュース").locator(".result-text");
+  await expect(displayedLines).toHaveCount(5);
+  const lines = await displayedLines.allTextContents();
+  const expectedText = `ニュースです！${lines.map((line) => line.trim().replace(/[！!]+$/, "")).join("、")}！`;
+  await replayButton.click();
+  await expect(replayButton).toBeEnabled();
   const calls = await page.evaluate(() => window.browserSpeechCalls ?? []);
-  expect(calls.length).toBeGreaterThan(0);
-  expect(calls[0]).toMatchObject({ lang: "ja-JP", rate: 0.75, pitch: 1.25 });
-  expect(calls[0]?.text.length).toBeGreaterThan(0);
+  const expectedCall = { text: expectedText, lang: "ja-JP", rate: 0.75, pitch: 1.25 };
+  expect(calls).toStrictEqual([expectedCall, expectedCall]);
   expect(modelRequests).toStrictEqual([]);
   expect(errors).toStrictEqual([]);
 });

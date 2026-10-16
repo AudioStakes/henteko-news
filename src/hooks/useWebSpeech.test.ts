@@ -14,11 +14,11 @@ describe("useWebSpeech", () => {
   const cancel = vi.fn<SpeechSynthesis["cancel"]>();
   const getVoices = vi.fn<() => SpeechSynthesisVoice[]>();
   let synthesis: EventTarget;
-  const voice = (lang: string, isDefault = false): SpeechSynthesisVoice => ({
+  const voice = (lang: string, isDefault = false, name = lang): SpeechSynthesisVoice => ({
     lang,
     default: isDefault,
-    name: lang,
-    voiceURI: lang,
+    name,
+    voiceURI: name,
     localService: true,
   });
 
@@ -60,6 +60,33 @@ describe("useWebSpeech", () => {
       pitch: 1.2,
     });
     expect(speak).toHaveBeenCalledWith(requiredArrayElement(utterances, 0));
+  });
+
+  it("prefers Kyoko over an alphabetically first Japanese voice without a default", () => {
+    const eddy = voice("ja-JP", false, "Eddy (Japanese (Japan))");
+    const kyoko = voice("ja-JP", false, "Kyoko (Japanese (Japan))");
+    getVoices.mockReturnValue([
+      eddy,
+      voice("ja-JP", false, "Flo (Japanese (Japan))"),
+      voice("ja-JP", false, "Grandma (Japanese (Japan))"),
+      voice("ja-JP", false, "Grandpa (Japanese (Japan))"),
+      kyoko,
+    ]);
+    const { result } = renderHook(() => useWebSpeech());
+    act(() => {
+      result.current.speak("モンスターがおやつをたべたあと", { rate: 0.75, pitch: 1.25 });
+    });
+    expect(requiredArrayElement(utterances, 0).voice).toBe(kyoko);
+  });
+
+  it("keeps the Japanese default voice ahead of Kyoko", () => {
+    const defaultVoice = voice("ja-JP", true, "Preferred Japanese voice");
+    getVoices.mockReturnValue([voice("ja-JP", false, "Kyoko"), defaultVoice]);
+    const { result } = renderHook(() => useWebSpeech());
+    act(() => {
+      result.current.speak("こんにちは", { rate: 1, pitch: 1 });
+    });
+    expect(requiredArrayElement(utterances, 0).voice).toBe(defaultVoice);
   });
 
   it("warms up asynchronously loaded voices and falls back to the browser voice", () => {

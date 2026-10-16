@@ -7,6 +7,8 @@ function japaneseVoice(voices: SpeechSynthesisVoice[]) {
   const japanese = voices.filter((voice) => /^ja(?:[-_]|$)/i.test(voice.lang));
   return (
     japanese.find((voice) => voice.default) ??
+    // macOS's alphabetically first Eddy voice can omit Japanese news phrases.
+    japanese.find((voice) => /^Kyoko(?:\s*\(|$)/i.test(voice.name)) ??
     japanese.find((voice) => /^ja[-_]JP$/i.test(voice.lang)) ??
     japanese[0] ??
     null

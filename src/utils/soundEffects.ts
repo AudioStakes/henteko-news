@@ -61,7 +61,7 @@ export function playChoiceSoundFromUserGesture(): void {
 
     const now = context.currentTime;
     const oscillator = context.createOscillator();
-    const gain = context.createGain();
+    let gain: GainNode | undefined;
     let cleanedUp = false;
     cleanup = () => {
       if (cleanedUp) {
@@ -76,12 +76,13 @@ export function playChoiceSoundFromUserGesture(): void {
       }
 
       try {
-        gain.disconnect();
+        gain?.disconnect();
       } catch {
         // Ignore disconnect errors during cleanup.
       }
     };
 
+    gain = context.createGain();
     oscillator.onended = cleanup;
 
     oscillator.type = "triangle";

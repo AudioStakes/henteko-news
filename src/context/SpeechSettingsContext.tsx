@@ -1,21 +1,25 @@
 import { createContext, type ReactNode, useContext, useMemo } from "react";
+import { type SpeechSettingsApi, validateSpeechSettings } from "../application/speechSettings";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import {
   DEFAULT_SPEECH_SETTINGS,
   parseSpeechSettings,
   SPEECH_SETTINGS_STORAGE_KEY,
-  type SpeechSettings,
 } from "../utils/speechSettings";
 
-type SpeechSettingsContextValue = {
-  settings: SpeechSettings;
-  updateSettings: (next: SpeechSettings) => void;
-};
-
-const SpeechSettingsContext = createContext<SpeechSettingsContextValue>({
-  settings: DEFAULT_SPEECH_SETTINGS,
-  updateSettings: () => {},
-});
+const SpeechSettingsContext = createContext<SpeechSettingsApi>(
+  Object.freeze<SpeechSettingsApi>({
+    settings: DEFAULT_SPEECH_SETTINGS,
+    saveSettings: () => ({
+      ok: false,
+      errors: {
+        provider: "音声設定を利用できません。",
+        modelBasePath: "",
+        voiceStylePath: "",
+      },
+    }),
+  }),
+);
 
 export function SpeechSettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useLocalStorage(
@@ -24,12 +28,17 @@ export function SpeechSettingsProvider({ children }: { children: ReactNode }) {
     parseSpeechSettings,
   );
   const value = useMemo(
-    () => ({
-      settings,
-      updateSettings: (next: SpeechSettings) => {
-        setSettings(parseSpeechSettings(next));
-      },
-    }),
+    (): SpeechSettingsApi =>
+      Object.freeze({
+        settings,
+        saveSettings: (next: unknown) => {
+          const result = validateSpeechSettings(next);
+          if (result.ok) {
+            setSettings(result.settings);
+          }
+          return result;
+        },
+      }),
     [settings, setSettings],
   );
 

@@ -70,6 +70,47 @@ export default defineConfig(
   },
   { files: ["src/**/*.{ts,tsx}"], extends: [reactHooks.configs.flat.recommended] },
   {
+    files: ["src/components/**/*.{ts,tsx}"],
+    ignores: ["src/components/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/hooks/**", "**/context/**", "**/data/**", "**/application/*"],
+              message: "画面は公開API（src/application）から機能を利用してください。",
+            },
+            {
+              group: [
+                "**/utils/speech*",
+                "**/utils/supertonic/**",
+                "**/utils/soundEffects",
+                "**/utils/analytics",
+                "**/utils/appMode",
+              ],
+              message: "音声・保存・計測・モードの処理はapplicationに置いてください。",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/application/**/*.{ts,tsx}"],
+    ignores: ["src/application/**/*.test.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["**/components/**", "**/App"], message: "機能APIは画面に依存できません。" },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["src/**/*.test.{ts,tsx}"],
     extends: [vitest.configs.recommended],
     rules: {

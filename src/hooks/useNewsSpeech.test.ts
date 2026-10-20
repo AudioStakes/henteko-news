@@ -16,6 +16,7 @@ const mockCancel = vi.fn<ReturnType<typeof useSpeech>["cancel"]>();
 
 let mockIsSupported = true;
 let mockIsSpeaking = false;
+let mockSettingsKey = "web-speech";
 
 vi.mock("../utils/analytics", () => ({
   ANALYTICS_EVENT_NAMES: {
@@ -38,6 +39,7 @@ vi.mock("./useSpeech", () => ({
     cancel: mockCancel,
     isSupported: mockIsSupported,
     isSpeaking: mockIsSpeaking,
+    settingsKey: mockSettingsKey,
   }),
 }));
 
@@ -56,6 +58,7 @@ describe("useNewsSpeech", () => {
     mockCancel.mockReset();
     mockIsSupported = true;
     mockIsSpeaking = false;
+    mockSettingsKey = "web-speech";
     mockTrackEvent.mockReset();
     mockTrackError.mockReset();
   });
@@ -64,7 +67,7 @@ describe("useNewsSpeech", () => {
     const { result } = renderHook(() => useNewsSpeech());
 
     act(() => {
-      result.current.speakNews({ who: fullSelections.who });
+      expect(result.current.speakNews({ who: fullSelections.who })).toBe(false);
     });
 
     expect(mockSpeak).not.toHaveBeenCalled();
@@ -76,7 +79,7 @@ describe("useNewsSpeech", () => {
     const { result } = renderHook(() => useNewsSpeech());
 
     act(() => {
-      result.current.speakNews(incompleteSelections);
+      expect(result.current.speakNews(incompleteSelections)).toBe(false);
     });
 
     expect(mockSpeak).not.toHaveBeenCalled();
@@ -88,7 +91,7 @@ describe("useNewsSpeech", () => {
     const { result } = renderHook(() => useNewsSpeech());
 
     act(() => {
-      result.current.speakNews(fullSelections);
+      expect(result.current.speakNews(fullSelections)).toBe(true);
     });
 
     expect(mockSpeak).toHaveBeenCalledTimes(1);
@@ -104,12 +107,14 @@ describe("useNewsSpeech", () => {
       action: { display: "みんなにわたした", speech: "みんなにわたしました" },
     };
     mockSpeak.mockReturnValue(true);
-    const { result, rerender } = renderHook(() => useNewsSpeech());
+    const { result } = renderHook(() => useNewsSpeech());
 
     act(() => {
       result.current.speakNews(selections);
     });
-    rerender();
+    act(() => {
+      requiredArrayElement(mockSpeak.mock.calls, 0)[1].onEnd?.();
+    });
     act(() => {
       result.current.speakNews(selections);
     });
@@ -144,28 +149,31 @@ describe("useNewsSpeech", () => {
     const { result } = renderHook(() => useNewsSpeech());
 
     act(() => {
-      result.current.speakNews(fullSelections);
+      expect(result.current.speakNews(fullSelections)).toBe(false);
     });
 
     expect(result.current.speechError).toContain("よみあげ");
   });
 
-  it("reports one analytics error when speak calls onError synchronously and returns false", () => {
-    mockSpeak.mockImplementationOnce((_text, options) => {
-      expect(options.onError).toBeDefined();
-      if (options.onError === undefined) {
-        throw new Error("Expected synchronous speech error callback");
-      }
-      options.onError("error");
-      return false;
-    });
-    const { result } = renderHook(() => useNewsSpeech());
-    act(() => {
-      result.current.speakNews(fullSelections);
-    });
-    expect(result.current.speechAvailability).toBe("error");
-    expect(mockTrackError).toHaveBeenCalledExactlyOnceWith("speech_error", { reason: "error" });
-  });
+  it.each([false, true])(
+    "reports one synchronous error and rejects the request when the engine returns %s",
+    (accepted) => {
+      mockSpeak.mockImplementationOnce((_text, options) => {
+        expect(options.onError).toBeDefined();
+        if (options.onError === undefined) {
+          throw new Error("Expected synchronous speech error callback");
+        }
+        options.onError("error");
+        return accepted;
+      });
+      const { result } = renderHook(() => useNewsSpeech());
+      act(() => {
+        expect(result.current.speakNews(fullSelections)).toBe(false);
+      });
+      expect(result.current.speechAvailability).toBe("error");
+      expect(mockTrackError).toHaveBeenCalledExactlyOnceWith("speech_error", { reason: "error" });
+    },
+  );
 
   it("does not show unavailable message when speak fails but is currently speaking", () => {
     mockSpeak.mockReturnValue(false);
@@ -173,10 +181,128 @@ describe("useNewsSpeech", () => {
     const { result } = renderHook(() => useNewsSpeech());
 
     act(() => {
-      result.current.speakNews(fullSelections);
+      expect(result.current.speakNews(fullSelections)).toBe(false);
     });
 
     expect(result.current.speechError).toBe("");
+  });
+
+  it("rejects a second request in the same tick without reporting a playback error", () => {
+    mockSpeak.mockReturnValueOnce(true).mockReturnValue(false);
+    const { result } = renderHook(() => useNewsSpeech());
+
+    act(() => {
+      expect(result.current.speakNews(fullSelections)).toBe(true);
+      expect(result.current.speakNews(fullSelections)).toBe(false);
+    });
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    expect(result.current.speechError).toBe("");
+    expect(mockTrackError).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported speech and preserves text play without calling the engine", () => {
+    mockIsSupported = false;
+    const { result } = renderHook(() => useNewsSpeech());
+
+    act(() => {
+      expect(result.current.speakNews(fullSelections)).toBe(false);
+    });
+
+    expect(mockSpeak).not.toHaveBeenCalled();
+    expect(result.current.speechError).toContain("文字");
+    expect(mockTrackError).not.toHaveBeenCalled();
+  });
+
+  it.each(["end", "error"])("permits retry after %s and ignores duplicate callbacks", (event) => {
+    mockSpeak.mockReturnValue(true);
+    const { result } = renderHook(() => useNewsSpeech());
+    act(() => {
+      expect(result.current.speakNews(fullSelections)).toBe(true);
+    });
+    const previous = requiredArrayElement(mockSpeak.mock.calls, 0)[1];
+
+    act(() => {
+      if (event === "end") {
+        previous.onEnd?.();
+      } else {
+        previous.onError?.("timeout");
+        previous.onError?.("error");
+      }
+      expect(result.current.speakNews(fullSelections)).toBe(true);
+      previous.onEnd?.();
+      previous.onError?.("error");
+      expect(result.current.speakNews(fullSelections)).toBe(false);
+    });
+
+    expect(mockSpeak).toHaveBeenCalledTimes(2);
+    expect(result.current.speechError).toBe("");
+    expect(mockTrackError).toHaveBeenCalledTimes(event === "error" ? 1 : 0);
+  });
+
+  it("cancels synchronously and prevents old callbacks from changing a newer request", () => {
+    mockSpeak.mockReturnValue(true);
+    const { result, rerender } = renderHook(() => useNewsSpeech());
+    act(() => {
+      result.current.speakNews(fullSelections);
+    });
+    const previous = requiredArrayElement(mockSpeak.mock.calls, 0)[1];
+    mockIsSpeaking = true;
+    rerender();
+
+    act(() => {
+      result.current.cancel();
+      expect(result.current.speakNews(fullSelections)).toBe(true);
+      previous.onError?.("error");
+      previous.onEnd?.();
+      expect(result.current.speakNews(fullSelections)).toBe(false);
+    });
+
+    expect(mockCancel).toHaveBeenCalledTimes(1);
+    expect(mockSpeak).toHaveBeenCalledTimes(2);
+    expect(result.current.speechError).toBe("");
+    expect(mockTrackError).not.toHaveBeenCalled();
+  });
+
+  it("invalidates pending callbacks and permits new speech when settings change", () => {
+    mockSpeak.mockReturnValue(true);
+    const { result, rerender } = renderHook(() => useNewsSpeech());
+    act(() => {
+      result.current.speakNews(fullSelections);
+    });
+    const previous = requiredArrayElement(mockSpeak.mock.calls, 0)[1];
+
+    mockSettingsKey = "supertonic";
+    rerender();
+    act(() => {
+      expect(result.current.speakNews(fullSelections)).toBe(true);
+      previous.onError?.("timeout");
+      previous.onEnd?.();
+      expect(result.current.speakNews(fullSelections)).toBe(false);
+    });
+
+    expect(mockSpeak).toHaveBeenCalledTimes(2);
+    expect(result.current.speechError).toBe("");
+    expect(mockTrackError).not.toHaveBeenCalled();
+  });
+
+  it("suppresses saved callbacks and commands after unmount", () => {
+    mockSpeak.mockReturnValue(true);
+    const { result, unmount } = renderHook(() => useNewsSpeech());
+    act(() => {
+      result.current.speakNews(fullSelections);
+    });
+    const previous = requiredArrayElement(mockSpeak.mock.calls, 0)[1];
+
+    unmount();
+    act(() => {
+      previous.onError?.("error");
+      previous.onEnd?.();
+      expect(result.current.speakNews(fullSelections)).toBe(false);
+    });
+
+    expect(mockSpeak).toHaveBeenCalledTimes(1);
+    expect(mockTrackError).not.toHaveBeenCalled();
   });
 
   it("exposes useSpeech support flags and controls", () => {

@@ -108,6 +108,7 @@ LinuxでOS依存ライブラリも必要な場合は `npx playwright install --w
 
 品質ルールの分担、意図的な例外、修正手順は[品質基準](agents/quality.md)にまとめています。
 `check` と `validate` はコードを書き換えません。
+UIの変更時に使う公開APIと、画面を描画せずに確認する契約テストは[UIを変更するときの機能API](application-api.md)を参照してください。
 
 実モデルの音声テストはモデル配置とビルドの後、次のコマンドで実行します。
 
@@ -177,7 +178,8 @@ Web Analyticsは無料で、外部ホストは10サイトまで、閲覧でき�
 ## 構成と変更箇所
 
 - `src/data/words/`：言葉のリストです。追加後は `npm run sort:words`、`npm run check:words` を実行します。
-- `src/hooks/`：ゲーム進行、読み上げ、効果音を扱います。
+- `src/application/`：UIから呼び出す機能APIです。ゲームのコアと、音声や設定を接続するReact向けのAPIをまとめています。[使い方と責務](application-api.md)を参照してください。
+- `src/hooks/`：読み上げ、音声キュー、ブラウザー保存を扱う内部実装です。
 - `src/components/`：開始、選択、結果、音声確認画面を表示します。
 - `src/utils/supertonic/`：ONNX Runtimeによる音声生成を扱います。
 - `src/styles/global.css`：画面全体のスタイルです。

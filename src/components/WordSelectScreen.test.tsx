@@ -2,21 +2,20 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { requiredArrayElement } from "../test/requiredArrayElement";
-import type { Category } from "../types/game";
 import { WordSelectScreen } from "./WordSelectScreen";
 
-vi.mock("../hooks/useButtonSound", () => ({
+vi.mock("./useButtonSound", () => ({
   useButtonSound: () => ({
     playOnPressStart: vi.fn(),
     withClickSound: <T extends unknown[]>(handler: (...args: T) => void) => handler,
   }),
 }));
 
-const category: Category = {
-  key: "who",
-  label: "だれが？",
-  words: ["ねこ", "いぬ", "とり"],
-};
+const category = { label: "だれが？" };
+const choices = [
+  { id: "first", option: { display: "ねこ" } },
+  { id: "second", option: { display: "いぬ" } },
+];
 
 describe("WordSelectScreen", () => {
   beforeEach(() => {
@@ -34,6 +33,7 @@ describe("WordSelectScreen", () => {
     render(
       <WordSelectScreen
         category={category}
+        choices={choices}
         onSelect={onSelect}
         currentStep={1}
         totalSteps={5}
@@ -41,10 +41,9 @@ describe("WordSelectScreen", () => {
       />,
     );
 
-    const choices = screen.getAllByTestId("choice-card");
-    const firstChoice = requiredArrayElement(choices, 0);
-    const secondChoice = requiredArrayElement(choices, 1);
-    const firstLabel = firstChoice.textContent;
+    const buttons = screen.getAllByTestId("choice-card");
+    const firstChoice = requiredArrayElement(buttons, 0);
+    const secondChoice = requiredArrayElement(buttons, 1);
 
     fireEvent.click(firstChoice);
     fireEvent.click(secondChoice);
@@ -54,7 +53,7 @@ describe("WordSelectScreen", () => {
     });
 
     expect(onSelect).toHaveBeenCalledTimes(1);
-    expect(onSelect).toHaveBeenCalledWith({ display: firstLabel, speech: firstLabel });
+    expect(onSelect).toHaveBeenCalledWith("first");
   });
 
   it("clears a pending selection timeout on unmount", () => {
@@ -63,6 +62,7 @@ describe("WordSelectScreen", () => {
     const { unmount } = render(
       <WordSelectScreen
         category={category}
+        choices={choices}
         onSelect={onSelect}
         currentStep={1}
         totalSteps={5}

@@ -6,7 +6,7 @@ import type { useNewsSpeech } from "./hooks/useNewsSpeech";
 import { requiredArrayElement } from "./test/requiredArrayElement";
 import type { trackEvent } from "./utils/analytics";
 
-vi.mock("./hooks/useButtonSound", () => ({
+vi.mock("./components/useButtonSound", () => ({
   useButtonSound: () => ({
     playOnPressStart: vi.fn(),
     withClickSound: <T extends unknown[]>(handler: (...args: T) => void) => handler,
@@ -76,6 +76,7 @@ function completeOneGame() {
 describe("App game flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(speechState.speakNews).mockReturnValue(true);
     vi.useFakeTimers();
     mockTrackEvent.mockReset();
     speechState.speechError = "";
@@ -98,7 +99,7 @@ describe("App game flow", () => {
     expect(screen.getByRole("button", { name: "ニュースをつくる" })).toBeInTheDocument();
   });
 
-  it("moves from start to result after selecting all categories", () => {
+  it("connects start, selection, replay and restart controls to the application API", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
@@ -108,31 +109,8 @@ describe("App game flow", () => {
 
     expect(screen.getByLabelText("かんせいニュース")).toBeInTheDocument();
     expect(speechState.speakNews).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not move to result before selecting the last category", () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
-
-    for (let i = 0; i < CATEGORIES.length - 1; i += 1) {
-      const choices = screen.getAllByTestId("choice-card");
-      fireEvent.click(requiredArrayElement(choices, 0));
-      act(() => {
-        vi.advanceTimersByTime(300);
-      });
-    }
-
-    expect(screen.queryByLabelText("かんせいニュース")).not.toBeInTheDocument();
-    expect(speechState.speakNews).not.toHaveBeenCalled();
-  });
-
-  it("restarts from result into the first select step", () => {
-    render(<App />);
-
-    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
-    completeOneGame();
-
+    fireEvent.click(screen.getByRole("button", { name: "もういちどよむ" }));
+    expect(speechState.speakNews).toHaveBeenCalledTimes(2);
     fireEvent.click(screen.getByRole("button", { name: "つぎのニュース →" }));
 
     expect(screen.getByText("だれが？")).toBeInTheDocument();
@@ -158,16 +136,6 @@ describe("App game flow", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows ResultScreen instead of start/select flow when debugResult=1", () => {
-    window.history.replaceState({}, "", "/?debugResult=1");
-
-    render(<App />);
-
-    expect(screen.getByLabelText("かんせいニュース")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "ニュースをつくる" })).not.toBeInTheDocument();
-    expect(screen.queryByText("だれが？")).not.toBeInTheDocument();
-  });
-
   it("reflects debug query who/when/where/what/action in result", () => {
     const params = new URLSearchParams({
       debugResult: "1",
@@ -188,7 +156,7 @@ describe("App game flow", () => {
     expect(screen.getByText("のみました！")).toBeInTheDocument();
   });
 
-  it("shows offline notice on normal route", () => {
+  it("displays connection state from the API", () => {
     render(<App />);
 
     act(() => {
@@ -199,16 +167,10 @@ describe("App game flow", () => {
     expect(
       screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
     ).toBeInTheDocument();
-  });
-
-  it("tracks online restored event", () => {
-    render(<App />);
-
     act(() => {
       window.dispatchEvent(new Event("online"));
     });
-
-    expect(mockTrackEvent).toHaveBeenCalledWith("online_restored");
+    expect(screen.queryByText(/オフラインです/)).not.toBeInTheDocument();
   });
 
   it("announces only speech error when an error is shown on result screen", () => {

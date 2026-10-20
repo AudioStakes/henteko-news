@@ -14,6 +14,7 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
   const [error, setError] = useState("");
   const queueIdRef = useRef(0);
   const isPlayingRef = useRef(false);
+  const resumeIndexRef = useRef(0);
   const previousSettingsKey = useRef(settingsKey);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
     previousSettingsKey.current = settingsKey;
     queueIdRef.current += 1;
     isPlayingRef.current = false;
+    resumeIndexRef.current = 0;
     setIsPlaying(false);
     setCurrentIndex(-1);
     setError("");
@@ -32,8 +34,9 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
     () => () => {
       queueIdRef.current += 1;
       isPlayingRef.current = false;
+      cancel();
     },
-    [],
+    [cancel],
   );
 
   const stop = () => {
@@ -55,12 +58,18 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
   };
 
   const start = (startIndex: number) => {
+    if (isPlayingRef.current || !Number.isFinite(startIndex)) {
+      return false;
+    }
     if (!isSupported) {
       setError(ERR_UNSUPPORTED);
       options.onError?.(ERR_UNSUPPORTED);
       return false;
     }
-    const safeStartIndex = Math.max(0, Math.min(startIndex, Math.max(items.length - 1, 0)));
+    const safeStartIndex = Math.max(
+      0,
+      Math.min(Math.floor(startIndex), Math.max(items.length - 1, 0)),
+    );
     stop();
     const queueId = queueIdRef.current;
     setError("");
@@ -74,28 +83,41 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
       const item = items[idx];
       if (item === undefined) {
         isPlayingRef.current = false;
+        resumeIndexRef.current = 0;
         setIsPlaying(false);
         setCurrentIndex(items.length - 1);
         options.onComplete?.();
         return;
       }
+      resumeIndexRef.current = idx;
       setCurrentIndex(idx);
+      const completion = { settled: false };
       const ok = speak(item, {
         ...DEFAULT_NEWS_SPEECH_CONFIG,
         onEnd: () => {
+          if (completion.settled) {
+            return;
+          }
+          completion.settled = true;
           next(idx + 1);
         },
         onError: () => {
+          if (completion.settled) {
+            return;
+          }
+          completion.settled = true;
           failQueue(queueId, ERR_PLAYBACK);
         },
       });
-      if (!ok) {
+      if (!(ok || completion.settled)) {
+        completion.settled = true;
         failQueue(queueId, ERR_PLAYBACK);
       }
     };
 
     if (items.length === 0) {
       isPlayingRef.current = false;
+      resumeIndexRef.current = 0;
       setIsPlaying(false);
       setCurrentIndex(-1);
       options.onComplete?.();
@@ -106,5 +128,7 @@ export function useSpeechQueue(items: string[], options: Options = {}) {
     return true;
   };
 
-  return { start, stop, currentIndex, isPlaying, error, isSupported };
+  const resume = () => start(resumeIndexRef.current);
+
+  return { start, resume, stop, currentIndex, isPlaying, error, isSupported };
 }

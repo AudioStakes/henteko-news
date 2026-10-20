@@ -1,16 +1,22 @@
 import type { Category, WordOption } from "../types/game";
 import { toWordOption } from "../utils/wordOption";
 
-export type ShuffledChoice = { id: string; option: WordOption };
+export type GameCategory = Readonly<{
+  key: Category["key"];
+  label: string;
+  words: readonly (string | Readonly<WordOption>)[];
+}>;
+
+export type Choice = Readonly<{ id: string; option: Readonly<WordOption> }>;
 
 export function buildShuffledChoices(
-  category: Category,
+  category: GameCategory,
   maxChoices = 5,
   randomFn: () => number = Math.random,
-): ShuffledChoice[] {
+): Choice[] {
   const shuffled = category.words.map((word, i) => {
-    const option = toWordOption(word);
-    return { id: `${category.key}-${i}-${option.display}`, option };
+    const option = Object.freeze({ ...toWordOption(word) });
+    return Object.freeze({ id: `${category.key}-${i}-${option.display}`, option });
   });
 
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
@@ -25,19 +31,4 @@ export function buildShuffledChoices(
   }
 
   return shuffled.slice(0, maxChoices);
-}
-
-export function computePickState(prevPickedId: string, nextId: string): string {
-  return prevPickedId.length > 0 ? prevPickedId : nextId;
-}
-
-export function scheduleSelection(
-  onSelect: (word: WordOption) => void,
-  option: WordOption,
-  delayMs = 260,
-  scheduleFn: (callback: () => void, delayMs: number) => ReturnType<typeof setTimeout> = setTimeout,
-) {
-  return scheduleFn(() => {
-    onSelect(option);
-  }, delayMs);
 }

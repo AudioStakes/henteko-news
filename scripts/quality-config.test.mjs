@@ -9,6 +9,25 @@ import { getFileInfo } from "prettier";
 const eslint = new ESLint();
 const probes = [
   {
+    name: "presentation cannot import internal application or browser implementations",
+    filePath: "src/components/StartScreen.tsx",
+    source: "import { useSpeech } from '../hooks/useSpeech'; export { useSpeech };\n",
+    rule: "no-restricted-imports",
+  },
+  {
+    name: "presentation must use the public application entry point",
+    filePath: "src/components/StartScreen.tsx",
+    source:
+      "import { createGameSession } from '../application/gameSession'; export { createGameSession };\n",
+    rule: "no-restricted-imports",
+  },
+  {
+    name: "application cannot depend on presentation",
+    filePath: "src/application/useNewsApplication.ts",
+    source: "import { AppView } from '../components/AppView'; export { AppView };\n",
+    rule: "no-restricted-imports",
+  },
+  {
     name: "unhandled promises fail even when prefixed with void",
     filePath: "src/utils/speechSettings.ts",
     source: "void Promise.reject(new Error('probe'));\n",

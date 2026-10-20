@@ -22,14 +22,28 @@ function buildSpeechError(reason: "unsupported" | "timeout" | "error") {
 
 export function useNewsSpeech() {
   const [speechError, setSpeechError] = useState("");
-  const { speak, isSupported, isSpeaking, warmup, cancel, settingsKey } = useSpeech();
+  const { speak, isSupported, isSpeaking, warmup, cancel: cancelSpeech, settingsKey } = useSpeech();
   const previousSettingsKey = useRef(settingsKey);
+  const requestIdRef = useRef(0);
+  const busyRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      requestIdRef.current += 1;
+      busyRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (previousSettingsKey.current === settingsKey) {
       return;
     }
     previousSettingsKey.current = settingsKey;
+    requestIdRef.current += 1;
+    busyRef.current = false;
     setSpeechError("");
   }, [settingsKey]);
 
@@ -52,35 +66,57 @@ export function useNewsSpeech() {
     return "ready";
   }, [isSupported, isSpeaking, speechError]);
 
-  const speakNews = (nextSelections: Selections) => {
-    if (buildNewsLines(nextSelections).length !== CATEGORIES.length) {
-      return;
+  const cancel = () => {
+    requestIdRef.current += 1;
+    busyRef.current = false;
+    cancelSpeech();
+  };
+
+  const speakNews = (nextSelections: Selections): boolean => {
+    if (
+      !mountedRef.current ||
+      busyRef.current ||
+      buildNewsLines(nextSelections).length !== CATEGORIES.length
+    ) {
+      return false;
     }
 
     if (!isSupported) {
       setSpeechError(buildSpeechError("unsupported"));
       trackEvent(ANALYTICS_EVENT_NAMES.speechUnsupported);
-      return;
+      return false;
     }
 
+    requestIdRef.current += 1;
+    const requestId = requestIdRef.current;
+    busyRef.current = true;
     setSpeechError("");
     let failureReported = false;
     const reportFailure = (reason: "timeout" | "error") => {
-      if (failureReported) {
+      if (requestId !== requestIdRef.current || !busyRef.current) {
         return;
       }
       failureReported = true;
+      busyRef.current = false;
       setSpeechError(buildSpeechError(reason));
       trackError(ANALYTICS_EVENT_NAMES.speechError, { reason });
     };
     const ok = speak(toSpeechText(nextSelections), {
       ...DEFAULT_NEWS_SPEECH_CONFIG,
+      onEnd: () => {
+        if (requestId === requestIdRef.current) {
+          busyRef.current = false;
+        }
+      },
       onError: reportFailure,
     });
 
     if (!(ok || isSpeaking)) {
       reportFailure("error");
+    } else if (!ok && requestId === requestIdRef.current) {
+      busyRef.current = false;
     }
+    return ok && !failureReported;
   };
 
   return {

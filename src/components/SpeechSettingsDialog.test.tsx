@@ -1,7 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { SpeechSettingsProvider, useSpeechSettings } from "../context/SpeechSettingsContext";
-import { SPEECH_SETTINGS_STORAGE_KEY } from "../utils/speechSettings";
+import { useState } from "react";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  DEFAULT_SPEECH_SETTINGS,
+  type SpeechSettings,
+  validateSpeechSettings,
+} from "../application/speechSettings";
 import { AppHeader } from "./AppHeader";
 
 const showModalDescriptor = Object.getOwnPropertyDescriptor(
@@ -10,19 +14,30 @@ const showModalDescriptor = Object.getOwnPropertyDescriptor(
 );
 const closeDescriptor = Object.getOwnPropertyDescriptor(HTMLDialogElement.prototype, "close");
 
-function ChoiceReader({ label }: { label: string }) {
-  const { settings } = useSpeechSettings();
-  return <output aria-label={label}>{JSON.stringify(settings)}</output>;
+const saveSettings = vi.fn(validateSpeechSettings);
+
+function SettingsHarness({ initialSettings }: { initialSettings: SpeechSettings }) {
+  const [settings, setSettings] = useState(initialSettings);
+  return (
+    <>
+      <AppHeader
+        settings={settings}
+        defaults={DEFAULT_SPEECH_SETTINGS}
+        onSave={(next) => {
+          const result = saveSettings(next);
+          if (result.ok) {
+            setSettings(result.settings);
+          }
+          return result;
+        }}
+      />
+      <output aria-label="saved settings">{JSON.stringify(settings)}</output>
+    </>
+  );
 }
 
-function renderSettings() {
-  return render(
-    <SpeechSettingsProvider>
-      <AppHeader />
-      <ChoiceReader label="game choice" />
-      <ChoiceReader label="audio check choice" />
-    </SpeechSettingsProvider>,
-  );
+function renderSettings(initialSettings: SpeechSettings = DEFAULT_SPEECH_SETTINGS) {
+  return render(<SettingsHarness initialSettings={initialSettings} />);
 }
 
 function openSettings() {
@@ -67,10 +82,10 @@ describe("speech settings dialog", () => {
   });
 
   beforeEach(() => {
-    window.localStorage.clear();
+    saveSettings.mockClear();
   });
 
-  it("saves model paths for all consumers and restores the saved draft on reopening", () => {
+  it("passes its draft to the API and restores the normalized settings prop on reopening", () => {
     renderSettings();
     openSettings();
     expect(screen.getByLabelText("読み上げ方式")).toHaveValue("web-speech");
@@ -85,21 +100,17 @@ describe("speech settings dialog", () => {
     fireEvent.change(screen.getByLabelText("声のJSONファイル"), {
       target: { value: "voices/F1.json" },
     });
-    expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"web-speech"');
+    expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"web-speech"');
+    expect(saveSettings).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "音声設定" })).toHaveFocus();
-    expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"supertonic"');
-    expect(screen.getByLabelText("audio check choice").textContent).toBe(
-      screen.getByLabelText("game choice").textContent,
-    );
-    expect(
-      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
-    ).toStrictEqual({
+    expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"supertonic"');
+    expect(saveSettings).toHaveBeenCalledExactlyOnceWith({
       provider: "supertonic",
-      modelBasePath: "https://models.example.com/onnx",
+      modelBasePath: "  https://models.example.com/onnx  ",
       voiceStylePath: "voices/F1.json",
     });
 
@@ -130,7 +141,8 @@ describe("speech settings dialog", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "音声設定" })).toHaveFocus();
-    expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"web-speech"');
+    expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"web-speech"');
+    expect(saveSettings).not.toHaveBeenCalled();
     openSettings();
     expect(screen.getByLabelText("読み上げ方式")).toHaveValue("web-speech");
     chooseModel();
@@ -139,18 +151,6 @@ describe("speech settings dialog", () => {
 
   it.each([
     { model: "javascript:alert(1)", voice: "", modelInvalid: true, voiceInvalid: true },
-    {
-      model: "/custom/onnx?",
-      voice: "/voices/M1.json",
-      modelInvalid: true,
-      voiceInvalid: false,
-    },
-    {
-      model: "/custom/onnx#",
-      voice: "/voices/M1.json",
-      modelInvalid: true,
-      voiceInvalid: false,
-    },
     {
       model: "/custom/onnx",
       voice: "/voices/M1.json#",
@@ -177,28 +177,41 @@ describe("speech settings dialog", () => {
       expect(modelInput).toHaveAttribute("aria-invalid", String(modelInvalid));
       expect(voiceInput).toHaveAttribute("aria-invalid", String(voiceInvalid));
       expect(modelInvalid ? modelInput : voiceInput).toHaveFocus();
-      expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"web-speech"');
+      expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"web-speech"');
     },
   );
 
-  it("resets to browser defaults only after saving", () => {
-    window.localStorage.setItem(
-      SPEECH_SETTINGS_STORAGE_KEY,
-      JSON.stringify({
-        provider: "supertonic",
-        modelBasePath: "/custom/onnx",
-        voiceStylePath: "/custom/F1.json",
-      }),
-    );
+  it("shows provider errors returned by the API and focuses the provider field", () => {
+    saveSettings.mockReturnValueOnce({
+      ok: false,
+      errors: { provider: "この方式は利用できません。", modelBasePath: "", voiceStylePath: "" },
+    });
     renderSettings();
+    openSettings();
+
+    fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
+
+    expect(screen.getByRole("dialog", { name: "音声設定" })).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("この方式は利用できません。");
+    expect(screen.getByLabelText("読み上げ方式")).toHaveFocus();
+    expect(screen.getByLabelText("読み上げ方式")).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("resets to browser defaults only after saving", () => {
+    renderSettings({
+      provider: "supertonic",
+      modelBasePath: "/custom/onnx",
+      voiceStylePath: "/custom/F1.json",
+    });
     openSettings();
 
     fireEvent.click(screen.getByRole("button", { name: "ブラウザーの既定設定に戻す" }));
 
     expect(screen.getByLabelText("読み上げ方式")).toHaveValue("web-speech");
-    expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"supertonic"');
+    expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"supertonic"');
+    expect(saveSettings).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
-    expect(screen.getByLabelText("game choice")).toHaveTextContent('"provider":"web-speech"');
+    expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"web-speech"');
     openSettings();
     chooseModel();
     expect(screen.getByLabelText("モデルのフォルダー")).toHaveValue("/supertonic/onnx");

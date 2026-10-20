@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { playChoiceSoundFromUserGesture } from "../utils/soundEffects";
+import { playChoiceSoundFromUserGesture } from "../application";
 
 export function useButtonSound() {
   const lastPointerSoundAtRef = useRef(0);

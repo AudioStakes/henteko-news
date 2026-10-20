@@ -1,58 +1,7 @@
-import { useMemo, useRef } from "react";
-import { CATEGORIES } from "../data/words";
-import { useSpeechQueue } from "../hooks/useSpeechQueue";
-import { toWordOption } from "../utils/wordOption";
+import type { WordsAudioCheckApi } from "../application";
 
-const CATEGORY_BUTTON_LABELS: Record<string, string> = {
-  who: "だれが",
-  when: "いつ",
-  where: "どこで",
-  what: "なにを",
-  action: "どうした",
-};
-function buildQueue() {
-  return CATEGORIES.flatMap((category) =>
-    category.words.map((word) => {
-      const option = toWordOption(word);
-      return {
-        categoryKey: category.key,
-        categoryLabel: category.label,
-        displayText: option.display,
-        speechText: option.speech ?? option.display,
-      };
-    }),
-  );
-}
-export function WordsAudioCheckScreen() {
-  const queue = useMemo(() => buildQueue(), []);
-  const resumeIndexRef = useRef(0);
-  const { start, stop, currentIndex, isPlaying, error } = useSpeechQueue(
-    queue.map((i) => i.speechText),
-    {
-      onComplete: () => {
-        resumeIndexRef.current = 0;
-      },
-      onError: () => {},
-    },
-  );
-  const categoryStarts = useMemo(
-    () =>
-      CATEGORIES.map((category) => ({
-        key: category.key,
-        label: CATEGORY_BUTTON_LABELS[category.key] ?? category.label.replace("？", ""),
-        startIndex: queue.findIndex((item) => item.categoryKey === category.key),
-      })),
-    [queue],
-  );
-  const playFrom = (idx: number) => {
-    resumeIndexRef.current = idx;
-    start(idx);
-  };
-  const stopPlayback = () => {
-    resumeIndexRef.current = Math.max(currentIndex, 0);
-    stop();
-  };
-  const currentItem = currentIndex >= 0 ? queue[currentIndex] : null;
+export function WordsAudioCheckScreen({ state, commands }: WordsAudioCheckApi) {
+  const { queue, currentItem, currentIndex, isPlaying, error, categoryStarts } = state;
   return (
     <section className="screen sound-screen">
       <div className="sound-card words-audio-check">
@@ -71,7 +20,7 @@ export function WordsAudioCheckScreen() {
             type="button"
             className="action-btn orange small"
             onClick={() => {
-              playFrom(0);
+              commands.start();
             }}
             disabled={isPlaying}
           >
@@ -81,9 +30,7 @@ export function WordsAudioCheckScreen() {
             type="button"
             className="action-btn orange small"
             onClick={() => {
-              playFrom(
-                error.length > 0 && currentIndex >= 0 ? currentIndex : resumeIndexRef.current,
-              );
+              commands.resume();
             }}
             disabled={isPlaying || queue.length === 0}
           >
@@ -92,7 +39,9 @@ export function WordsAudioCheckScreen() {
           <button
             type="button"
             className="action-btn blue small"
-            onClick={stopPlayback}
+            onClick={() => {
+              commands.stop();
+            }}
             disabled={!isPlaying}
           >
             ていし
@@ -105,7 +54,7 @@ export function WordsAudioCheckScreen() {
               type="button"
               className="sound-choice"
               onClick={() => {
-                playFrom(category.startIndex);
+                commands.startCategory(category.key);
               }}
               disabled={isPlaying || category.startIndex < 0}
             >

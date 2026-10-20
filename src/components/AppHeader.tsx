@@ -1,7 +1,14 @@
 import { useRef, useState } from "react";
+import type { SpeechSettings, SpeechSettingsApi } from "../application";
 import { SpeechSettingsDialog } from "./SpeechSettingsDialog";
 
-export function AppHeader() {
+type AppHeaderProps = {
+  settings: SpeechSettings;
+  defaults: SpeechSettings;
+  onSave: SpeechSettingsApi["saveSettings"];
+};
+
+export function AppHeader({ settings, defaults, onSave }: AppHeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -20,6 +27,9 @@ export function AppHeader() {
         音声設定
       </button>
       <SpeechSettingsDialog
+        settings={settings}
+        defaults={defaults}
+        onSave={onSave}
         isOpen={isSettingsOpen}
         returnFocusRef={settingsButtonRef}
         onClose={() => {

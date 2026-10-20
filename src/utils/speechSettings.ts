@@ -1,18 +1,18 @@
 export type SpeechProvider = "web-speech" | "supertonic";
 
-export type SpeechSettings = {
+export type SpeechSettings = Readonly<{
   provider: SpeechProvider;
   modelBasePath: string;
   voiceStylePath: string;
-};
+}>;
 
 export const SPEECH_SETTINGS_STORAGE_KEY = "henteko-news:speech-settings";
 
-export const DEFAULT_SPEECH_SETTINGS: SpeechSettings = {
+export const DEFAULT_SPEECH_SETTINGS: SpeechSettings = Object.freeze({
   provider: "web-speech",
   modelBasePath: "/supertonic/onnx",
   voiceStylePath: "/supertonic/voice_styles/M1.json",
-};
+});
 
 export function isSpeechAssetPath(value: string, directory = false) {
   if (value.trim().length === 0 || value.includes("#") || (directory && value.includes("?"))) {
@@ -32,7 +32,7 @@ export function isSpeechAssetPath(value: string, directory = false) {
 
 export function parseSpeechSettings(value: unknown): SpeechSettings {
   if (value === null || typeof value !== "object") {
-    return { ...DEFAULT_SPEECH_SETTINGS };
+    return DEFAULT_SPEECH_SETTINGS;
   }
   const candidateModelBasePath = "modelBasePath" in value ? value.modelBasePath : undefined;
   const candidateVoiceStylePath = "voiceStylePath" in value ? value.voiceStylePath : undefined;
@@ -40,7 +40,7 @@ export function parseSpeechSettings(value: unknown): SpeechSettings {
     typeof candidateModelBasePath === "string" ? candidateModelBasePath.trim() : "";
   const voiceStylePath =
     typeof candidateVoiceStylePath === "string" ? candidateVoiceStylePath.trim() : "";
-  return {
+  return Object.freeze({
     provider: "provider" in value && value.provider === "supertonic" ? "supertonic" : "web-speech",
     modelBasePath: isSpeechAssetPath(modelBasePath, true)
       ? modelBasePath
@@ -48,5 +48,5 @@ export function parseSpeechSettings(value: unknown): SpeechSettings {
     voiceStylePath: isSpeechAssetPath(voiceStylePath)
       ? voiceStylePath
       : DEFAULT_SPEECH_SETTINGS.voiceStylePath,
-  };
+  });
 }

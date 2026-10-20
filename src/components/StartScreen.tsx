@@ -1,5 +1,5 @@
-import { useButtonSound } from "../hooks/useButtonSound";
 import { CharacterImage } from "./CharacterImage";
+import { useButtonSound } from "./useButtonSound";
 
 type StartScreenProps = {
   onStart: () => void;

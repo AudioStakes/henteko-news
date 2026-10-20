@@ -1,5 +1,4 @@
 import { useLayoutEffect, useMemo, useState } from "react";
-import { useButtonSound } from "../hooks/useButtonSound";
 import { calculateSafeResultBubbleMaxHeight } from "../utils/resultBubbleMaxHeight";
 import {
   calculateMaxResultMascotHeightFromSpace,
@@ -8,9 +7,10 @@ import {
 } from "../utils/resultMascotLayout";
 import { calculateResultTextLayout } from "../utils/resultTextLayout";
 import { CharacterImage } from "./CharacterImage";
+import { useButtonSound } from "./useButtonSound";
 
 type ResultScreenProps = {
-  lines: string[];
+  lines: readonly string[];
   speechError: string;
   speechStatusText?: string;
   imageUrl: string;

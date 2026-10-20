@@ -22,13 +22,18 @@ describe("SpeechSettingsProvider", () => {
     vi.restoreAllMocks();
   });
 
-  it("defaults to browser speech and safely supports hooks outside the provider", () => {
+  it("defaults to browser speech outside the provider and reports unavailable saves", () => {
     const { result } = renderHook(useSpeechSettings);
 
     expect(result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
-    expect(() => {
-      result.current.updateSettings(modelSettings);
-    }).not.toThrow();
+    expect(result.current.saveSettings(modelSettings)).toStrictEqual({
+      ok: false,
+      errors: {
+        provider: "音声設定を利用できません。",
+        modelBasePath: "",
+        voiceStylePath: "",
+      },
+    });
   });
 
   it("persists the shared choice and restores it when the app mounts again", () => {
@@ -36,7 +41,10 @@ describe("SpeechSettingsProvider", () => {
     expect(first.result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
 
     act(() => {
-      first.result.current.updateSettings(modelSettings);
+      expect(first.result.current.saveSettings(modelSettings)).toStrictEqual({
+        ok: true,
+        settings: modelSettings,
+      });
     });
     expect(
       JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
@@ -45,6 +53,17 @@ describe("SpeechSettingsProvider", () => {
 
     const second = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
     expect(second.result.current.settings).toStrictEqual(modelSettings);
+  });
+
+  it("requires the save command to replace or change shared settings", () => {
+    const { result } = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
+
+    expect(Reflect.set(result.current, "settings", modelSettings)).toBe(false);
+    expect(Reflect.set(result.current.settings, "provider", "supertonic")).toBe(false);
+    expect(result.current.settings).toBe(DEFAULT_SPEECH_SETTINGS);
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
   });
 
   it("recovers from corrupt stored JSON with browser defaults", () => {
@@ -69,9 +88,74 @@ describe("SpeechSettingsProvider", () => {
     expect(result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
 
     act(() => {
-      result.current.updateSettings(modelSettings);
+      expect(result.current.saveSettings(modelSettings)).toStrictEqual({
+        ok: true,
+        settings: modelSettings,
+      });
     });
 
     expect(result.current.settings).toStrictEqual(modelSettings);
+  });
+
+  it("leaves shared settings and storage unchanged when a save fails validation", () => {
+    window.localStorage.setItem(SPEECH_SETTINGS_STORAGE_KEY, JSON.stringify(modelSettings));
+    const { result } = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
+
+    act(() => {
+      expect(
+        result.current.saveSettings({ ...modelSettings, modelBasePath: "file:///models" }).ok,
+      ).toBe(false);
+      expect(result.current.saveSettings({ provider: "unknown" }).ok).toBe(false);
+    });
+
+    expect(result.current.settings).toStrictEqual(modelSettings);
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual(modelSettings);
+  });
+
+  it("applies settings for the session when persisted settings cannot be overwritten", () => {
+    window.localStorage.setItem(SPEECH_SETTINGS_STORAGE_KEY, JSON.stringify(modelSettings));
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("quota exceeded");
+    });
+    const { result } = renderHook(useSpeechSettings, { wrapper: SpeechSettingsProvider });
+
+    act(() => {
+      expect(result.current.saveSettings(DEFAULT_SPEECH_SETTINGS)).toStrictEqual({
+        ok: true,
+        settings: DEFAULT_SPEECH_SETTINGS,
+      });
+    });
+
+    expect(result.current.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual(modelSettings);
+  });
+
+  it("shares normalized saves immediately with every consumer and supports reset", () => {
+    const { result } = renderHook(
+      () => ({ first: useSpeechSettings(), second: useSpeechSettings() }),
+      { wrapper: SpeechSettingsProvider },
+    );
+
+    act(() => {
+      result.current.first.saveSettings({
+        ...modelSettings,
+        modelBasePath: `  ${modelSettings.modelBasePath}  `,
+      });
+    });
+    expect(result.current.first.settings).toStrictEqual(modelSettings);
+    expect(result.current.second.settings).toStrictEqual(modelSettings);
+
+    act(() => {
+      result.current.second.saveSettings(DEFAULT_SPEECH_SETTINGS);
+    });
+    expect(result.current.first.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(result.current.second.settings).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
+    expect(
+      JSON.parse(window.localStorage.getItem(SPEECH_SETTINGS_STORAGE_KEY) ?? "null"),
+    ).toStrictEqual(DEFAULT_SPEECH_SETTINGS);
   });
 });

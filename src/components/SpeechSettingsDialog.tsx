@@ -1,27 +1,31 @@
 import { type RefObject, type SubmitEvent, useEffect, useId, useRef, useState } from "react";
-import { useSpeechSettings } from "../context/SpeechSettingsContext";
-import {
-  DEFAULT_SPEECH_SETTINGS,
-  isSpeechAssetPath,
-  type SpeechSettings,
-} from "../utils/speechSettings";
+import type { SpeechSettings, SpeechSettingsApi, SpeechSettingsErrors } from "../application";
 
 type SpeechSettingsDialogProps = {
   isOpen: boolean;
   onClose: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
+  settings: SpeechSettings;
+  defaults: SpeechSettings;
+  onSave: SpeechSettingsApi["saveSettings"];
 };
 
 export function SpeechSettingsDialog({
   isOpen,
   onClose,
   returnFocusRef,
+  settings,
+  defaults,
+  onSave,
 }: SpeechSettingsDialogProps) {
-  const { settings, updateSettings } = useSpeechSettings();
   const [draft, setDraft] = useState<SpeechSettings>(settings);
-  const [errors, setErrors] = useState({ modelBasePath: "", voiceStylePath: "" });
+  const [errors, setErrors] = useState<SpeechSettingsErrors>({
+    modelBasePath: "",
+    voiceStylePath: "",
+  });
   const [previousProps, setPreviousProps] = useState({ isOpen, settings });
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const providerInputRef = useRef<HTMLSelectElement>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
   const voiceInputRef = useRef<HTMLInputElement>(null);
   const id = useId();
@@ -51,28 +55,16 @@ export function SpeechSettingsDialog({
 
   const save = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const next = {
-      ...draft,
-      modelBasePath: draft.modelBasePath.trim(),
-      voiceStylePath: draft.voiceStylePath.trim(),
-    };
-    const nextErrors = { modelBasePath: "", voiceStylePath: "" };
-    if (next.provider === "supertonic") {
-      if (!isSpeechAssetPath(next.modelBasePath, true)) {
-        nextErrors.modelBasePath =
-          "モデルのフォルダーをパスまたはHTTP(S) URLで入力してください。?や#は使えません。";
+    const result = onSave(draft);
+    if (!result.ok) {
+      setErrors(result.errors);
+      if (result.errors.provider !== undefined) {
+        providerInputRef.current?.focus();
+      } else {
+        (result.errors.modelBasePath.length > 0 ? modelInputRef : voiceInputRef).current?.focus();
       }
-      if (!isSpeechAssetPath(next.voiceStylePath)) {
-        nextErrors.voiceStylePath =
-          "声のJSONファイルをパスまたはHTTP(S) URLで入力してください。#は使えません。";
-      }
-    }
-    setErrors(nextErrors);
-    if (nextErrors.modelBasePath.length > 0 || nextErrors.voiceStylePath.length > 0) {
-      (nextErrors.modelBasePath.length > 0 ? modelInputRef : voiceInputRef).current?.focus();
       return;
     }
-    updateSettings(next);
     onClose();
   };
   const hasModelPathError = errors.modelBasePath.length > 0;
@@ -104,8 +96,11 @@ export function SpeechSettingsDialog({
         <div className="speech-settings-dialog__field">
           <label htmlFor={`${id}-provider`}>読み上げ方式</label>
           <select
+            ref={providerInputRef}
             id={`${id}-provider`}
             value={draft.provider}
+            aria-invalid={Boolean(errors.provider)}
+            aria-describedby={errors.provider === undefined ? undefined : `${id}-provider-error`}
             onChange={(event) => {
               setDraft((current) => ({
                 ...current,
@@ -116,6 +111,11 @@ export function SpeechSettingsDialog({
             <option value="web-speech">ブラウザーの音声（Web Speech API）</option>
             <option value="supertonic">モデル音声（Supertonic）</option>
           </select>
+          {errors.provider !== undefined && (
+            <p id={`${id}-provider-error`} className="speech-settings-dialog__error" role="alert">
+              {errors.provider}
+            </p>
+          )}
         </div>
         {draft.provider === "supertonic" && (
           <>
@@ -175,7 +175,7 @@ export function SpeechSettingsDialog({
           type="button"
           className="speech-settings-dialog__reset"
           onClick={() => {
-            setDraft({ ...DEFAULT_SPEECH_SETTINGS });
+            setDraft({ ...defaults });
             setErrors({ modelBasePath: "", voiceStylePath: "" });
           }}
         >

@@ -185,7 +185,7 @@ test("keyboard users can create a complete news item and start another", async (
   });
   await page.goto("/");
   await pressTab(page, browserName);
-  await expect(page.getByRole("button", { name: "音声設定", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "おとな：音声設定", exact: true })).toBeFocused();
   await pressTab(page, browserName);
   await expect(page.getByRole("button", { name: "はじめる" })).toBeFocused();
   await page.keyboard.press("Enter");

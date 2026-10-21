@@ -78,7 +78,7 @@ test("settings preserve the game and configured model paths across reloads", asy
   await page.goto("/");
   await page.getByRole("button", { name: "はじめる" }).click();
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await expect(page.getByLabel("読み上げ方式")).toHaveValue("web-speech");
   await page.getByLabel("読み上げ方式").selectOption("supertonic");
   await page.getByLabel("モデルのフォルダー").fill("/custom-model/onnx");
@@ -88,7 +88,7 @@ test("settings preserve the game and configured model paths across reloads", asy
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
 
   await page.reload();
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await expect(page.getByLabel("読み上げ方式")).toHaveValue("supertonic");
   await expect(page.getByLabel("モデルのフォルダー")).toHaveValue("/custom-model/onnx");
   await expect(page.getByLabel("声のJSONファイル")).toHaveValue("/custom-model/voices/F1.json");
@@ -97,11 +97,11 @@ test("settings preserve the game and configured model paths across reloads", asy
   await expect.poll(() => requested.some((url) => url.endsWith("/onnx/tts.json"))).toBe(true);
   await expect.poll(() => requested.some((url) => url.endsWith("/voices/F1.json"))).toBe(true);
 
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await page.getByLabel("読み上げ方式").selectOption("web-speech");
   await page.getByRole("button", { name: "設定を保存", exact: true }).click();
   await page.reload();
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await expect(page.getByLabel("読み上げ方式")).toHaveValue("web-speech");
   await expect(page.getByLabel("モデルのフォルダー")).toHaveCount(0);
 });
@@ -156,7 +156,7 @@ test("the caster follows actual speech preparation, playback, and cancellation",
 test("settings remain usable on a narrow phone and return focus after saving", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });
   await page.goto("/");
-  const settingsButton = page.getByRole("button", { name: "音声設定", exact: true });
+  const settingsButton = page.getByRole("button", { name: "おとな：音声設定", exact: true });
   await settingsButton.click();
   await page.getByLabel("読み上げ方式").selectOption("supertonic");
   const dialog = page.getByRole("dialog", { name: "音声設定", exact: true });
@@ -177,7 +177,7 @@ test("the settings dialog keeps background controls inert and restores keyboard 
   browserName,
 }) => {
   await page.goto("/");
-  const settingsButton = page.getByRole("button", { name: "音声設定", exact: true });
+  const settingsButton = page.getByRole("button", { name: "おとな：音声設定", exact: true });
   await settingsButton.click();
   const closeButton = page.getByRole("button", { name: "音声設定を閉じる", exact: true });
   await expect(closeButton).toBeFocused();
@@ -206,7 +206,7 @@ test("all model settings and dialog actions stay reachable in phone landscape", 
 }) => {
   await page.setViewportSize({ width: 667, height: 375 });
   await page.goto("/");
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await page.getByLabel("読み上げ方式").selectOption("supertonic");
   const dialog = page.getByRole("dialog", { name: "音声設定", exact: true });
   const bounds = await getVisibleBounds(dialog, "The landscape settings dialog must be visible");
@@ -225,7 +225,7 @@ test("all model settings and dialog actions stay reachable in phone landscape", 
 
 test("invalid model paths show an accessible error and cannot be saved", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await page.getByLabel("読み上げ方式").selectOption("supertonic");
   const modelPath = page.getByLabel("モデルのフォルダー");
   await modelPath.fill("javascript:alert(1)");
@@ -235,6 +235,6 @@ test("invalid model paths show an accessible error and cannot be saved", async (
   await expect(modelPath).toHaveAttribute("aria-invalid", "true");
   await expect(modelPath).toBeFocused();
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await expect(page.getByLabel("読み上げ方式")).toHaveValue("web-speech");
 });

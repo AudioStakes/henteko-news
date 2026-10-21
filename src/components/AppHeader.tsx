@@ -19,7 +19,7 @@ export function AppHeader({ settings, defaults, onSave }: AppHeaderProps) {
         <button
           type="button"
           className="app-header__speech-settings"
-          aria-label="音声設定"
+          aria-label="おとな：音声設定"
           ref={settingsButtonRef}
           onClick={() => {
             setIsSettingsOpen(true);

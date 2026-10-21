@@ -64,7 +64,7 @@ test("the real Supertonic models produce and play a non-silent PCM WAV in a prod
     };
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "音声設定", exact: true }).click();
+  await page.getByRole("button", { name: "おとな：音声設定", exact: true }).click();
   await page.getByLabel("読み上げ方式").selectOption("supertonic");
   await page.getByRole("button", { name: "設定を保存", exact: true }).click();
   await page.getByRole("button", { name: "はじめる" }).click();

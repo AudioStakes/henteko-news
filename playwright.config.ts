@@ -1,10 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const runningInCi = Boolean(process.env["CI"]);
+const speechTestIgnore = process.env["RUN_SPEECH_SMOKE"] === "1" ? [] : ["**/speech.spec.ts"];
+const mobileLayoutTest = "**/layout/mobile-viewport.spec.ts";
 
 export default defineConfig({
   testDir: "./tests",
-  testIgnore: process.env["RUN_SPEECH_SMOKE"] === "1" ? [] : ["**/speech.spec.ts"],
+  testIgnore: speechTestIgnore,
   timeout: 30_000,
   forbidOnly: true,
   fullyParallel: true,
@@ -18,16 +20,20 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: [...speechTestIgnore, mobileLayoutTest],
+    },
     {
       name: "firefox",
       use: { ...devices["Desktop Firefox"] },
-      testIgnore: ["**/speech.spec.ts"],
+      testIgnore: ["**/speech.spec.ts", mobileLayoutTest],
     },
     {
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
-      testIgnore: ["**/speech.spec.ts"],
+      testIgnore: ["**/speech.spec.ts", mobileLayoutTest],
     },
     {
       name: "android",
@@ -42,7 +48,7 @@ export default defineConfig({
     {
       name: "ipad",
       use: { ...devices["iPad (gen 7)"] },
-      testIgnore: ["**/speech.spec.ts"],
+      testIgnore: ["**/speech.spec.ts", mobileLayoutTest],
     },
   ],
   webServer: {

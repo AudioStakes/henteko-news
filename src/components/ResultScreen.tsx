@@ -36,7 +36,7 @@ export function ResultScreen({
         <h2
           className="result-text"
           style={{
-            fontSize: `clamp(1.125rem, calc(100cqi / ${longestLineLength}), 2.8125rem)`,
+            fontSize: `clamp(1.125rem, calc(100cqi / ${longestLineLength}), var(--result-font-max, 2.8125rem))`,
           }}
           data-screen-heading
           tabIndex={-1}

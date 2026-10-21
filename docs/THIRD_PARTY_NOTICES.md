@@ -1,14 +1,22 @@
 # 利用条件と出所
 
 独自コードとそのドキュメントには[MIT License](../LICENSE)を適用します。
-画像、音声モデル、第三者コードには、それぞれ以下の条件が適用されます。
+画像、フォント、音声モデル、第三者コードには、それぞれ以下の条件が適用されます。
 
 ## 画像素材
 
-`src/assets/hiyoko*.webp` のひよこ画像は、プロジェクト作者がChatGPTで生成したものです。
-`src/assets/hiyoko*.webp`、`public/assets/*`、`public/icons/*` を含む画像素材は、独自コードのMIT Licenseの対象に含めません。
+`src/assets/hiyoko*.webp` と `public/assets/caster-idle.png`、`public/assets/caster-reading.png` のひよこ画像は、プロジェクト作者がChatGPTで生成したものです。
+キャスター2姿勢の生成指示は[プロトタイプの素材記録](ui-prototype/asset-prompts.md)に保存しています。
+`src/assets/hiyoko*.webp`、`public/assets/*.webp`、`public/assets/*.png`、`public/icons/*` を含む画像素材は、独自コードのMIT Licenseの対象に含めません。
 画像の掲載は、第三者の著作権などの権利が存在しないことを保証するものではありません。
 画像を再利用する場合は、生成サービスの利用条件と用途に応じた権利を確認してください。
+
+## フォント
+
+`public/assets/rounded-black.ttf` は Rounded Mplus 1c Black です。
+[Google Fontsの配布元](https://github.com/google/fonts/tree/main/ofl/mplusrounded1c)から取得した未改変のフォントで、著作権表示は `Copyright 2016 The Rounded M+ Project Authors.` です。
+フォントにはSIL Open Font License 1.1を適用します。
+同梱の[許諾文](../public/assets/rounded-black.LICENSE.txt)を、フォントと一緒に配布してください。
 
 ## Supertonicの実装
 
@@ -32,7 +40,7 @@ Supertonicの開発とサポートは2026年9月9日に終了しています。
 ## npm依存関係
 
 使用するパッケージの正確なバージョンは `package-lock.json` を参照してください。
-ReactとReact DOMは19.3.0を使用し、MIT許諾文は [LICENSES/React-MIT.txt](../LICENSES/React-MIT.txt) に保存しています。
+ReactとReact DOMは19.3.1を使用し、MIT許諾文は [LICENSES/React-MIT.txt](../LICENSES/React-MIT.txt) に保存しています。
 それぞれの配布物に含まれるLICENSEを保持します。
 
 配布するONNX RuntimeのMIT許諾文は [LICENSES/ONNX-Runtime-MIT.txt](../LICENSES/ONNX-Runtime-MIT.txt) に保存し、ビルド時にランタイムと一緒にコピーします。

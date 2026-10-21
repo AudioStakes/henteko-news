@@ -1,6 +1,7 @@
 # HTMLプロトタイプの検証
 
-対象は [単一HTML](../index.html) です。既存の本番アプリへは適用していません。
+対象は [単一HTML](../index.html) で、この記録は比較用HTMLの検証結果です。
+本番アプリの実装と検証は[アプリへの反映記録](../../ui-implementation.md)を参照してください。
 `main` の `130c8f5` を基準に作成しました。
 
 ## 確認範囲
@@ -29,12 +30,12 @@ Chromium・WebKitともに9項目すべて成功し、ページのJavaScript例�
 録画は両方とも390×844で出力し、ffprobeで再生時間と寸法を検証しています。
 録画からフレームを取り出し、完成画面と画面切り替えが実際に映っていることも目視確認しました。
 
-| エンジン | 機械結果                                                                                                                                                   | 録画                                                                                                                                               |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Chromium | [9項目成功・録画成功](/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-chromium/result.json) | [操作の動画](/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-chromium/page-01.webm) |
-| WebKit   | [9項目成功・録画成功](/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-webkit/result.json)   | [操作の動画](/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-webkit/page-01.webm)   |
+以下は個人端末だけに保存したローカル成果物のパスです。公開リポジトリからは参照できません。
 
-![Chromiumの操作記録](/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-chromium/page-01.webm)
+| エンジン | 機械結果                                                                                                                              | 録画                                                                                                                                   |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Chromium | `/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-chromium/result.json` | `/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-chromium/page-01.webm` |
+| WebKit   | `/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-webkit/result.json`   | `/Users/satoudaisuke/.codex/visualizations/2026/10/20/01a15b6f-725f-74f2-a95f-f34af1402c14/orange-html-reviewed-webkit/page-01.webm`   |
 
 `file://` で直接HTMLを開いた場合も、両エンジンで5段階の選択と完成文、同梱フォントの読み込みを確認しました。
 HTMLと操作フローは、既存のBiome設定を継承する一時設定で明示検査し、エラー・警告ともに0です。
@@ -50,4 +51,4 @@ HTMLと操作フローは、既存のBiome設定を継承する一時設定で�
 通常の音声状態、Supertonic、設定の保存、364語の音声確認はモックです。
 確認欄にある任意の端末音声ボタンについて、実際の聞こえ方は評価していません。
 オフラインの表示確認は、初回インストールやService Workerのオフライン保証を検証するものではありません。
-起動用のViteサーバーは利用者の操作確認のため起動したままにしています。
+検証終了時点では、利用者の操作確認用にViteサーバーを起動したままにしていました。

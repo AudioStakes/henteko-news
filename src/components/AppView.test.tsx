@@ -26,7 +26,7 @@ const state: NewsApplication["state"] = {
   game: initial,
   isOffline: false,
   lines: [],
-  speech: { error: "", isSupported: true, isSpeaking: false, availability: "ready" },
+  speech: { error: "", isSupported: true, isSpeaking: false, phase: "idle", availability: "ready" },
 };
 
 function view(overrides: Partial<NewsApplication["state"]> = {}) {
@@ -57,9 +57,12 @@ describe("game screen focus", () => {
     expect(screen.getByRole("heading", { name: "いつ？" })).toHaveFocus();
 
     rerender(view({ game: result, lines: result.lines }));
-    expect(screen.getByRole("heading", { name: "かんせいニュース" })).toHaveFocus();
+    expect(
+      screen.getByRole("article", { name: "かんせいニュース" }).querySelector("h2"),
+    ).toHaveFocus();
 
-    const settings = screen.getByRole("button", { name: "音声設定" });
+    const settings = screen.getByRole("button", { name: "おとな：音声設定" });
+    expect(settings).toHaveTextContent("おとな");
     settings.focus();
     rerender(view({ game: result, speech: { ...state.speech, isSpeaking: true } }));
     expect(settings).toHaveFocus();

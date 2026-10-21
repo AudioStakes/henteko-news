@@ -29,6 +29,7 @@ const speechState: ReturnType<typeof useNewsSpeech> = {
   cancel: vi.fn<ReturnType<typeof useNewsSpeech>["cancel"]>(),
   speakNews: vi.fn<ReturnType<typeof useNewsSpeech>["speakNews"]>(),
   isSpeaking: false,
+  phase: "idle",
   speechAvailability: "ready",
 };
 
@@ -85,6 +86,7 @@ describe("useNewsApplication public API", () => {
     speechState.speechError = "";
     speechState.isSupported = true;
     speechState.isSpeaking = false;
+    speechState.phase = "idle";
     speechState.speechAvailability = "ready";
     setNavigatorOnline(true);
     window.history.replaceState({}, "", "/");
@@ -106,6 +108,7 @@ describe("useNewsApplication public API", () => {
       error: "",
       isSupported: true,
       isSpeaking: false,
+      phase: "idle",
       availability: "ready",
     });
     expect(speechState.speakNews).not.toHaveBeenCalled();
@@ -399,8 +402,17 @@ describe("useNewsApplication public API", () => {
       error: "よみあげエラー",
       isSupported: true,
       isSpeaking: false,
+      phase: "idle",
       availability: "error",
     });
+    speechState.isSpeaking = true;
+    speechState.phase = "preparing";
+    speechState.speechAvailability = "speaking";
+    rerender();
+    expect(result.current.state.speech.phase).toBe("preparing");
+    speechState.phase = "speaking";
+    rerender();
+    expect(result.current.state.speech.phase).toBe("speaking");
   });
 
   it("exposes debug news as read-only state and rejects all game commands", () => {
@@ -413,6 +425,7 @@ describe("useNewsApplication public API", () => {
       action: "のみました",
     });
     window.history.replaceState({}, "", `/?${params.toString()}`);
+    speechState.phase = "speaking";
     const { result } = renderHook(() => useNewsApplication());
 
     act(() => {
@@ -422,6 +435,7 @@ describe("useNewsApplication public API", () => {
     });
 
     expect(result.current.state.mode).toBe("debug-result");
+    expect(result.current.state.speech.phase).toBe("idle");
     expect(result.current.state.lines).toStrictEqual([
       "テスト太郎が",
       "きょう",

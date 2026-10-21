@@ -1,0 +1,92 @@
+.words-audio-check {
+  margin-block-start: 30px;
+  color: var(--color-ink);
+  font-family: system-ui, sans-serif;
+  text-align: start;
+}
+
+.words-audio-check__title {
+  margin: 0 0 8px;
+  font-size: 26px;
+}
+
+.words-audio-check__title:focus {
+  outline: none;
+}
+
+.words-audio-check__help {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.words-audio-check__status {
+  margin: 18px 0;
+  padding: 18px;
+  border: 2px solid var(--color-edge);
+  border-radius: 20px;
+  background: var(--color-secondary);
+  overflow-wrap: anywhere;
+}
+
+.words-audio-check__status p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.words-audio-check__status .words-audio-check__progress {
+  margin-block-end: 13px;
+  font-size: 29px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.words-audio-check__status .words-audio-check__current-word {
+  margin-block-start: 13px;
+  font-size: clamp(20px, 6vw, 28px);
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.words-audio-check__controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.words-audio-check__controls button {
+  min-inline-size: 0;
+  min-block-size: 52px;
+  padding: 10px;
+  border: 2px solid var(--color-edge);
+  border-radius: 15px;
+  color: var(--color-ink);
+  background: var(--color-primary);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.words-audio-check__controls button:disabled {
+  color: var(--color-muted);
+  background: var(--color-disabled);
+}
+
+.words-audio-check__stop {
+  grid-column: 1 / -1;
+}
+
+.words-audio-check__error {
+  margin: 0 0 18px;
+  color: var(--color-error);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}

@@ -1,8 +1,7 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Choice } from "../application";
-import { calculateChoiceCardTextLayout } from "../utils/choiceCardTextLayout";
 import { toCardWord } from "../utils/words";
-import { CharacterImage } from "./CharacterImage";
+import { NewsCaster } from "./NewsCaster";
 import { StepIndicator } from "./StepIndicator";
 import { useButtonSound } from "./useButtonSound";
 
@@ -14,9 +13,6 @@ type WordSelectScreenProps = {
   totalSteps: number;
   imageUrl: string;
 };
-const CHOICE_CARD_MIN_FONT_SIZE = 18;
-const CHOICE_CARD_MAX_FONT_SIZE = 35;
-const CHOICE_CARD_GLYPH_WIDTH_RATIO = 1;
 
 export function WordSelectScreen({
   category,
@@ -28,36 +24,13 @@ export function WordSelectScreen({
 }: WordSelectScreenProps) {
   const { playOnPressStart, withClickSound } = useButtonSound();
   const [pickedId, setPickedId] = useState("");
-  const [gridElement, setGridElement] = useState<HTMLDivElement | null>(null);
-  const [choiceGridWidth, setChoiceGridWidth] = useState(373);
   const pickedIdRef = useRef("");
   const selectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useLayoutEffect(() => {
-    if (!gridElement) {
-      return;
-    }
-
-    const updateGridWidth = () => {
-      setChoiceGridWidth(Math.max(0, Math.floor(gridElement.clientWidth)));
-    };
-
-    updateGridWidth();
-
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", updateGridWidth);
-      return () => {
-        window.removeEventListener("resize", updateGridWidth);
-      };
-    }
-
-    const observer = new ResizeObserver(updateGridWidth);
-    observer.observe(gridElement);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [gridElement]);
+  const choiceCards = choices.map((choice) => ({
+    ...choice,
+    label: toCardWord(choice.option.display),
+  }));
+  const hasLongWords = choiceCards.some((choice) => Array.from(choice.label).length > 8);
 
   useEffect(
     () => () => {
@@ -68,33 +41,17 @@ export function WordSelectScreen({
     [],
   );
 
-  const choiceCards = useMemo(
-    () =>
-      choices.map((choice) => {
-        const cardLabel = toCardWord(choice.option.display);
-        const layout = calculateChoiceCardTextLayout({
-          gridWidth: choiceGridWidth,
-          text: cardLabel,
-          minFontSize: CHOICE_CARD_MIN_FONT_SIZE,
-          maxFontSize: CHOICE_CARD_MAX_FONT_SIZE,
-          glyphWidthRatio: CHOICE_CARD_GLYPH_WIDTH_RATIO,
-        });
-
-        return {
-          ...choice,
-          cardLabel,
-          fontSize: layout.fontSize,
-        };
-      }),
-    [choiceGridWidth, choices],
-  );
-
   const handlePick = (id: string) => {
     if (pickedIdRef.current.length > 0) {
       return;
     }
     pickedIdRef.current = id;
     setPickedId(id);
+    if (currentStep === totalSteps - 1) {
+      // Narration must start in the user event to retain browser audio permission.
+      onSelect(id);
+      return;
+    }
     selectTimeoutRef.current = window.setTimeout(() => {
       selectTimeoutRef.current = null;
       onSelect(id);
@@ -103,36 +60,27 @@ export function WordSelectScreen({
 
   return (
     <section className="screen select-screen">
+      <NewsCaster imageUrl={imageUrl} />
       <StepIndicator current={currentStep} total={totalSteps} />
-      <div className="hero hero-select">
-        <CharacterImage variant="select" src={imageUrl} className="select-character" />
-        <h2
-          className="speech speech-select speech-select--from-hiyoko"
-          data-screen-heading
-          tabIndex={-1}
-        >
-          {category.label}
-        </h2>
-      </div>
-      <div className="choice-grid" ref={setGridElement}>
+      <h2 className="question speech-select" data-screen-heading tabIndex={-1}>
+        {category.label}
+      </h2>
+      <div className={`choice-grid${hasLongWords ? " long-choices" : ""}`}>
         {choiceCards.map((choice) => (
           <button
             key={choice.id}
             type="button"
             data-testid="choice-card"
             className={`choice-card${pickedId === choice.id ? " is-selected" : ""}`}
-            disabled={Boolean(pickedId)}
+            disabled={pickedId.length > 0}
             onClick={(event) => {
               withClickSound(() => {
                 handlePick(choice.id);
               })(event);
             }}
             onPointerDown={playOnPressStart}
-            style={{
-              ["--choice-card-font-size" as string]: `${choice.fontSize}px`,
-            }}
           >
-            <span className="choice-card__label">{choice.cardLabel}</span>
+            <span className="choice-card__label">{choice.label}</span>
           </button>
         ))}
       </div>

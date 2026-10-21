@@ -2,12 +2,12 @@ import { expect, type Page, test } from "@playwright/test";
 import { NEWS_QUESTIONS, waitForAppWorker } from "./helpers";
 
 async function completeNews(page: Page) {
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   for (const label of NEWS_QUESTIONS) {
     await expect(page.locator(".speech-select")).toHaveText(label);
     await page.getByTestId("choice-card").first().click();
   }
-  await expect(page.locator(".result-text")).toHaveCount(5);
+  await expect(page.locator(".news-line")).toHaveCount(5);
 }
 
 test("completes and restarts a game when browser speech is unavailable", async ({ page }) => {
@@ -18,8 +18,8 @@ test("completes and restarts a game when browser speech is unavailable", async (
   });
   await page.goto("/");
   await completeNews(page);
-  await expect(page.locator(".speech-status")).toContainText("文字で遊べます");
-  await page.getByRole("button", { name: "つぎのニュース →" }).click();
+  await expect(page.getByRole("status")).toContainText("もじで たのしんでね");
+  await page.getByRole("button", { name: "つぎをつくる" }).click();
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
   expect(errors).toStrictEqual([]);
 });
@@ -48,7 +48,7 @@ test("a first online visit caches enough of the production build to play offline
   // Check live connectivity events separately, and verify a fresh online boot here.
   await page.reload();
   await expect(page.locator(".offline-notice")).toBeHidden();
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   await expect(page.getByRole("heading", { name: "だれが？", exact: true })).toBeVisible();
   expect(errors).toStrictEqual([]);
 });
@@ -58,11 +58,11 @@ test("connectivity notices follow live browser network changes without reloading
   context,
 }) => {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "ニュースをつくる" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "はじめる" })).toBeVisible();
   await context.setOffline(true);
   await expect(page.locator(".offline-notice")).toBeVisible();
   await context.setOffline(false);
   await expect(page.locator(".offline-notice")).toBeHidden();
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   await expect(page.getByRole("heading", { name: "だれが？", exact: true })).toBeVisible();
 });

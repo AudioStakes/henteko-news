@@ -23,8 +23,12 @@ ESLintは、画面から内部の音声・設定・語彙実装への直接impor
 
 `useNewsApplication()` は `{ state, commands }` を返します。
 `state.game` に画面、現在のカテゴリ、進捗、選択肢、選択済みの言葉があり、`state.lines` に表示用のニュース本文があります。
-`state.speech` には `error`、`isSupported`、`isSpeaking`、`availability` があり、音声の状態を表示できます。
+`state.speech` には `error`、`isSupported`、`isSpeaking`、`phase`、`availability` があり、音声の状態を表示できます。
 `availability` は `"ready"`、`"unsupported"`、`"speaking"`、`"error"` のいずれかです。
+`phase` は公開型 `SpeechPhase` の `"idle"`、`"preparing"`、`"speaking"` です。
+読み上げの受付後と分割音声の合成中は `"preparing"`、ブラウザーから実際の再生開始イベントが届くと `"speaking"`、終了・取消・失敗後は `"idle"` になります。
+`isSpeaking` と `availability: "speaking"` は従来どおり準備中も含むため、再読み上げのボタンは準備中にも無効にします。
+`debug-result` と `audio-check` のゲーム用 `phase` は `"idle"` です。
 
 ゲームの画面は `state.game.screen.name` の `"start"`、`"select"`、`"result"` で判別します。
 `currentStep` は0始まり、`totalSteps` はカテゴリ数、`currentCategory` は選択中のカテゴリ（選択画面以外では `null`）です。

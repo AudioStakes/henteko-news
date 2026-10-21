@@ -1,10 +1,10 @@
-import { type ReactNode, useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import {
   DEFAULT_SPEECH_SETTINGS,
   type NewsApplication,
   type SpeechSettingsApi,
 } from "../application";
-import { getRandomHiyokoImageUrl, NEXT_SCREEN_IMAGE_URLS } from "../assets/imageUrls";
+import homeImage from "../assets/hiyoko3.webp";
 import { preloadImagesWhenIdle } from "../utils/preload";
 import { AppFooter } from "./AppFooter";
 import { AppHeader } from "./AppHeader";
@@ -20,10 +20,36 @@ type AppViewProps = {
 
 const SPEECH_STATUS_TEXT = {
   speaking: "ただいま よみあげちゅう。",
-  unsupported: "このブラウザでは読み上げできないことがあります。でも文字で遊べます。",
-  ready: "こえのボタンで もういちど よめるよ。",
+  unsupported: "この おとでは よめないよ。もじで たのしんでね。",
+  ready: "きく ボタンで もういちど よめるよ。",
   error: "こえが うまくでないときも、文字でニュースを読めるよ。",
 };
+const CASTER_IDLE_IMAGE = "/assets/caster-idle.png";
+const CASTER_READING_IMAGE = "/assets/caster-reading.png";
+
+function getReplayDisabledReason(speech: NewsApplication["state"]["speech"]) {
+  if (speech.isSpeaking) {
+    return speech.phase === "preparing"
+      ? "いま こえを じゅんびしているよ。"
+      : "いま よみあげちゅうだよ。おわったら もういちど よめるよ。";
+  }
+  return speech.isSupported
+    ? undefined
+    : "このブラウザでは よみあげに たいおうしていないことがあります。";
+}
+
+function focusScreen(main: HTMLElement | null) {
+  const heading = main?.querySelector<HTMLElement>("[data-screen-heading]");
+  heading?.focus({ preventScroll: true });
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  const bounds = heading?.getBoundingClientRect();
+  if (bounds && bounds.bottom > window.innerHeight) {
+    const top = Math.max(0, bounds.top - 16);
+    document.documentElement.scrollTop = top;
+    document.body.scrollTop = top;
+  }
+}
 
 export function AppView({ application: { state, commands }, settings, audioCheck }: AppViewProps) {
   const { game, mode, speech } = state;
@@ -35,13 +61,8 @@ export function AppView({ application: { state, commands }, settings, audioCheck
         : game.screen.name
       : mode;
   const previousScreenKey = useRef(screenKey);
-  const screenImage = useMemo(
-    () => ({ screenKey, imageUrl: getRandomHiyokoImageUrl() }),
-    [screenKey],
-  );
-
   useEffect(() => {
-    preloadImagesWhenIdle(NEXT_SCREEN_IMAGE_URLS);
+    preloadImagesWhenIdle([CASTER_IDLE_IMAGE, CASTER_READING_IMAGE]);
   }, []);
 
   useEffect(() => {
@@ -52,63 +73,62 @@ export function AppView({ application: { state, commands }, settings, audioCheck
     if (document.querySelector("dialog[open]")) {
       return;
     }
-    const main = mainRef.current;
-    main?.querySelector<HTMLElement>("[data-screen-heading]")?.focus({ preventScroll: true });
-    if (main) {
-      main.scrollTop = 0;
-    }
+    focusScreen(mainRef.current);
   }, [screenKey]);
 
-  const speechStatusText = SPEECH_STATUS_TEXT[speech.availability];
+  const speechPhase = mode === "debug-result" ? "idle" : speech.phase;
+  const speechStatusText =
+    speechPhase === "preparing"
+      ? "こえを じゅんびしているよ。"
+      : SPEECH_STATUS_TEXT[speech.availability];
 
   return (
     <div className="viewport">
       <div className="app-shell">
-        {state.isOffline && (
-          <p className="offline-notice">
-            オフラインです。読み上げや画像の一部が動かないことがあります。
-          </p>
-        )}
-        <AppHeader
-          settings={settings.settings}
-          defaults={DEFAULT_SPEECH_SETTINGS}
-          onSave={settings.saveSettings}
-        />
-        <main className="app-shell__main" ref={mainRef}>
-          {mode === "audio-check" && audioCheck}
-          {mode === "game" && game.screen.name === "start" && (
-            <StartScreen onStart={commands.start} imageUrl={screenImage.imageUrl} />
+        <div className="child-stage">
+          <AppHeader
+            settings={settings.settings}
+            defaults={DEFAULT_SPEECH_SETTINGS}
+            onSave={settings.saveSettings}
+          />
+          {state.isOffline && (
+            <p className="offline-notice" role="status">
+              いまは オフラインだよ。
+              <br />
+              もじで あそべるよ。
+            </p>
           )}
-          {mode === "game" && game.screen.name === "select" && game.currentCategory && (
-            <WordSelectScreen
-              key={game.choices[0]?.id}
-              category={game.currentCategory}
-              choices={game.choices}
-              currentStep={game.currentStep}
-              totalSteps={game.totalSteps}
-              imageUrl={screenImage.imageUrl}
-              onSelect={commands.select}
-            />
-          )}
-          {(mode === "debug-result" || (mode === "game" && game.screen.name === "result")) && (
-            <ResultScreen
-              lines={state.lines}
-              speechError={mode === "game" && speech.isSupported ? speech.error : ""}
-              speechStatusText={mode === "game" ? speechStatusText : ""}
-              imageUrl={screenImage.imageUrl}
-              replayDisabled={mode === "debug-result" || speech.isSpeaking || !speech.isSupported}
-              replayDisabledReason={
-                speech.isSpeaking
-                  ? "いま よみあげちゅうだよ。おわったら もういちど よめるよ。"
-                  : !speech.isSupported
-                    ? "このブラウザでは よみあげに たいおうしていないことがあります。"
-                    : undefined
-              }
-              onReplayVoice={commands.replay}
-              onRestartGame={commands.start}
-            />
-          )}
-        </main>
+          <main className="app-shell__main" ref={mainRef}>
+            {mode === "audio-check" && audioCheck}
+            {mode === "game" && game.screen.name === "start" && (
+              <StartScreen onStart={commands.start} imageUrl={homeImage} />
+            )}
+            {mode === "game" && game.screen.name === "select" && game.currentCategory && (
+              <WordSelectScreen
+                key={`${game.currentStep}-${game.choices[0]?.id}`}
+                category={game.currentCategory}
+                choices={game.choices}
+                currentStep={game.currentStep}
+                totalSteps={game.totalSteps}
+                imageUrl={CASTER_IDLE_IMAGE}
+                onSelect={commands.select}
+              />
+            )}
+            {(mode === "debug-result" || (mode === "game" && game.screen.name === "result")) && (
+              <ResultScreen
+                lines={state.lines}
+                speechError={mode === "game" && speech.isSupported ? speech.error : ""}
+                speechStatusText={mode === "game" ? speechStatusText : ""}
+                speechPhase={speechPhase}
+                imageUrl={speechPhase === "speaking" ? CASTER_READING_IMAGE : CASTER_IDLE_IMAGE}
+                replayDisabled={mode === "debug-result" || speech.isSpeaking || !speech.isSupported}
+                replayDisabledReason={getReplayDisabledReason(speech)}
+                onReplayVoice={commands.replay}
+                onRestartGame={commands.start}
+              />
+            )}
+          </main>
+        </div>
         <AppFooter />
       </div>
     </div>

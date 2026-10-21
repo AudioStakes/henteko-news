@@ -1,24 +1,37 @@
 import type { WordsAudioCheckApi } from "../application";
+import "./WordsAudioCheckScreen.css";
 
 export function WordsAudioCheckScreen({ state, commands }: WordsAudioCheckApi) {
   const { queue, currentItem, currentIndex, isPlaying, error, categoryStarts } = state;
   return (
-    <section className="screen sound-screen">
-      <div className="sound-card words-audio-check">
-        <h1>おんせい かくにん</h1>
+    <section className="words-audio-check">
+      <h1 className="words-audio-check__title" data-screen-heading tabIndex={-1}>
+        おんせい かくにん
+      </h1>
+      <p className="words-audio-check__help">
+        開発者向け · 全{queue.length}語
+        <br />
+        登録された言葉を順番に読み上げます。
+      </p>
+      <div className="words-audio-check__content">
         <div className="words-audio-check__status">
-          <p>
+          <p className="words-audio-check__progress">
             しんこう:{" "}
             {currentIndex >= 0 ? `${currentIndex + 1} / ${queue.length}` : `0 / ${queue.length}`}
           </p>
           <p>カテゴリ: {currentItem?.categoryLabel ?? "まだ さいせいしていません"}</p>
-          <p>いまのことば: {currentItem?.displayText ?? "「かいし」を おしてください"}</p>
+          <p className="words-audio-check__current-word">
+            いまのことば: {currentItem?.displayText ?? "「かいし」を おしてください"}
+          </p>
         </div>
-        {error.length > 0 && <p className="speech-error words-audio-check__error">{error}</p>}
-        <div className="action-stack">
+        {error.length > 0 && (
+          <p className="words-audio-check__error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="words-audio-check__controls">
           <button
             type="button"
-            className="action-btn orange small"
             onClick={() => {
               commands.start();
             }}
@@ -28,7 +41,6 @@ export function WordsAudioCheckScreen({ state, commands }: WordsAudioCheckApi) {
           </button>
           <button
             type="button"
-            className="action-btn orange small"
             onClick={() => {
               commands.resume();
             }}
@@ -38,7 +50,7 @@ export function WordsAudioCheckScreen({ state, commands }: WordsAudioCheckApi) {
           </button>
           <button
             type="button"
-            className="action-btn blue small"
+            className="words-audio-check__stop"
             onClick={() => {
               commands.stop();
             }}
@@ -46,13 +58,10 @@ export function WordsAudioCheckScreen({ state, commands }: WordsAudioCheckApi) {
           >
             ていし
           </button>
-        </div>
-        <div className="words-audio-check__category-buttons">
           {categoryStarts.map((category) => (
             <button
               key={category.key}
               type="button"
-              className="sound-choice"
               onClick={() => {
                 commands.startCategory(category.key);
               }}

@@ -4,7 +4,7 @@ import { requiredArrayElement } from "../test/requiredArrayElement";
 import type { Selections } from "../types/game";
 import type { trackError, trackEvent } from "../utils/analytics";
 import { useNewsSpeech } from "./useNewsSpeech";
-import type { useSpeech } from "./useSpeech";
+import type { SpeechPhase, useSpeech } from "./useSpeech";
 
 const { mockTrackEvent, mockTrackError } = vi.hoisted(() => ({
   mockTrackEvent: vi.fn<typeof trackEvent>(),
@@ -16,6 +16,7 @@ const mockCancel = vi.fn<ReturnType<typeof useSpeech>["cancel"]>();
 
 let mockIsSupported = true;
 let mockIsSpeaking = false;
+let mockPhase: SpeechPhase = "idle";
 let mockSettingsKey = "web-speech";
 
 vi.mock("../utils/analytics", () => ({
@@ -39,6 +40,7 @@ vi.mock("./useSpeech", () => ({
     cancel: mockCancel,
     isSupported: mockIsSupported,
     isSpeaking: mockIsSpeaking,
+    phase: mockPhase,
     settingsKey: mockSettingsKey,
   }),
 }));
@@ -58,6 +60,7 @@ describe("useNewsSpeech", () => {
     mockCancel.mockReset();
     mockIsSupported = true;
     mockIsSpeaking = false;
+    mockPhase = "idle";
     mockSettingsKey = "web-speech";
     mockTrackEvent.mockReset();
     mockTrackError.mockReset();
@@ -323,6 +326,20 @@ describe("useNewsSpeech", () => {
     const { result } = renderHook(() => useNewsSpeech());
 
     expect(result.current.speechAvailability).toBe("ready");
+  });
+
+  it("exposes the playback phase while preserving the busy availability", () => {
+    const { result, rerender } = renderHook(() => useNewsSpeech());
+    expect(result.current.phase).toBe("idle");
+    mockIsSpeaking = true;
+    mockPhase = "preparing";
+    rerender();
+    expect(result.current.phase).toBe("preparing");
+    expect(result.current.speechAvailability).toBe("speaking");
+    mockPhase = "speaking";
+    rerender();
+    expect(result.current.phase).toBe("speaking");
+    expect(result.current.isSpeaking).toBe(true);
   });
 
   it("exposes speechAvailability as unsupported when speech is not supported", () => {

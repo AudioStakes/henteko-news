@@ -107,6 +107,7 @@ export function useNewsApplication() {
         error: speech.speechError,
         isSupported: speech.isSupported,
         isSpeaking: speech.isSpeaking,
+        phase: mode === "game" ? speech.phase : "idle",
         availability: speech.speechAvailability,
       },
     },

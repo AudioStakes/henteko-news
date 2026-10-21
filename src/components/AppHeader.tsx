@@ -14,18 +14,29 @@ export function AppHeader({ settings, defaults, onSave }: AppHeaderProps) {
 
   return (
     <header className="app-header">
-      <h1 className="visually-hidden">へんてこニュース</h1>
-      <img src="/assets/header-logo.webp" alt="へんてこニュース" className="app-header__logo" />
-      <button
-        type="button"
-        className="app-header__speech-settings"
-        ref={settingsButtonRef}
-        onClick={() => {
-          setIsSettingsOpen(true);
-        }}
-      >
-        音声設定
-      </button>
+      <h1 className="sr-only">へんてこニュース</h1>
+      <div className="utility-bar">
+        <button
+          type="button"
+          className="app-header__speech-settings"
+          aria-label="おとな：音声設定"
+          ref={settingsButtonRef}
+          onClick={() => {
+            setIsSettingsOpen(true);
+          }}
+        >
+          おとな
+        </button>
+      </div>
+      <div className="brand">
+        <img
+          src="/assets/header-logo.webp"
+          alt="へんてこニュース"
+          className="app-header__logo"
+          width={600}
+          height={200}
+        />
+      </div>
       <SpeechSettingsDialog
         settings={settings}
         defaults={defaults}

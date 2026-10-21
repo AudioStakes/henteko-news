@@ -41,7 +41,7 @@ function renderSettings(initialSettings: SpeechSettings = DEFAULT_SPEECH_SETTING
 }
 
 function openSettings() {
-  const button = screen.getByRole("button", { name: "音声設定" });
+  const button = screen.getByRole("button", { name: "おとな：音声設定" });
   fireEvent.click(button);
   return screen.getByRole("dialog", { name: "音声設定" });
 }
@@ -106,7 +106,7 @@ describe("speech settings dialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "設定を保存" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "音声設定" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "おとな：音声設定" })).toHaveFocus();
     expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"supertonic"');
     expect(saveSettings).toHaveBeenCalledExactlyOnceWith({
       provider: "supertonic",
@@ -140,7 +140,7 @@ describe("speech settings dialog", () => {
     }
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "音声設定" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "おとな：音声設定" })).toHaveFocus();
     expect(screen.getByLabelText("saved settings")).toHaveTextContent('"provider":"web-speech"');
     expect(saveSettings).not.toHaveBeenCalled();
     openSettings();

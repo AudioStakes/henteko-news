@@ -1,4 +1,5 @@
 export { SpeechSettingsProvider, useSpeechSettings } from "../context/SpeechSettingsContext";
+export type { SpeechPhase } from "../hooks/useSpeech";
 export { playChoiceSoundFromUserGesture } from "../utils/soundEffects";
 export type { Choice } from "./gameChoices";
 export {

@@ -20,6 +20,7 @@ export function CharacterImage({ variant, src, className = "", alt }: CharacterI
       decoding="async"
       loading={loading}
       fetchPriority={fetchPriority}
+      draggable={false}
     />
   );
 }

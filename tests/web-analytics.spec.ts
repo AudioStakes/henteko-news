@@ -33,12 +33,12 @@ test("the game remains playable when the production analytics script cannot load
     "href",
     "https://github.com/AudioStakes/henteko-news/blob/main/docs/PRIVACY.md",
   );
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   for (const label of NEWS_QUESTIONS) {
     await expect(page.locator(".speech-select")).toHaveText(label);
     await page.getByTestId("choice-card").first().click();
   }
-  await expect(page.locator(".result-text")).toHaveCount(5);
+  await expect(page.locator(".news-line")).toHaveCount(5);
   await expect
     .poll(() => analyticsRequests.map((route) => route.request().url()))
     .toStrictEqual(["https://static.cloudflareinsights.com/beacon.min.js"]);
@@ -49,7 +49,7 @@ test("the game remains playable when the production analytics script cannot load
     await route.abort();
   }
   await failedBeacon;
-  await page.getByRole("button", { name: "つぎのニュース →" }).click();
+  await page.getByRole("button", { name: "つぎをつくる" }).click();
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
   expect(analyticsRequests).toHaveLength(1);
   expect(errors).toStrictEqual([]);

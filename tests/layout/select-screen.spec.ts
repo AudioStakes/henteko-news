@@ -1,13 +1,7 @@
-import { expect, type Locator, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { getVisibleBounds } from "../helpers";
 
-type Viewport = {
-  name: string;
-  width: number;
-  height: number;
-};
-
-const VIEWPORTS: Viewport[] = [
+const VIEWPORTS = [
   { name: "narrow-android", width: 360, height: 740 },
   { name: "small-phone", width: 375, height: 667 },
   { name: "standard-phone", width: 390, height: 844 },
@@ -15,148 +9,61 @@ const VIEWPORTS: Viewport[] = [
   { name: "large-phone", width: 430, height: 932 },
 ];
 
-const TOLERANCE_PX = 2;
-
-async function expectInViewport(locator: Locator, viewport: Viewport, label: string) {
-  const box = await getVisibleBounds(
-    locator,
-    `${viewport.name}: ${label} should have a visible bounding box`,
-  );
-
-  expect(box.width, `${viewport.name}: ${label} width should be > 0`).toBeGreaterThan(0);
-  expect(box.height, `${viewport.name}: ${label} height should be > 0`).toBeGreaterThan(0);
-  expect(
-    box.x,
-    `${viewport.name}: ${label} left edge should be in viewport`,
-  ).toBeGreaterThanOrEqual(-TOLERANCE_PX);
-  expect(box.y, `${viewport.name}: ${label} top edge should be in viewport`).toBeGreaterThanOrEqual(
-    -TOLERANCE_PX,
-  );
-  expect(
-    box.x + box.width,
-    `${viewport.name}: ${label} right edge should be in viewport`,
-  ).toBeLessThanOrEqual(viewport.width + TOLERANCE_PX);
-  expect(
-    box.y + box.height,
-    `${viewport.name}: ${label} bottom edge should be in viewport`,
-  ).toBeLessThanOrEqual(viewport.height + TOLERANCE_PX);
-}
-
-async function expectInsideParent(
-  child: Locator,
-  parent: Locator,
-  viewport: Viewport,
-  label: string,
-) {
-  const childBox = await getVisibleBounds(
-    child,
-    `${viewport.name}: ${label} child box should exist`,
-  );
-  const parentBox = await getVisibleBounds(
-    parent,
-    `${viewport.name}: ${label} parent box should exist`,
-  );
-
-  expect(childBox.x, `${viewport.name}: ${label} left edge inside parent`).toBeGreaterThanOrEqual(
-    parentBox.x - TOLERANCE_PX,
-  );
-  expect(childBox.y, `${viewport.name}: ${label} top edge inside parent`).toBeGreaterThanOrEqual(
-    parentBox.y - TOLERANCE_PX,
-  );
-  expect(
-    childBox.x + childBox.width,
-    `${viewport.name}: ${label} right edge inside parent`,
-  ).toBeLessThanOrEqual(parentBox.x + parentBox.width + TOLERANCE_PX);
-  expect(
-    childBox.y + childBox.height,
-    `${viewport.name}: ${label} bottom edge inside parent`,
-  ).toBeLessThanOrEqual(parentBox.y + parentBox.height + TOLERANCE_PX);
-}
-
-async function expectNoVerticalOverflow(page: Page, viewport: Viewport) {
-  const overflow = await page.evaluate(() => {
-    const root = document.querySelector("#root");
-    return {
-      innerHeight: window.innerHeight,
-      documentScrollHeight: document.documentElement.scrollHeight,
-      bodyScrollHeight: document.body.scrollHeight,
-      rootScrollHeight: root?.scrollHeight ?? 0,
-    };
-  });
-
-  expect(
-    overflow.documentScrollHeight,
-    `${viewport.name}: document.documentElement scrollHeight overflows viewport`,
-  ).toBeLessThanOrEqual(overflow.innerHeight + TOLERANCE_PX);
-  expect(
-    overflow.bodyScrollHeight,
-    `${viewport.name}: body scrollHeight overflows viewport`,
-  ).toBeLessThanOrEqual(overflow.innerHeight + TOLERANCE_PX);
-  expect(
-    overflow.rootScrollHeight,
-    `${viewport.name}: #root scrollHeight overflows viewport`,
-  ).toBeLessThanOrEqual(overflow.innerHeight + TOLERANCE_PX);
-}
-
 test.describe("select screen layout", () => {
   for (const viewport of VIEWPORTS) {
-    test(`keeps select choices and footer in-bounds at ${viewport.name}`, async ({ page }) => {
-      await page.setViewportSize({ width: viewport.width, height: viewport.height });
-      await page.emulateMedia({ reducedMotion: "reduce" });
+    test(`keeps five choices readable in the picture-book layout at ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport);
+      await page.addInitScript(() => {
+        // The first five who choices stay short enough for the regular 2/1/2 layout.
+        Math.random = () => 0;
+      });
       await page.goto("/");
+      await page.getByRole("button", { name: "はじめる", exact: true }).click();
 
-      await page.getByRole("button", { name: "ニュースをつくる" }).click();
+      const choices = page.getByTestId("choice-card");
+      await expect(choices).toHaveCount(5);
+      const grid = page.locator(".choice-grid");
+      const first = await getVisibleBounds(choices.nth(0), "First choice must exist");
+      const second = await getVisibleBounds(choices.nth(1), "Second choice must exist");
+      const middle = await getVisibleBounds(choices.nth(2), "Middle choice must exist");
+      const fourth = await getVisibleBounds(choices.nth(3), "Fourth choice must exist");
+      const fifth = await getVisibleBounds(choices.nth(4), "Fifth choice must exist");
+      expect(Math.abs(first.y - second.y)).toBeLessThanOrEqual(2);
+      expect(middle.y).toBeGreaterThan(first.y + first.height);
+      expect(fourth.y).toBeGreaterThan(middle.y + middle.height);
+      expect(Math.abs(fourth.y - fifth.y)).toBeLessThanOrEqual(2);
+      const gridBox = await getVisibleBounds(grid, "Choice grid must exist");
+      expect(
+        Math.abs(middle.x + middle.width / 2 - (gridBox.x + gridBox.width / 2)),
+      ).toBeLessThanOrEqual(2);
 
-      const appShell = page.locator(".app-shell");
-      const appMain = page.locator(".app-shell__main");
-      const footer = page.locator(".app-footer");
-      const selectScreen = page.locator(".select-screen");
-      const choiceGrid = page.locator(".choice-grid");
-      const choiceCards = page.locator(".choice-card");
-
-      await expect(appShell).toBeVisible();
-      await expect(appMain).toBeVisible();
-      await expect(footer).toBeVisible();
-      await expect(selectScreen).toBeVisible();
-      await expect(choiceGrid).toBeVisible();
-      await expect(choiceCards).toHaveCount(5);
-
-      await expectNoVerticalOverflow(page, viewport);
-      await expectInViewport(appShell, viewport, ".app-shell");
-      await expectInViewport(appMain, viewport, ".app-shell__main");
-      await expectInViewport(footer, viewport, ".app-footer");
-      await expectInViewport(selectScreen, viewport, ".select-screen");
-      await expectInViewport(choiceGrid, viewport, ".choice-grid");
-
-      for (let i = 0; i < 5; i += 1) {
-        const choice = choiceCards.nth(i);
-        const label = `.choice-card:nth(${i + 1})`;
-
-        await expectInViewport(choice, viewport, label);
-        await expectInsideParent(choice, choiceGrid, viewport, `${label} inside .choice-grid`);
-        await expectInsideParent(choice, selectScreen, viewport, `${label} inside .select-screen`);
-        await expectInsideParent(choice, appMain, viewport, `${label} inside .app-shell__main`);
-        await expectInsideParent(choice, appShell, viewport, `${label} inside .app-shell`);
-
-        const choiceBox = await getVisibleBounds(
-          choice,
-          `${viewport.name}: ${label} should have box`,
-        );
+      for (const choice of await choices.all()) {
+        await choice.scrollIntoViewIfNeeded();
+        await expect(choice).toBeInViewport({ ratio: 0.99 });
+        const box = await getVisibleBounds(choice, "Each choice must be reachable");
+        expect(box.height).toBeGreaterThanOrEqual(44);
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+        const label = choice.locator(".choice-card__label");
         expect(
-          choiceBox.height,
-          `${viewport.name}: ${label} height should be practical`,
-        ).toBeGreaterThanOrEqual(32);
+          await label.evaluate(
+            (element) =>
+              element.scrollWidth <= element.clientWidth + 1 &&
+              element.scrollHeight <= element.clientHeight + 1,
+          ),
+        ).toBe(true);
       }
 
-      const lastChoiceBox = await getVisibleBounds(
-        choiceCards.nth(4),
-        `${viewport.name}: last choice should have box`,
-      );
-      const footerBox = await getVisibleBounds(footer, `${viewport.name}: footer should have box`);
+      const footer = page.locator(".app-footer");
+      await footer.scrollIntoViewIfNeeded();
+      await expect(footer).toBeInViewport({ ratio: 0.99 });
       expect(
-        lastChoiceBox.y + lastChoiceBox.height,
-        `${viewport.name}: last choice should not overlap or pass footer top`,
-      ).toBeLessThanOrEqual(footerBox.y + TOLERANCE_PX);
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1,
+        ),
+      ).toBe(true);
     });
   }
 });

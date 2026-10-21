@@ -38,6 +38,7 @@ const speechState: ReturnType<typeof useNewsSpeech> = {
   cancel: vi.fn<ReturnType<typeof useNewsSpeech>["cancel"]>(),
   speakNews: vi.fn<ReturnType<typeof useNewsSpeech>["speakNews"]>(),
   isSpeaking: false,
+  phase: "idle",
   speechAvailability: "ready",
 };
 
@@ -82,6 +83,7 @@ describe("App game flow", () => {
     speechState.speechError = "";
     speechState.isSupported = true;
     speechState.isSpeaking = false;
+    speechState.phase = "idle";
     speechState.speechAvailability = "ready";
     setNavigatorOnline(true);
     window.history.replaceState({}, "", "/");
@@ -96,22 +98,22 @@ describe("App game flow", () => {
   it("renders start screen initially", () => {
     render(<App />);
 
-    expect(screen.getByRole("button", { name: "ニュースをつくる" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "はじめる" })).toBeInTheDocument();
   });
 
   it("connects start, selection, replay and restart controls to the application API", () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+    fireEvent.click(screen.getByRole("button", { name: "はじめる" }));
     expect(mockTrackEvent).toHaveBeenCalledWith("game_start");
 
     completeOneGame();
 
     expect(screen.getByLabelText("かんせいニュース")).toBeInTheDocument();
     expect(speechState.speakNews).toHaveBeenCalledTimes(1);
-    fireEvent.click(screen.getByRole("button", { name: "もういちどよむ" }));
+    fireEvent.click(screen.getByRole("button", { name: "きく" }));
     expect(speechState.speakNews).toHaveBeenCalledTimes(2);
-    fireEvent.click(screen.getByRole("button", { name: "つぎのニュース →" }));
+    fireEvent.click(screen.getByRole("button", { name: "つぎをつくる" }));
 
     expect(screen.getByText("だれが？")).toBeInTheDocument();
     expect(screen.getAllByTestId("choice-card")).toHaveLength(5);
@@ -131,9 +133,7 @@ describe("App game flow", () => {
 
     render(<App />);
 
-    expect(
-      screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/いまは オフラインだよ。/)).toBeInTheDocument();
   });
 
   it("reflects debug query who/when/where/what/action in result", () => {
@@ -164,13 +164,11 @@ describe("App game flow", () => {
     });
     expect(mockTrackEvent).toHaveBeenCalledWith("offline_detected");
 
-    expect(
-      screen.getByText("オフラインです。読み上げや画像の一部が動かないことがあります。"),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/いまは オフラインだよ。/)).toBeInTheDocument();
     act(() => {
       window.dispatchEvent(new Event("online"));
     });
-    expect(screen.queryByText(/オフラインです/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/いまは オフラインだよ。/)).not.toBeInTheDocument();
   });
 
   it("announces only speech error when an error is shown on result screen", () => {
@@ -178,7 +176,7 @@ describe("App game flow", () => {
     speechState.speechAvailability = "error";
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: "ニュースをつくる" }));
+    fireEvent.click(screen.getByRole("button", { name: "はじめる" }));
     completeOneGame();
 
     expect(screen.getAllByRole("status")).toHaveLength(1);

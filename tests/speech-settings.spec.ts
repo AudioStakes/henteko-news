@@ -49,14 +49,14 @@ test("default browser speech reads news without requesting model assets", async 
     Object.defineProperty(window, "speechSynthesis", { value: synthesis, configurable: true });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   for (const label of ["だれが？", "いつ？", "どこで？", "なにを？", "どうした？"]) {
     await expect(page.locator(".speech-select")).toHaveText(label);
     await page.getByTestId("choice-card").first().click();
   }
-  const replayButton = page.getByRole("button", { name: "もういちどよむ", exact: true });
+  const replayButton = page.getByRole("button", { name: "きく", exact: true });
   await expect(replayButton).toBeEnabled();
-  const displayedLines = page.getByLabel("かんせいニュース").locator(".result-text");
+  const displayedLines = page.getByLabel("かんせいニュース").locator(".news-line");
   await expect(displayedLines).toHaveCount(5);
   const lines = await displayedLines.allTextContents();
   const expectedText = `ニュースです！${lines.map((line) => line.trim().replace(/[！!]+$/, "")).join("、")}！`;
@@ -76,7 +76,7 @@ test("settings preserve the game and configured model paths across reloads", asy
     return route.fulfill({ status: 404, body: "model not deployed" });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   await expect(page.locator(".speech-select")).toHaveText("だれが？");
   await page.getByRole("button", { name: "音声設定", exact: true }).click();
   await expect(page.getByLabel("読み上げ方式")).toHaveValue("web-speech");
@@ -93,7 +93,7 @@ test("settings preserve the game and configured model paths across reloads", asy
   await expect(page.getByLabel("モデルのフォルダー")).toHaveValue("/custom-model/onnx");
   await expect(page.getByLabel("声のJSONファイル")).toHaveValue("/custom-model/voices/F1.json");
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   await expect.poll(() => requested.some((url) => url.endsWith("/onnx/tts.json"))).toBe(true);
   await expect.poll(() => requested.some((url) => url.endsWith("/voices/F1.json"))).toBe(true);
 
@@ -104,6 +104,53 @@ test("settings preserve the game and configured model paths across reloads", asy
   await page.getByRole("button", { name: "音声設定", exact: true }).click();
   await expect(page.getByLabel("読み上げ方式")).toHaveValue("web-speech");
   await expect(page.getByLabel("モデルのフォルダー")).toHaveCount(0);
+});
+
+test("the caster follows actual speech preparation, playback, and cancellation", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    let current: SpeechSynthesisUtterance | null = null;
+    const synthesis = Object.assign(new EventTarget(), {
+      getVoices: () => [],
+      cancel: () => {
+        current = null;
+      },
+      speak: (utterance: SpeechSynthesisUtterance) => {
+        current = utterance;
+      },
+    });
+    window.addEventListener("test:speech-start", () => current?.dispatchEvent(new Event("start")));
+    window.addEventListener("test:speech-end", () => current?.dispatchEvent(new Event("end")));
+    Object.defineProperty(window, "speechSynthesis", { value: synthesis, configurable: true });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "はじめる", exact: true }).click();
+  for (const question of ["だれが？", "いつ？", "どこで？", "なにを？", "どうした？"]) {
+    await expect(page.getByRole("heading", { name: question, exact: true })).toBeVisible();
+    await page.getByTestId("choice-card").first().click();
+  }
+  const caster = page.locator(".result-screen .caster");
+  const replay = page.getByRole("button", { name: "きく", exact: true });
+  const restart = page.getByRole("button", { name: "つぎをつくる", exact: true });
+  await expect(caster).toHaveAttribute("data-phase", "preparing");
+  await expect(replay).toBeDisabled();
+  await expect(restart).toBeEnabled();
+
+  await page.evaluate(() => window.dispatchEvent(new Event("test:speech-start")));
+  await expect(caster).toHaveAttribute("data-phase", "speaking");
+  await expect(replay).toBeDisabled();
+  await expect(restart).toBeEnabled();
+
+  await page.evaluate(() => window.dispatchEvent(new Event("test:speech-end")));
+  await expect(caster).toHaveAttribute("data-phase", "idle");
+  await expect(replay).toBeEnabled();
+  await replay.click();
+  await expect(caster).toHaveAttribute("data-phase", "preparing");
+  await restart.click();
+  await expect(page.getByRole("heading", { name: "だれが？", exact: true })).toBeFocused();
+  await page.evaluate(() => window.dispatchEvent(new Event("test:speech-start")));
+  await expect(page.locator(".select-screen .caster")).toHaveAttribute("data-phase", "idle");
 });
 
 test("settings remain usable on a narrow phone and return focus after saving", async ({ page }) => {
@@ -172,7 +219,7 @@ test("all model settings and dialog actions stay reachable in phone landscape", 
   await expect(save).toBeInViewport({ ratio: 1 });
   await page.getByRole("button", { name: "キャンセル", exact: true }).click();
   await expect(dialog).toBeHidden();
-  await page.getByRole("button", { name: "ニュースをつくる" }).click();
+  await page.getByRole("button", { name: "はじめる" }).click();
   await expect(page.getByRole("heading", { name: "だれが？", exact: true })).toBeVisible();
 });
 

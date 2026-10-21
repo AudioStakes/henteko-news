@@ -3,6 +3,8 @@ import { useSpeechSettings } from "../context/SpeechSettingsContext";
 import { useModelSpeech } from "./useModelSpeech";
 import { useWebSpeech } from "./useWebSpeech";
 
+export type SpeechPhase = "idle" | "preparing" | "speaking";
+
 export type SpeakOptions = {
   rate: number;
   pitch: number;

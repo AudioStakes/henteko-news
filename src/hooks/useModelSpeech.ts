@@ -6,7 +6,7 @@ import {
   preloadSupertonic,
   synthesizeSupertonicSpeech,
 } from "../utils/supertonic/supertonicClient";
-import type { SpeakOptions } from "./useSpeech";
+import type { SpeakOptions, SpeechPhase } from "./useSpeech";
 
 export const SYNTHESIS_TIMEOUT_MS = 60_000;
 const PLAYBACK_START_TIMEOUT_MS = 10_000;
@@ -20,7 +20,8 @@ function splitSpeechText(text: string) {
 
 export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTINGS) {
   const { modelBasePath, voiceStylePath } = settings;
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [phase, setPhase] = useState<SpeechPhase>("idle");
+  const isSpeaking = phase !== "idle";
   const isSpeakingRef = useRef(false);
   const requestIdRef = useRef(0);
   const activeAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -33,9 +34,9 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
     typeof window.Audio !== "undefined" &&
     typeof window.fetch !== "undefined";
 
-  const setSpeaking = useCallback((next: boolean) => {
-    isSpeakingRef.current = next;
-    setIsSpeaking(next);
+  const setSpeaking = useCallback((next: SpeechPhase) => {
+    isSpeakingRef.current = next !== "idle";
+    setPhase(next);
   }, []);
 
   const clearWatchdog = useCallback(() => {
@@ -80,7 +81,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
     requestIdRef.current += 1;
     invalidatePending();
     cleanupPlayback();
-    setSpeaking(false);
+    setSpeaking("idle");
   }, [cleanupPlayback, invalidatePending, isSupported, setSpeaking]);
 
   const warmup = useCallback(() => {
@@ -104,7 +105,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
 
       requestIdRef.current += 1;
       const requestId = requestIdRef.current;
-      setSpeaking(true);
+      setSpeaking("preparing");
 
       const fail = (reason: "timeout" | "error") => {
         if (requestId !== requestIdRef.current) {
@@ -113,7 +114,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
         requestIdRef.current += 1;
         invalidatePending();
         cleanupPlayback();
-        setSpeaking(false);
+        setSpeaking("idle");
         options.onError?.(reason);
       };
 
@@ -125,13 +126,14 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
         if (part === undefined) {
           cleanupPlayback();
           requestIdRef.current += 1;
-          setSpeaking(false);
+          setSpeaking("idle");
           options.onEnd?.();
           return;
         }
 
         try {
           cleanupPlayback();
+          setSpeaking("preparing");
           startWatchdogRef.current = window.setTimeout(() => {
             fail("timeout");
           }, SYNTHESIS_TIMEOUT_MS);
@@ -160,9 +162,10 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
             fail("timeout");
           }, PLAYBACK_START_TIMEOUT_MS);
           audio.onplaying = () => {
-            if (requestId !== requestIdRef.current) {
+            if (requestId !== requestIdRef.current || activeAudioRef.current !== audio) {
               return;
             }
+            setSpeaking("speaking");
             clearWatchdog();
             startWatchdogRef.current = window.setTimeout(
               () => {
@@ -173,7 +176,7 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
           };
 
           audio.onended = () => {
-            if (requestId !== requestIdRef.current) {
+            if (requestId !== requestIdRef.current || activeAudioRef.current !== audio) {
               return;
             }
             cleanupPlayback();
@@ -182,7 +185,9 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
             });
           };
           audio.onerror = () => {
-            fail("error");
+            if (activeAudioRef.current === audio) {
+              fail("error");
+            }
           };
 
           await audio.play();
@@ -207,5 +212,5 @@ export function useModelSpeech(settings: SpeechSettings = DEFAULT_SPEECH_SETTING
     ],
   );
 
-  return { isSupported, isSpeaking, speak, warmup, cancel };
+  return { isSupported, isSpeaking, phase, speak, warmup, cancel };
 }

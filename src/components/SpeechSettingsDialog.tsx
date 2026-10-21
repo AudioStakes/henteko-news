@@ -1,5 +1,6 @@
 import { type RefObject, type SubmitEvent, useEffect, useId, useRef, useState } from "react";
 import type { SpeechSettings, SpeechSettingsApi, SpeechSettingsErrors } from "../application";
+import "./SpeechSettingsDialog.css";
 
 type SpeechSettingsDialogProps = {
   isOpen: boolean;
@@ -111,6 +112,9 @@ export function SpeechSettingsDialog({
             <option value="web-speech">ブラウザーの音声（Web Speech API）</option>
             <option value="supertonic">モデル音声（Supertonic）</option>
           </select>
+          {draft.provider === "web-speech" && (
+            <p className="speech-settings-dialog__help">端末の音声で読み上げます。</p>
+          )}
           {errors.provider !== undefined && (
             <p id={`${id}-provider-error`} className="speech-settings-dialog__error" role="alert">
               {errors.provider}

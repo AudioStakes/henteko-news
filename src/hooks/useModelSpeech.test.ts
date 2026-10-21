@@ -25,6 +25,7 @@ describe("useModelSpeech", () => {
   const audioInstances: Array<{
     onended: (() => void) | null;
     onerror: (() => void) | null;
+    onplaying: (() => void) | null;
     play: ReturnType<typeof vi.fn<() => Promise<void>>>;
     pause: ReturnType<typeof vi.fn<() => void>>;
   }> = [];
@@ -38,6 +39,7 @@ describe("useModelSpeech", () => {
       const audio = {
         onended: null,
         onerror: null,
+        onplaying: null,
         play: vi.fn(() => Promise.resolve()),
         pause: vi.fn<() => void>(),
       };
@@ -73,6 +75,73 @@ describe("useModelSpeech", () => {
       result.current.warmup();
     });
     expect(mockPreload).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports preparation between parts and changes phase only for the active audio", async () => {
+    mockSynthesize.mockResolvedValue({ url: "blob:part", revoke: vi.fn(), durationSec: 1 });
+    const { result } = renderHook(() => useModelSpeech());
+    expect(result.current.phase).toBe("idle");
+    act(() => {
+      result.current.speak("ひとつ。ふたつ", { rate: 1, pitch: 1 });
+    });
+    expect(result.current.phase).toBe("preparing");
+    expect(result.current.isSpeaking).toBe(true);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const first = requiredArrayElement(audioInstances, 0);
+    const stalePlaying = first.onplaying;
+    act(() => {
+      first.onplaying?.();
+    });
+    expect(result.current.phase).toBe("speaking");
+    act(() => {
+      first.onended?.();
+    });
+    expect(result.current.phase).toBe("preparing");
+    act(() => {
+      stalePlaying?.();
+    });
+    expect(result.current.phase).toBe("preparing");
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const second = requiredArrayElement(audioInstances, 1);
+    act(() => {
+      second.onplaying?.();
+    });
+    expect(result.current.phase).toBe("speaking");
+    act(() => {
+      second.onended?.();
+    });
+    expect(result.current.phase).toBe("idle");
+    expect(result.current.isSpeaking).toBe(false);
+  });
+
+  it("does not let cancelled playback change the phase of a newer preparation", async () => {
+    mockSynthesize
+      .mockResolvedValueOnce({ url: "blob:first", revoke: vi.fn(), durationSec: 1 })
+      .mockReturnValue(new Promise(() => {}));
+    const { result } = renderHook(() => useModelSpeech());
+    await act(async () => {
+      result.current.speak("ひとつ", { rate: 1, pitch: 1 });
+      await Promise.resolve();
+    });
+    const first = requiredArrayElement(audioInstances, 0);
+    const stalePlaying = first.onplaying;
+    const staleEnded = first.onended;
+    act(() => {
+      first.onplaying?.();
+      result.current.cancel();
+    });
+    expect(result.current.phase).toBe("idle");
+    act(() => {
+      result.current.speak("ふたつ", { rate: 1, pitch: 1 });
+      stalePlaying?.();
+      staleEnded?.();
+    });
+    expect(result.current.phase).toBe("preparing");
+    expect(result.current.isSpeaking).toBe(true);
   });
 
   it("calls onEnd after successful playback", async () => {
@@ -154,6 +223,7 @@ describe("useModelSpeech", () => {
     await act(async () => vi.advanceTimersByTimeAsync(SYNTHESIS_TIMEOUT_MS));
     expect(onError).toHaveBeenCalledExactlyOnceWith("timeout");
     expect(result.current.isSpeaking).toBe(false);
+    expect(result.current.phase).toBe("idle");
     await act(async () => {
       synthesis.resolve({ url: "blob:late", revoke, durationSec: 1 });
       await synthesis.promise;
@@ -216,6 +286,7 @@ describe("useModelSpeech", () => {
     expect(mockInvalidate).toHaveBeenCalledTimes(2);
     expect(revoke).toHaveBeenCalledTimes(1);
     expect(audioInstances).toHaveLength(0);
+    expect(result.current.phase).toBe("idle");
   });
 
   it("keeps initialized assets when cancelling audio playback", async () => {

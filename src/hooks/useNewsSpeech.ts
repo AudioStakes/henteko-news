@@ -22,7 +22,15 @@ function buildSpeechError(reason: "unsupported" | "timeout" | "error") {
 
 export function useNewsSpeech() {
   const [speechError, setSpeechError] = useState("");
-  const { speak, isSupported, isSpeaking, warmup, cancel: cancelSpeech, settingsKey } = useSpeech();
+  const {
+    speak,
+    isSupported,
+    isSpeaking,
+    phase,
+    warmup,
+    cancel: cancelSpeech,
+    settingsKey,
+  } = useSpeech();
   const previousSettingsKey = useRef(settingsKey);
   const requestIdRef = useRef(0);
   const busyRef = useRef(false);
@@ -127,6 +135,7 @@ export function useNewsSpeech() {
     cancel,
     speakNews,
     isSpeaking,
+    phase,
     speechAvailability,
   };
 }

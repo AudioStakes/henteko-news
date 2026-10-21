@@ -132,9 +132,19 @@ describe("useWebSpeech", () => {
   it("finishes once and permits the next utterance", () => {
     const onEnd = vi.fn();
     const { result } = renderHook(() => useWebSpeech());
+    expect(result.current.phase).toBe("idle");
     act(() => {
       result.current.speak("こんにちは", { rate: 1, pitch: 1, onEnd });
     });
+    expect(result.current.phase).toBe("preparing");
+    expect(result.current.isSpeaking).toBe(true);
+    act(() => {
+      requiredArrayElement(utterances, 0).onstart?.call(
+        requiredArrayElement(utterances, 0),
+        new MockSpeechSynthesisEvent("start", requiredArrayElement(utterances, 0)),
+      );
+    });
+    expect(result.current.phase).toBe("speaking");
     const ended = requiredArrayElement(utterances, 0).onend;
     act(() => {
       ended?.call(
@@ -150,6 +160,7 @@ describe("useWebSpeech", () => {
     });
     expect(onEnd).toHaveBeenCalledTimes(1);
     expect(result.current.isSpeaking).toBe(false);
+    expect(result.current.phase).toBe("idle");
     act(() => {
       expect(result.current.speak("つぎ", { rate: 1, pitch: 1 })).toBe(true);
     });
@@ -164,10 +175,19 @@ describe("useWebSpeech", () => {
     });
     const ended = requiredArrayElement(utterances, 0).onend;
     const errored = requiredArrayElement(utterances, 0).onerror;
+    const started = requiredArrayElement(utterances, 0).onstart;
     act(() => {
       result.current.cancel();
     });
+    expect(result.current.phase).toBe("idle");
     act(() => {
+      result.current.speak("つぎ", { rate: 1, pitch: 1 });
+    });
+    act(() => {
+      started?.call(
+        requiredArrayElement(utterances, 0),
+        new MockSpeechSynthesisEvent("start", requiredArrayElement(utterances, 0)),
+      );
       ended?.call(
         requiredArrayElement(utterances, 0),
         new MockSpeechSynthesisEvent("end", requiredArrayElement(utterances, 0)),
@@ -178,7 +198,8 @@ describe("useWebSpeech", () => {
       );
     });
     expect(cancel).toHaveBeenCalledTimes(1);
-    expect(result.current.isSpeaking).toBe(false);
+    expect(result.current.isSpeaking).toBe(true);
+    expect(result.current.phase).toBe("preparing");
     expect(onEnd).not.toHaveBeenCalled();
     expect(onError).not.toHaveBeenCalled();
   });
@@ -209,6 +230,7 @@ describe("useWebSpeech", () => {
     expect(onError).toHaveBeenCalledExactlyOnceWith("timeout");
     expect(onEnd).not.toHaveBeenCalled();
     expect(result.current.isSpeaking).toBe(false);
+    expect(result.current.phase).toBe("idle");
     expect(vi.getTimerCount()).toBe(0);
   });
 
@@ -246,6 +268,7 @@ describe("useWebSpeech", () => {
     });
     expect(onError).toHaveBeenCalledExactlyOnceWith("error");
     expect(result.current.isSpeaking).toBe(false);
+    expect(result.current.phase).toBe("idle");
     speak.mockImplementationOnce(() => {
       throw new Error("unavailable");
     });

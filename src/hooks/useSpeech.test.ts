@@ -169,12 +169,14 @@ describe("speech provider selection", () => {
     settings = { ...settings, modelBasePath: "/other/onnx" };
     rerender();
     expect(result.current.isSpeaking).toBe(false);
+    expect(result.current.phase).toBe("idle");
     await act(async () => {
       synthesis.resolve({ url: "blob:late", durationSec: 1, revoke });
       await synthesis.promise;
     });
     expect(revoke).toHaveBeenCalledTimes(1);
     expect(onEnd).not.toHaveBeenCalled();
+    expect(result.current.phase).toBe("idle");
     await act(async () => {
       result.current.speak("つぎ", { rate: 1, pitch: 1 });
       await synthesis.promise;

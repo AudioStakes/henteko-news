@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SpeakOptions } from "./useSpeech";
+import type { SpeakOptions, SpeechPhase } from "./useSpeech";
 
 export const WEB_SPEECH_START_TIMEOUT_MS = 10_000;
 
@@ -16,7 +16,8 @@ function japaneseVoice(voices: SpeechSynthesisVoice[]) {
 }
 
 export function useWebSpeech() {
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [phase, setPhase] = useState<SpeechPhase>("idle");
+  const isSpeaking = phase !== "idle";
   const speakingRef = useRef(false);
   const requestIdRef = useRef(0);
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -65,7 +66,7 @@ export function useWebSpeech() {
   const cancel = useCallback(() => {
     requestIdRef.current += 1;
     cleanup(true);
-    setIsSpeaking(false);
+    setPhase("idle");
   }, [cleanup]);
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export function useWebSpeech() {
         }
         requestIdRef.current += 1;
         cleanup(reason !== undefined);
-        setIsSpeaking(false);
+        setPhase("idle");
         if (reason !== undefined) {
           options.onError?.(reason);
         } else {
@@ -123,7 +124,7 @@ export function useWebSpeech() {
           : 1;
         utteranceRef.current = utterance;
         speakingRef.current = true;
-        setIsSpeaking(true);
+        setPhase("preparing");
         watchdogRef.current = window.setTimeout(() => {
           finish("timeout");
         }, WEB_SPEECH_START_TIMEOUT_MS);
@@ -131,6 +132,7 @@ export function useWebSpeech() {
           if (requestId !== requestIdRef.current) {
             return;
           }
+          setPhase("speaking");
           if (watchdogRef.current !== null) {
             window.clearTimeout(watchdogRef.current);
           }
@@ -158,5 +160,5 @@ export function useWebSpeech() {
     [cleanup, isSupported, refreshVoices, synthesis],
   );
 
-  return { isSupported, isSpeaking, speak, warmup: refreshVoices, cancel };
+  return { isSupported, isSpeaking, phase, speak, warmup: refreshVoices, cancel };
 }

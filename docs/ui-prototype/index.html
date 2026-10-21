@@ -1,0 +1,1441 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#FFEA66">
+    <title>へんてこニュース · オレンジ版プロトタイプ</title>
+    <link rel="preload" as="image" href="assets/caster-idle.png">
+    <link rel="preload" as="image" href="assets/caster-reading.png">
+    <style>
+    @font-face {
+      font-family: "Rounded";
+      src: url("assets/rounded-black.ttf") format("truetype");
+      font-weight: 900;
+      font-display: swap;
+    }
+    :root {
+      --yellow: #ffea66;
+      --apricot: #ffc88f;
+      --ink: #5a2d16;
+      --edge: #954315;
+      --orange: #ffa35c;
+      --cream: #fff4d8;
+      --input: #fffbef;
+      --disabled: #e8e1d4;
+      --muted: #765d4d;
+      --error: #9a3423;
+      color-scheme: light;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--yellow);
+      font-family: "Rounded", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+      font-weight: 900;
+    }
+    button,
+    input,
+    select {
+      font: inherit;
+      color: inherit;
+    }
+    button {
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:disabled {
+      cursor: default;
+      background: var(--disabled);
+      color: var(--muted);
+    }
+    button,
+    a,
+    input,
+    select,
+    summary {
+      -webkit-tap-highlight-color: transparent;
+    }
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    summary:focus-visible {
+      outline: 4px solid var(--ink);
+      outline-offset: 4px;
+    }
+    button {
+      min-width: 44px;
+      min-height: 44px;
+    }
+    [hidden] {
+      display: none;
+    }
+    .app-shell {
+      max-width: 440px;
+      margin: auto;
+      padding: max(6px, env(safe-area-inset-top)) 16px 0;
+    }
+    .child-stage {
+      min-height: calc(100svh - max(6px, env(safe-area-inset-top)));
+    }
+    .utility-bar {
+      display: flex;
+      justify-content: flex-end;
+      height: 40px;
+    }
+    .adult-button {
+      background: none;
+      border: 0;
+      padding: 0 4px;
+      font-size: 18px;
+    }
+    .brand {
+      display: block;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 5.76;
+      overflow: hidden;
+      margin: 7px 0 12px;
+    }
+    .brand img {
+      position: absolute;
+      width: 104.167%;
+      max-width: none;
+      height: auto;
+      left: -2.604%;
+      top: -47%;
+    }
+    .notice {
+      background: var(--cream);
+      border: 2px solid var(--edge);
+      border-radius: 16px;
+      padding: 10px 13px;
+      font-size: 15px;
+      margin: 10px 0;
+      line-height: 1.5;
+    }
+    .caster {
+      height: 157px;
+      position: relative;
+      border-bottom: 4px solid var(--edge);
+      border-radius: 0 0 3px 3px;
+      margin: 0 0 13px;
+      overflow: hidden;
+    }
+    .caster img {
+      display: block;
+      position: absolute;
+      width: 210px;
+      height: 175px;
+      object-fit: contain;
+      object-position: center bottom;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: -18px;
+    }
+    .nameplate {
+      position: absolute;
+      right: 5px;
+      bottom: 0;
+      background: var(--input);
+      border: 3px solid var(--edge);
+      padding: 5px 7px 3px;
+      font-size: 12px;
+      line-height: 1;
+      transform: skew(-8deg);
+    }
+    .nameplate span {
+      display: block;
+      transform: skew(8deg);
+    }
+    .caster-status {
+      position: absolute;
+      right: 0;
+      top: 48px;
+      font-size: 13px;
+      max-width: 98px;
+      text-align: center;
+    }
+    .caster-status::before {
+      content: "●";
+      display: block;
+      color: var(--edge);
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    .caster-status.speaking::before {
+      color: #f67529;
+    }
+    .welcome-caster {
+      height: 260px;
+      margin-top: 13px;
+      margin-bottom: 19px;
+      overflow: hidden;
+    }
+    .welcome-caster::before {
+      content: "";
+      position: absolute;
+      inset: 2px 5px 0;
+      background: var(--apricot);
+      border-radius: 40% 43% 16% 12% / 32% 28% 15% 23%;
+    }
+    .welcome-caster img {
+      width: 360px;
+      height: 360px;
+      left: 45%;
+      bottom: -95px;
+    }
+    .caster.with-status img {
+      left: 37%;
+      width: 210px;
+    }
+    .welcome-copy {
+      font-size: clamp(31px, 10.7vw, 42px);
+      text-align: center;
+      line-height: 1.35;
+      margin: 19px 0 23px;
+      letter-spacing: -0.045em;
+    }
+    .primary,
+    .secondary {
+      border: 2px solid var(--edge);
+      background: var(--orange);
+      min-height: 88px;
+      padding: 14px 16px;
+      font-size: 30px;
+      line-height: 1.2;
+      border-radius: 38% 31% 35% 27% / 43% 46% 46% 43%;
+    }
+    .primary:active:not(:disabled),
+    .secondary:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    .secondary {
+      background: var(--cream);
+    }
+    .start-button {
+      width: 100%;
+      min-height: 132px;
+      font-size: clamp(34px, 11.8vw, 48px);
+    }
+    .play-icon {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-top: 15px solid transparent;
+      border-bottom: 15px solid transparent;
+      border-left: 23px solid currentColor;
+      vertical-align: -2px;
+      margin-right: 11px;
+      border-radius: 4px;
+    }
+    .sound-note {
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.45;
+      margin: 13px 0 0;
+    }
+    .sound-note svg {
+      display: block;
+      width: 35px;
+      height: 32px;
+      margin: 0 auto 2px;
+      fill: currentColor;
+    }
+    .progress {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      margin: 9px 0 3px;
+    }
+    .progress .dot {
+      width: 21px;
+      height: 21px;
+      border: 2px solid var(--edge);
+      border-radius: 50%;
+    }
+    .progress .done {
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+    .progress .current {
+      background: var(--ink);
+      border-color: var(--ink);
+    }
+    .progress .count {
+      font-size: 23px;
+      margin-left: 10px;
+    }
+    .question {
+      font-size: clamp(45px, 16.5vw, 68px);
+      line-height: 1.2;
+      text-align: center;
+      margin: 6px -7px 12px;
+      letter-spacing: -0.04em;
+    }
+    .question:focus,
+    .welcome-copy:focus,
+    .news:focus,
+    .developer-title:focus {
+      outline: none;
+    }
+    .choices {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 2px 13px;
+      align-items: center;
+      padding-bottom: 18px;
+    }
+    .choice {
+      position: relative;
+      border: 2px solid var(--edge);
+      background: var(--apricot);
+      font-size: clamp(28px, 10.4vw, 43px);
+      line-height: 1.25;
+      min-height: 112px;
+      padding: 13px 6px;
+      letter-spacing: -0.06em;
+      grid-column: span 2;
+      border-radius: 47% 55% 46% 53% / 48% 57% 44% 52%;
+      overflow-wrap: anywhere;
+      transition:
+        transform 100ms,
+        box-shadow 100ms;
+    }
+    .choice:nth-child(2) {
+      border-radius: 54% 43% 55% 47% / 54% 48% 55% 45%;
+    }
+    .choice:nth-child(3) {
+      grid-column: 2 / 4;
+      min-height: 106px;
+      margin: -3px -7px;
+      border-radius: 50% 50% 44% 56% / 48% 53% 47% 52%;
+    }
+    .choice:nth-child(4) {
+      grid-column: 1 / 3;
+    }
+    .choice:nth-child(5) {
+      border-radius: 49% 48% 55% 43% / 53% 45% 54% 47%;
+    }
+    .choice:active,
+    .choice.is-pressed {
+      transform: scale(0.94) rotate(-2deg);
+      box-shadow: inset 0 0 0 4px var(--edge);
+    }
+    .choice[aria-disabled="true"] {
+      cursor: default;
+    }
+    .choices.long-choices {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .long-choices .choice {
+      width: 100%;
+      margin: 0;
+      min-height: 80px;
+      padding: 15px 17px;
+      font-size: 27px;
+      border-radius: 27% 15% 25% 17% / 45% 52% 47% 53%;
+    }
+    .news {
+      position: relative;
+      background: var(--apricot);
+      border-radius: 24% 27% 24% 23% / 13% 15% 16% 14%;
+      padding: 21px 12px 24px;
+      margin: 6px 0 13px;
+      font-size: clamp(32px, 11.5vw, 45px);
+      line-height: 1.38;
+      text-align: center;
+      letter-spacing: -0.045em;
+      overflow-wrap: anywhere;
+    }
+    .news-line {
+      display: block;
+    }
+    .result-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding-bottom: 16px;
+    }
+    .result-actions button {
+      min-height: 98px;
+      font-size: 28px;
+      padding: 12px 8px;
+    }
+    .result-actions button small {
+      display: block;
+      font-size: 20px;
+      margin-top: 4px;
+    }
+    .result-actions .play-icon {
+      margin-right: 0;
+    }
+    .error-note {
+      color: var(--error);
+      font-size: 17px;
+      line-height: 1.5;
+      text-align: center;
+      margin: 0 0 12px;
+    }
+    .long-news {
+      font-size: 29px;
+      line-height: 1.45;
+    }
+    .site-footer {
+      font-family: system-ui, sans-serif;
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      padding: 25px 8px 18px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    a {
+      color: inherit;
+    }
+    .site-footer a {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+    }
+    dialog {
+      color: var(--ink);
+      background: var(--cream);
+      border: 2px solid var(--edge);
+      border-radius: 19px;
+      padding: 22px;
+      width: calc(100% - 32px);
+      max-width: 408px;
+      max-height: calc(100svh - 32px);
+      overflow: auto;
+      font-family: system-ui, sans-serif;
+      font-weight: 600;
+    }
+    dialog::backdrop {
+      background: rgb(90 45 22 / 0.08);
+    }
+    .dialog-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+    .dialog-title h2 {
+      font-size: 27px;
+      margin: 0;
+    }
+    .close-button {
+      font-size: 33px;
+      border: 0;
+      background: none;
+      padding: 0;
+      line-height: 1;
+    }
+    .field {
+      margin-bottom: 20px;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 17px;
+    }
+    .field select,
+    .field input {
+      width: 100%;
+      min-height: 44px;
+      border: 2px solid var(--edge);
+      background: var(--input);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+    .field input {
+      font-family: system-ui, sans-serif;
+    }
+    .field p,
+    .form-note {
+      font-size: 14px;
+      line-height: 1.5;
+      margin: 7px 0 0;
+      font-weight: 400;
+    }
+    .field .field-error {
+      color: var(--error);
+      font-weight: 600;
+    }
+    .field [aria-invalid="true"] {
+      border: 3px solid var(--error);
+    }
+    .reset-button {
+      border: 0;
+      background: none;
+      padding: 8px 0;
+      font-size: 16px;
+      text-align: left;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+    .dialog-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+    }
+    .dialog-actions button {
+      flex: 1;
+      min-height: 60px;
+      font-size: 19px;
+      border-radius: 18px;
+      padding: 10px;
+    }
+    .developer-title {
+      font-family: system-ui, sans-serif;
+      font-size: 26px;
+      margin: 30px 0 8px;
+    }
+    .developer-copy {
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      font-weight: 500;
+    }
+    .developer-panel {
+      background: var(--cream);
+      border: 2px solid var(--edge);
+      border-radius: 20px;
+      padding: 18px;
+      margin: 18px 0;
+      font-family: system-ui, sans-serif;
+    }
+    .developer-panel strong {
+      display: block;
+      font-size: 29px;
+      text-align: center;
+    }
+    .developer-panel .current-word {
+      display: block;
+      font-family: "Rounded", sans-serif;
+      font-size: 35px;
+      text-align: center;
+      margin: 13px 0;
+    }
+    .developer-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .developer-controls button {
+      min-height: 52px;
+      border: 2px solid var(--edge);
+      border-radius: 15px;
+      background: var(--orange);
+      font-size: 16px;
+    }
+    .developer-controls button:disabled {
+      background: var(--disabled);
+    }
+    .developer-controls .wide {
+      grid-column: span 2;
+    }
+    .preview-tools {
+      max-width: 440px;
+      margin: 0 auto 40px;
+      padding: 20px 16px max(30px, env(safe-area-inset-bottom));
+      font-family: system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      border-top: 1px dashed var(--edge);
+    }
+    .preview-tools summary {
+      min-height: 44px;
+      cursor: pointer;
+      font-weight: 700;
+      padding: 12px 0;
+    }
+    .preview-tools p {
+      line-height: 1.7;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .preview-grid button,
+    .preview-extra {
+      border: 1px solid var(--edge);
+      background: var(--cream);
+      border-radius: 9px;
+      padding: 10px;
+      min-height: 48px;
+      font: inherit;
+      text-align: left;
+    }
+    .preview-extra {
+      width: 100%;
+      margin-top: 9px;
+    }
+    .preview-state {
+      overflow-wrap: anywhere;
+      background: var(--input);
+      padding: 12px;
+      border-radius: 8px;
+      font:
+        12px / 1.6 ui-monospace,
+        monospace;
+      white-space: pre-wrap;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (min-width: 600px) {
+      body {
+        background: #fff9e3;
+      }
+      .app-shell {
+        background: var(--yellow);
+      }
+      .preview-tools {
+        background: var(--yellow);
+      }
+    }
+    @media (max-width: 350px) {
+      .app-shell {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+      .caster {
+        height: 138px;
+      }
+      .caster img {
+        height: 156px;
+      }
+      .welcome-caster {
+        height: 237px;
+      }
+      .welcome-caster img {
+        height: 330px;
+        width: 330px;
+        bottom: -95px;
+      }
+      .choice {
+        min-height: 103px;
+      }
+      .choice:nth-child(3) {
+        min-height: 98px;
+      }
+      .question {
+        font-size: 45px;
+      }
+      .result-actions button {
+        font-size: 25px;
+      }
+      .result-actions button small {
+        font-size: 17px;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .choice {
+        transition: none;
+      }
+      html {
+        scroll-behavior: auto;
+      }
+    }
+    </style>
+  </head>
+  <body>
+    <!-- Disposable visual prototype. Replace the application mock with useNewsApplication(); retain render(state) and command bindings. -->
+    <div class="app-shell">
+      <div class="child-stage">
+        <header>
+          <div class="utility-bar">
+            <button class="adult-button" type="button" id="open-settings">おとな</button>
+          </div>
+          <div class="brand">
+            <img
+              src="../../public/assets/header-logo.webp"
+              alt="へんてこニュース"
+              width="600"
+              height="200"
+            >
+          </div>
+        </header>
+        <div id="offline-notice" class="notice" role="status" hidden>
+          いまは オフラインだよ。<br>もじで あそべるよ。
+        </div>
+        <main id="screen"></main>
+      </div>
+      <footer class="site-footer">
+        <a href="https://x.com/AudioStakes" target="_blank" rel="noopener noreferrer">作者</a
+        ><a
+          href="https://github.com/AudioStakes/henteko-news/blob/main/docs/PRIVACY.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          >プライバシー</a
+        >
+      </footer>
+    </div>
+    <div class="preview-tools">
+      <details id="preview-details">
+        <summary>試作の表示確認</summary>
+        <p>
+          採用したオレンジ案の操作サンプルです。ニュース、音声状態、設定、音声確認はメモリー内の模擬データです。通常の「よんでいるよ」では音は出ません。再読み込みで初期状態に戻ります。
+        </p>
+        <div id="preview-buttons" class="preview-grid"></div>
+        <button class="preview-extra" type="button" id="browser-speech">
+          端末の音声で、このニュースを試しに読む
+        </button>
+        <p id="browser-speech-note" role="status">
+          任意の音声確認です。通常の模擬読み上げとは別に動作します。
+        </p>
+        <button class="preview-extra" type="button" id="toggle-offline">
+          オフライン表示を切り替える
+        </button>
+        <p>現在の表示状態</p>
+        <pre class="preview-state" id="state-output"></pre>
+      </details>
+    </div>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <form id="settings-form" novalidate>
+        <div class="dialog-title">
+          <h2 id="settings-title">音声設定</h2>
+          <button
+            type="button"
+            class="close-button"
+            id="close-settings"
+            aria-label="音声設定を閉じる"
+          >
+            ×
+          </button>
+        </div>
+        <div class="field">
+          <label for="provider">読み上げ方式</label
+          ><select id="provider" name="provider">
+            <option value="web-speech">ブラウザーの音声</option>
+            <option value="supertonic">モデル音声（Supertonic）</option>
+          </select>
+          <p id="provider-help">端末の音声で読み上げます。</p>
+        </div>
+        <div id="model-fields" hidden>
+          <div class="field">
+            <label for="model-path">モデルのフォルダー</label>
+            <input
+              id="model-path"
+              name="modelBasePath"
+              type="text"
+              spellcheck="false"
+              aria-describedby="model-error"
+            >
+            <p class="field-error" id="model-error" hidden></p>
+          </div>
+          <div class="field">
+            <label for="voice-path">声のJSONファイル</label>
+            <input
+              id="voice-path"
+              name="voiceStylePath"
+              type="text"
+              spellcheck="false"
+              aria-describedby="voice-help voice-error"
+            >
+            <p id="voice-help">公開済みのパスまたはHTTP(S) URL</p>
+            <p class="field-error" id="voice-error" hidden></p>
+          </div>
+        </div>
+        <button class="reset-button" id="reset-settings" type="button">
+          ブラウザーの既定設定に戻す
+        </button>
+        <p class="form-note">「設定を保存」で反映します。</p>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="cancel-settings">キャンセル</button
+          ><button type="submit" class="primary">設定を保存</button>
+        </div>
+      </form>
+    </dialog>
+    <p class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></p>
+    <script>
+    (() => {
+      "use strict";
+      const $ = (id) => document.getElementById(id);
+      const escapeHtml = (value) =>
+        String(value).replace(
+          /[&<>"']/g,
+          (character) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character],
+        );
+      const categories = [
+        { key: "who", label: "だれが？", words: ["ねこ", "いぬ", "うさぎ", "おばけ", "ロボット"] },
+        {
+          key: "when",
+          label: "いつ？",
+          words: ["きのうのよる", "あさ", "おひる", "きょう", "あした"],
+        },
+        {
+          key: "where",
+          label: "どこで？",
+          words: ["こうえん", "うみ", "おうち", "おそら", "がっこう"],
+        },
+        {
+          key: "what",
+          label: "なにを？",
+          words: ["おにぎり", "アイス", "えほん", "おちゃ", "バナナ"],
+        },
+        {
+          key: "action",
+          label: "どうした？",
+          words: ["たべた", "おとした", "かざった", "かぶった", "あつめた"],
+          polite: [
+            "たべました！",
+            "おとしました！",
+            "かざりました！",
+            "かぶりました！",
+            "あつめました！",
+          ],
+        },
+      ];
+      const longWords = [
+        "おおきな リボンの ぼうし",
+        "ふわふわの まっしろな ケーキ",
+        "にじいろの ながい マフラー",
+        "うちゅうから きた おべんとう",
+        "おやまみたいな アイスクリーム",
+      ];
+      const defaultLines = ["ねこが", "きのうのよる", "こうえんで", "おにぎりを", "たべました！"];
+      const longLines = [
+        "おおきな ぼうしの",
+        "うさぎが",
+        "ほしが いっぱいの",
+        "よるに",
+        "にじの むこうの",
+        "こうえんで",
+        "ふわふわの",
+        "アイスクリームを",
+        "れいぞうこで",
+        "ひやしました！",
+      ];
+      const defaults = {
+        provider: "web-speech",
+        modelBasePath: "/supertonic/onnx",
+        voiceStylePath: "/supertonic/voice_styles/M1.json",
+      };
+      // shortcut: fixtures and speech timers simulate application output; replace this block with the public application API when applying the design.
+      const application = (() => {
+        let round = 0;
+        let speechTimers = [];
+        let transitionTimer;
+        let lock = false;
+        const state = {
+          mode: "game",
+          game: {
+            screen: { name: "start" },
+            currentStep: 0,
+            totalSteps: 5,
+            currentCategory: null,
+            choices: [],
+            selections: {},
+          },
+          lines: [],
+          speech: {
+            availability: "ready",
+            isSupported: true,
+            isSpeaking: false,
+            error: null,
+            phase: "ready",
+          },
+          isOffline: false,
+          long: false,
+          pressed: null,
+          audioCheck: { playing: false, index: 0 },
+          settings: { ...defaults },
+        };
+        const listeners = new Set();
+        const emit = () => {
+          for (const listener of listeners) {
+            listener(state);
+          }
+        };
+        const clearSpeech = () => {
+          for (const timer of speechTimers) {
+            clearTimeout(timer);
+          }
+          speechTimers = [];
+          if ("speechSynthesis" in window) {
+            window.speechSynthesis.cancel();
+          }
+        };
+        const cancel = () => {
+          clearSpeech();
+          clearTimeout(transitionTimer);
+          lock = false;
+          state.pressed = null;
+        };
+        const setStep = (step) => {
+          const category = categories[step];
+          state.game = {
+            ...state.game,
+            screen: { name: "select", step },
+            currentStep: step,
+            currentCategory: { key: category.key, label: category.label },
+            choices: (state.long ? longWords : category.words).map((display, index) => ({
+              id: `${round}-${step}-${index}`,
+              option: { display },
+              index,
+            })),
+          };
+        };
+        const setSpeech = (phase) => {
+          state.speech = {
+            ...state.speech,
+            phase,
+            availability: phase === "preparing" || phase === "speaking" ? "speaking" : phase,
+            isSpeaking: phase === "preparing" || phase === "speaking",
+            isSupported: phase !== "unsupported",
+            error: phase === "error" ? "こえが でなかったよ。もういちど きいてみてね。" : null,
+          };
+        };
+        const speak = () => {
+          clearSpeech();
+          setSpeech("preparing");
+          emit();
+          speechTimers.push(
+            setTimeout(() => {
+              setSpeech("speaking");
+              emit();
+            }, 800),
+          );
+          speechTimers.push(
+            setTimeout(() => {
+              setSpeech("ready");
+              emit();
+            }, 4200),
+          );
+        };
+        const commands = {
+          start() {
+            cancel();
+            round++;
+            state.mode = "game";
+            state.long = false;
+            state.lines = [];
+            state.game.selections = {};
+            setSpeech("ready");
+            setStep(0);
+            emit();
+            return true;
+          },
+          select(id) {
+            if (state.mode !== "game" || state.game.screen.name !== "select" || lock) {
+              return false;
+            }
+            const choice = state.game.choices.find((candidate) => candidate.id === id);
+            if (!choice) {
+              return false;
+            }
+            lock = true;
+            state.pressed = id;
+            const step = state.game.currentStep;
+            state.game.selections[categories[step].key] = { ...choice.option, index: choice.index };
+            emit();
+            transitionTimer = setTimeout(() => {
+              lock = false;
+              state.pressed = null;
+              if (step < 4) {
+                setStep(step + 1);
+                emit();
+              } else {
+                const selected = state.game.selections;
+                state.lines = state.long
+                  ? [...longLines]
+                  : [
+                      `${selected.who.display}が`,
+                      selected.when.display,
+                      `${selected.where.display}で`,
+                      `${selected.what.display}を`,
+                      categories[4].polite[selected.action.index],
+                    ];
+                state.game = {
+                  ...state.game,
+                  screen: { name: "result" },
+                  currentCategory: null,
+                  choices: [],
+                };
+                speak();
+              }
+            }, 160);
+            return true;
+          },
+          replay() {
+            if (
+              state.mode !== "game" ||
+              state.game.screen.name !== "result" ||
+              !state.speech.isSupported ||
+              state.speech.isSpeaking
+            ) {
+              return false;
+            }
+            speak();
+            return true;
+          },
+        };
+        function settingsDraft(next) {
+          const candidate =
+            next !== null && typeof next === "object" && !Array.isArray(next) ? next : {};
+          return {
+            provider: candidate.provider,
+            modelBasePath:
+              typeof candidate.modelBasePath === "string" ? candidate.modelBasePath.trim() : "",
+            voiceStylePath:
+              typeof candidate.voiceStylePath === "string" ? candidate.voiceStylePath.trim() : "",
+          };
+        }
+        function previewSelection(key) {
+          if (/^step[0-4]$/.test(key)) {
+            const step = Number(key.slice(-1));
+            for (let previous = 0; previous < step; previous++) {
+              state.game.selections[categories[previous].key] = {
+                display: categories[previous].words[0],
+                index: 0,
+              };
+            }
+            setStep(step);
+            return;
+          }
+          state.long = key === "long-choices";
+          setStep(state.long ? 3 : 0);
+          if (key === "pressed") {
+            state.pressed = state.game.choices[0].id;
+          }
+        }
+        function previewResult(key) {
+          state.game = {
+            ...state.game,
+            screen: { name: "result" },
+            currentCategory: null,
+            choices: [],
+          };
+          state.long = key === "long-result";
+          state.lines = state.long ? [...longLines] : [...defaultLines];
+          setSpeech(
+            ["preparing", "speaking", "error", "unsupported"].includes(key) ? key : "ready",
+          );
+        }
+        return {
+          commands,
+          subscribe(listener) {
+            listeners.add(listener);
+            return () => listeners.delete(listener);
+          },
+          getState() {
+            return state;
+          },
+          saveSettings(next) {
+            const settings = settingsDraft(next);
+            const errors = { modelBasePath: "", voiceStylePath: "" };
+            if (settings.provider !== "web-speech" && settings.provider !== "supertonic") {
+              errors.provider = "読み上げ方式を選んでください。";
+            }
+            if (settings.provider === "supertonic") {
+              errors.modelBasePath = pathError(settings.modelBasePath, true);
+              errors.voiceStylePath = pathError(settings.voiceStylePath, false);
+            }
+            if (errors.provider || errors.modelBasePath || errors.voiceStylePath) {
+              return { ok: false, errors };
+            }
+            if (pathError(settings.modelBasePath, true)) {
+              settings.modelBasePath = defaults.modelBasePath;
+            }
+            if (pathError(settings.voiceStylePath, false)) {
+              settings.voiceStylePath = defaults.voiceStylePath;
+            }
+            state.settings = settings;
+            emit();
+            return { ok: true, settings: { ...settings } };
+          },
+          setOffline(value) {
+            state.isOffline = value;
+            emit();
+          },
+          dispose: cancel,
+          setAudioPlaying(value, index = state.audioCheck.index) {
+            state.audioCheck = { playing: value, index };
+            emit();
+          },
+          preview(key) {
+            cancel();
+            state.mode = "game";
+            state.long = false;
+            state.isOffline = key === "offline";
+            state.audioCheck = { playing: false, index: 0 };
+            setSpeech("ready");
+            round++;
+            state.game.selections = {};
+            if (key === "start") {
+              state.game = {
+                ...state.game,
+                screen: { name: "start" },
+                currentCategory: null,
+                choices: [],
+              };
+            } else if (
+              /^step[0-4]$/.test(key) ||
+              ["offline", "pressed", "long-choices"].includes(key)
+            ) {
+              previewSelection(key);
+            } else if (key === "developer-idle" || key === "developer-playing") {
+              state.mode = "audio-check";
+              state.audioCheck = {
+                playing: key === "developer-playing",
+                index: key === "developer-playing" ? 63 : 0,
+              };
+            } else {
+              previewResult(key);
+            }
+            emit();
+          },
+        };
+      })();
+      const commands = application.commands;
+      const speakerIcon =
+        '<svg viewBox="0 0 32 28" aria-hidden="true"><path d="M3 9h6l8-7v24l-8-7H3a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2Z"/><path d="M21 7q7 7 0 14M25 3q11 11 0 22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+      const caster = (welcome = false, phase = "ready") =>
+        `<div class="caster ${welcome ? "welcome-caster" : ""} ${["preparing", "speaking"].includes(phase) ? "with-status" : ""}"><img src="${welcome ? "../../src/assets/hiyoko3.webp" : phase === "speaking" ? "assets/caster-reading.png" : "assets/caster-idle.png"}" alt="${phase === "speaking" ? "原稿を読むひよこキャスター" : "赤い帽子のひよこキャスター"}" draggable="false" />${["preparing", "speaking"].includes(phase) ? `<span class="caster-status ${phase === "speaking" ? "speaking" : ""}">${phase === "preparing" ? "じゅんび中" : "よんでいるよ"}</span>` : ""}<div class="nameplate"><span>へんてこニュース</span></div></div>`;
+      function startMarkup() {
+        return `${caster(true)}<h1 class="welcome-copy" tabindex="-1">5つ えらぶと<br />ニュースに なるよ</h1><button type="button" class="primary start-button" data-command="start"><span class="play-icon" aria-hidden="true"></span>はじめる</button><p class="sound-note">${speakerIcon}おとが でるよ</p>`;
+      }
+      function selectMarkup(state) {
+        return `${caster()}<div class="progress" aria-label="5つのうち ${state.game.currentStep + 1}つめ">${categories.map((_, index) => `<span class="dot ${index < state.game.currentStep ? "done" : index === state.game.currentStep ? "current" : ""}" aria-hidden="true"></span>`).join("")}<span class="count" aria-hidden="true">${state.game.currentStep + 1}/5</span></div><h1 class="question" tabindex="-1">${escapeHtml(state.game.currentCategory.label)}</h1><div class="choices ${state.long ? "long-choices" : ""}">${state.game.choices.map((choice) => `<button type="button" class="choice ${state.pressed === choice.id ? "is-pressed" : ""}" data-choice="${choice.id}" aria-disabled="${Boolean(state.pressed)}">${escapeHtml(choice.option.display)}</button>`).join("")}</div>`;
+      }
+      function resultMarkup(state) {
+        const phase = state.speech.phase;
+        const busy = state.speech.isSpeaking;
+        return `${caster(false, phase)}<h1 class="news ${state.long ? "long-news" : ""}" tabindex="-1">${state.lines.map((line) => `<span class="news-line">${escapeHtml(line)}</span>`).join("")}</h1>${phase === "error" ? `<p class="error-note" role="status">${escapeHtml(state.speech.error)}</p>` : phase === "unsupported" ? '<p class="error-note" role="status">この おとでは よめないよ。<br />もじで たのしんでね。</p>' : ""}<div class="result-actions"><button type="button" class="primary" data-command="replay" ${busy || !state.speech.isSupported ? "disabled" : ""}>${busy ? `<span class="play-icon" aria-hidden="true"></span><small>${phase === "preparing" ? "じゅんび中" : "よんでいるよ"}</small>` : '<span class="play-icon" aria-hidden="true"></span> きく'}</button><button type="button" class="secondary" data-command="start">つぎを<br />つくる</button></div>`;
+      }
+      function developerMarkup(state) {
+        const playing = state.audioCheck.playing;
+        return `<h1 class="developer-title" tabindex="-1">ことばの音声確認</h1><p class="developer-copy">開発者向け · 全364語<br />この試作では再生状態だけを模擬表示します。</p><div class="developer-panel"><strong>${state.audioCheck.index} / 364</strong><span class="current-word">${state.audioCheck.index ? "11じ11ぷん" : "—"}</span><p>${state.audioCheck.index ? "いつ？" : "まだ再生していません"} · ${playing ? "連続再生中（模擬）" : "停止中"}</p></div><div class="developer-controls"><button type="button" data-audio="start" ${playing ? "disabled" : ""}>最初から</button><button type="button" data-audio="resume" ${playing ? "disabled" : ""}>続きから</button><button type="button" class="wide" data-audio="stop" ${playing ? "" : "disabled"}>停止</button>${categories.map((category, index) => `<button type="button" data-audio="${index}" ${playing ? "disabled" : ""}>${category.label}から</button>`).join("")}</div>`;
+      }
+      function screenMarkup(state) {
+        if (state.mode === "audio-check") {
+          return developerMarkup(state);
+        }
+        if (state.game.screen.name === "start") {
+          return startMarkup();
+        }
+        if (state.game.screen.name === "select") {
+          return selectMarkup(state);
+        }
+        return resultMarkup(state);
+      }
+      function focusedControlIn(screen) {
+        const focused = document.activeElement;
+        if (!screen.contains(focused)) {
+          return null;
+        }
+        if (focused.matches("h1")) {
+          return { key: "heading", value: "h1" };
+        }
+        return ["command", "audio", "choice"]
+          .map((key) =>
+            focused.dataset?.[key] !== undefined ? { key, value: focused.dataset[key] } : null,
+          )
+          .find(Boolean);
+      }
+      function restoreControlFocus(state, screen, focusedControl) {
+        if (!focusedControl) {
+          return;
+        }
+        if (focusedControl.key === "heading") {
+          screen.querySelector("h1")?.focus({ preventScroll: true });
+          return;
+        }
+        const replacement = Array.from(screen.querySelectorAll("button")).find(
+          (button) => button.dataset[focusedControl.key] === focusedControl.value,
+        );
+        const fallback =
+          state.mode === "audio-check"
+            ? screen.querySelector('[data-audio="stop"]:not(:disabled)') ||
+              screen.querySelector('[data-audio="resume"]:not(:disabled)')
+            : screen.querySelector('[data-command="start"]:not(:disabled)');
+        (replacement && !replacement.disabled ? replacement : fallback)?.focus({
+          preventScroll: true,
+        });
+      }
+      function focusScreenHeading(screen) {
+        const heading = screen.querySelector("h1");
+        window.scrollTo({ top: 0, behavior: "instant" });
+        heading?.focus({ preventScroll: true });
+        const rect = heading?.getBoundingClientRect();
+        if (rect && rect.bottom > window.innerHeight) {
+          window.scrollTo({ top: Math.max(0, rect.top - 16), behavior: "instant" });
+        }
+      }
+      function screenAnnouncement(state) {
+        if (state.mode === "audio-check") {
+          return "ことばの音声確認";
+        }
+        if (state.game.screen.name === "select") {
+          return `${state.game.currentStep + 1}つめ、${state.game.currentCategory.label}`;
+        }
+        if (state.game.screen.name === "result") {
+          return `ニュースができたよ。${state.lines.join(" ")}`;
+        }
+        return "へんてこニュース";
+      }
+      function speechAnnouncement(state) {
+        return (
+          state.speech.error ||
+          (state.speech.phase === "preparing"
+            ? "音声の準備中"
+            : state.speech.phase === "speaking"
+              ? "読み上げ中"
+              : "読み終わりました")
+        );
+      }
+      let previousScreen = "";
+      function render(state) {
+        const screen = $("screen");
+        const focusedControl = focusedControlIn(screen);
+        const screenKey = `${state.mode}-${state.game.screen.name}-${state.game.currentStep}`;
+        $("offline-notice").hidden = !state.isOffline;
+        screen.innerHTML = screenMarkup(state);
+        $("state-output").textContent = JSON.stringify(
+          {
+            screen: state.mode === "audio-check" ? state.mode : state.game.screen,
+            step: state.game.currentStep + 1,
+            phase: state.speech.phase,
+            isOffline: state.isOffline,
+            selections: state.game.selections,
+            lines: state.lines,
+            settings: state.settings,
+          },
+          null,
+          2,
+        );
+        if (screenKey !== previousScreen) {
+          if (previousScreen) {
+            focusScreenHeading(screen);
+          }
+          $("announcement").textContent = screenAnnouncement(state);
+        } else {
+          restoreControlFocus(state, screen, focusedControl);
+          if (state.game.screen.name === "result") {
+            $("announcement").textContent = speechAnnouncement(state);
+          }
+        }
+        previousScreen = screenKey;
+      }
+      function handleAudioAction(action) {
+        if (action === "stop") {
+          application.setAudioPlaying(false);
+          return;
+        }
+        const index =
+          action === "resume"
+            ? application.getState().audioCheck.index || 1
+            : action === "start"
+              ? 1
+              : [1, 63, 132, 204, 283][Number(action)];
+        application.setAudioPlaying(true, index);
+      }
+      $("screen").addEventListener("click", (event) => {
+        const button = event.target.closest("button");
+        if (!button || button.disabled) {
+          return;
+        }
+        if (button.dataset.choice) {
+          commands.select(button.dataset.choice);
+        } else if (button.dataset.command) {
+          commands[button.dataset.command]();
+        } else if (button.dataset.audio) {
+          handleAudioAction(button.dataset.audio);
+        }
+      });
+      const dialog = $("settings-dialog");
+      let settingsOpener = null;
+      const setErrors = (model = "", voice = "") => {
+        for (const [key, message] of [
+          ["model", model],
+          ["voice", voice],
+        ]) {
+          $(`${key}-error`).textContent = message;
+          $(`${key}-error`).hidden = !message;
+          $(`${key}-path`).setAttribute("aria-invalid", String(Boolean(message)));
+        }
+      };
+      const updateProvider = () => {
+        $("model-fields").hidden = $("provider").value !== "supertonic";
+        $("provider-help").textContent =
+          $("provider").value === "supertonic"
+            ? "はじめは読み込みに時間がかかります。"
+            : "端末の音声で読み上げます。";
+      };
+      const fillSettings = (settings) => {
+        $("provider").value = settings.provider;
+        $("model-path").value = settings.modelBasePath;
+        $("voice-path").value = settings.voiceStylePath;
+        setErrors();
+        updateProvider();
+      };
+      function openSettings(override, opener = document.activeElement) {
+        settingsOpener = opener;
+        fillSettings(override || application.getState().settings);
+        dialog.showModal();
+        $("close-settings").focus();
+      }
+      $("open-settings").addEventListener("click", (event) =>
+        openSettings(undefined, event.currentTarget),
+      );
+      $("close-settings").addEventListener("click", () => dialog.close());
+      $("cancel-settings").addEventListener("click", () => dialog.close());
+      dialog.addEventListener("close", () => {
+        setErrors();
+        settingsOpener?.focus({ preventScroll: true });
+      });
+      $("provider").addEventListener("change", () => {
+        updateProvider();
+        setErrors();
+      });
+      $("reset-settings").addEventListener("click", () => fillSettings(defaults));
+      function pathError(value, model) {
+        if (!value) {
+          return "パスを入力してください。";
+        }
+        if (value.includes("#")) {
+          return "# を含むパスは使えません。";
+        }
+        if (model && value.includes("?")) {
+          return "フォルダーのパスに ? は使えません。";
+        }
+        try {
+          const url = new URL(value, "https://henteko-news.invalid");
+          if (!["http:", "https:"].includes(url.protocol)) {
+            return "公開済みのパスか HTTP(S) URL を使ってください。";
+          }
+        } catch {
+          return "正しいパスかHTTP(S) URLを入力してください。";
+        }
+        return "";
+      }
+      $("settings-form").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const result = application.saveSettings({
+          provider: $("provider").value,
+          modelBasePath: $("model-path").value,
+          voiceStylePath: $("voice-path").value,
+        });
+        if (!result.ok) {
+          setErrors(result.errors.modelBasePath, result.errors.voiceStylePath);
+          $(
+            result.errors.modelBasePath
+              ? "model-path"
+              : result.errors.voiceStylePath
+                ? "voice-path"
+                : "provider",
+          ).focus();
+          return;
+        }
+        dialog.close();
+        $("announcement").textContent =
+          "音声設定を保存しました。この試作では画面内だけに反映します。";
+      });
+      const previews = [
+        ["start", "01 トップ"],
+        ["step0", "02 だれが？"],
+        ["step1", "03 いつ？"],
+        ["step2", "04 どこで？"],
+        ["step3", "05 なにを？"],
+        ["step4", "06 どうした？"],
+        ["preparing", "07 じゅんび中"],
+        ["speaking", "08 よんでいるよ"],
+        ["ready", "09 読み終わり"],
+        ["error", "10 音声エラー"],
+        ["unsupported", "11 音声非対応"],
+        ["offline", "12 オフライン"],
+        ["settings-browser", "13 ブラウザー設定"],
+        ["settings-model", "14 モデル音声設定"],
+        ["settings-error", "15 設定エラー"],
+        ["pressed", "16 候補の押下"],
+        ["developer-idle", "17 音声確認・待機"],
+        ["developer-playing", "18 音声確認・再生"],
+        ["long-choices", "19 長い候補"],
+        ["long-result", "20 長い完成文"],
+      ];
+      $("preview-buttons").innerHTML = previews
+        .map(([key, label]) => `<button type="button" data-preview="${key}">${label}</button>`)
+        .join("");
+      $("preview-buttons").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-preview]");
+        if (!button) {
+          return;
+        }
+        const key = button.dataset.preview;
+        if (key.startsWith("settings-")) {
+          application.preview("step0");
+          const settings = {
+            ...defaults,
+            provider: key === "settings-browser" ? "web-speech" : "supertonic",
+            ...(key === "settings-error"
+              ? { modelBasePath: "/supertonic/onnx?x=1", voiceStylePath: "ftp://voice.json" }
+              : {}),
+          };
+          openSettings(settings, button);
+          if (key === "settings-error") {
+            const result = application.saveSettings(settings);
+            if (!result.ok) {
+              setErrors(result.errors.modelBasePath, result.errors.voiceStylePath);
+            }
+          }
+        } else {
+          application.preview(key);
+          window.scrollTo({ top: 0, behavior: "instant" });
+        }
+      });
+      $("toggle-offline").addEventListener("click", () =>
+        application.setOffline(!application.getState().isOffline),
+      );
+      $("browser-speech").addEventListener("click", () => {
+        if (!("speechSynthesis" in window)) {
+          $("browser-speech-note").textContent =
+            "このブラウザーは端末の読み上げに対応していません。";
+          return;
+        }
+        const lines = application.getState().lines;
+        if (!lines.length) {
+          $("browser-speech-note").textContent = "先にニュースを作るか、完成画面を選んでください。";
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(lines.join(" "));
+        utterance.lang = "ja-JP";
+        utterance.onend = () => {
+          $("browser-speech-note").textContent = "端末の音声確認が終わりました。";
+        };
+        utterance.onerror = () => {
+          $("browser-speech-note").textContent =
+            "端末の音声を再生できませんでした。文字のゲームは続けられます。";
+        };
+        $("browser-speech-note").textContent = "端末の音声で読み上げを試しています。";
+        window.speechSynthesis.speak(utterance);
+      });
+      window.addEventListener("pagehide", () => application.dispose());
+      application.subscribe(render);
+      render(application.getState());
+    })();
+    </script>
+  </body>
+</html>

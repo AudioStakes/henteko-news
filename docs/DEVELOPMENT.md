@@ -99,11 +99,15 @@ Supertonicの開発とサポートは終了しており、このアプリで使�
 | `npm run check:words`          | 語彙の重複、並び順、読み上げ表記の確認                        |
 | `npm run build`                | 本番ビルド（出力先 `dist/`）                                  |
 | `npm run test:e2e`             | 本番ビルドのゲーム、オフライン、スマートフォン画面テスト      |
+| `npm run test:layout`          | スマホ縦画面でフッターまで1画面に収まること、文字切れ・重なり |
 
 ブラウザーテストは先に `npm run build` と `npx playwright install chromium firefox webkit` を実行します。
 LinuxでOS依存ライブラリも必要な場合は `npx playwright install --with-deps chromium firefox webkit` を使います。
-`test:layout` は画面サイズのテストだけを実行します。
-デスクトップの3エンジンに加え、Android、iPhone、iPad相当の画面設定でも検証します。
+`test:layout` はAndroid・iPhone相当の2環境で、トップ・単語選択5画面・結果がフッターまでスクロールなしで収まることを確認します。
+320 × 568から430 × 932 CSS pxまでの代表サイズに加え、短い選択肢、長い選択肢、長い結果文、通知など高さが変わる状態を検証します。
+操作前にdocumentと主要要素の位置・寸法を検査し、文字の欠け、領域の重なり、ボタンの縮めすぎも検出します。
+横向きや文字拡大、設定画面では内容と操作性を保つため縦スクロールを許可し、到達可能性は`test:e2e`で確認します。
+デスクトップの3エンジンとiPad相当の操作検証も`test:e2e`に含まれます。
 実行ポートは4175で、ほかのアプリのサーバーを再利用しません。
 
 品質ルールの分担、意図的な例外、修正手順は[品質基準](agents/quality.md)にまとめています。

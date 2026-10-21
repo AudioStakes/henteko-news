@@ -84,7 +84,7 @@ export function AppView({ application: { state, commands }, settings, audioCheck
 
   return (
     <div className="viewport">
-      <div className="app-shell">
+      <div className={`app-shell${state.isOffline ? " is-offline" : ""}`}>
         <div className="child-stage">
           <AppHeader
             settings={settings.settings}

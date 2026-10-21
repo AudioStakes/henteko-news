@@ -55,7 +55,7 @@ function News() {
   return (
     <main>
       <button type="button" onClick={() => { commands.start(); }}>
-        ニュースをはじめる
+        はじめる
       </button>
       <h1>{state.game.currentCategory?.label ?? "へんてこニュース"}</h1>
       {state.game.choices.map((choice) => (
@@ -74,7 +74,7 @@ function News() {
           disabled={!state.speech.isSupported || state.speech.isSpeaking}
           onClick={() => { commands.replay(); }}
         >
-          もういちどよむ
+          きく
         </button>
       )}
       <p role="status">{state.speech.error}</p>
@@ -109,7 +109,7 @@ HTMLのボタンからゲームコアを呼び出す場合は、[`gameSession.ts
 TypeScriptのエントリーポイントをViteなどでビルドし、HTMLに次の要素を用意します。
 
 ```html
-<button id="start" type="button">ニュースをはじめる</button>
+<button id="start" type="button">はじめる</button>
 <div id="choices"></div>
 <p id="news" aria-live="polite"></p>
 ```

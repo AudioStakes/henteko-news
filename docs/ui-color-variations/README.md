@@ -59,5 +59,5 @@ A「はちみつオレンジ」が採用された。
 
 画像はimagegenの組み込みツールで作成し、[生成指示](prompts.md)に記録した。
 色の好みに関する出典と設計の前提は[調査メモ](../ui-full-design/color-research.md)を参照。
-比較元の[水色版の全画面案](../ui-full-design/README.md)も残している。
+比較元の[水色版の全画面案](../ui-full-design/blue-version.md)も残している。
 実装と、実機や子どもによる好みの確認は行っていない。

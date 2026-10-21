@@ -27,10 +27,10 @@ npm run dev -- --host 0.0.0.0
 Supertonicモデルの取得や音声合成、ブラウザーへの設定の永続化は接続していません。
 実音声の聞こえ方や、子どもによる使いやすさの評価は別途必要です。
 
-## 本実装へ移すとき
+## 本実装との対応
 
 HTMLの表示は[application API](../application-api.md)に合わせた状態と操作を受け取ります。
-単一HTMLのCSS・DOMを既存の `AppView` 以下へ移し、試作用モックを公開契約へ差し替える想定です。
+本実装では単一HTMLのCSS・DOMを既存の `AppView` 以下へ移し、試作用モックを公開契約へ差し替えています。
 
 | 試作の表示・操作   | 本実装の接続先                                            |
 | ------------------ | --------------------------------------------------------- |
@@ -59,7 +59,7 @@ HTMLの表示は[application API](../application-api.md)に合わせた状態と
 待機・原稿を読むキャスターは、既存キャラクターを参照して組み込み `imagegen` で作成しました。
 [生成指示](asset-prompts.md)に入力と保存先を記録しています。
 
-太い丸文字は [Google Fonts公式](https://github.com/google/fonts/tree/main/ofl/mplusrounded1c)の M PLUS Rounded 1c Black を同梱しています。
+太い丸文字は [Google Fonts公式](https://github.com/google/fonts/tree/main/ofl/mplusrounded1c)の Rounded Mplus 1c Black を同梱しています。
 フォント本体は未改変です。[SIL Open Font License](assets/OFL.txt)も同梱しています。
 ダイアログには [標準の `<dialog>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/dialog) を使います。
 

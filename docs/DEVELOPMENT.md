@@ -152,6 +152,39 @@ Netlify向けの `public/_headers` も配布に含めます。
 大きい音声モデルとWASMランタイムはPWAの事前キャッシュ対象外です。
 更新版は既存のタブやインストールしたアプリを閉じて開き直すと反映されます。
 
+### Netlifyへ手動リリースする
+
+NetlifyのBuild settingsを **Stopped builds** に設定し、Gitのpush、PR、build hookによる自動ビルドを停止しています。
+現在の公開版は維持され、mainへのマージだけでは更新されません。
+更新がまとまったときに、ローカルで検証した `dist/` 全体を手動で本番公開します。
+2026年10月21日の切替時には、公開コミット `8fcaebc` をそのまま維持したことを確認しています。
+
+[Netlify CLIの公式導入手順](https://docs.netlify.com/api-and-cli-guides/cli-guides/get-started-with-cli/)に従ってCLIを用意し、初回は `netlify login` で認証します。
+認証トークンをソースや設定ファイルに書かないでください。
+公開先は `henteko-news`、Project IDは `81caffde-d2a6-4ed7-ac00-63fbb6603f13` です。
+別のプロジェクトへ配布する場合は、管理画面で確認したProject IDに置き換えます。
+
+モデル音声を同梱するリリースでは、未取得のモデル一式を `npm run setup:speech` で用意し、`check:speech-assets` で確認してからビルドします。
+通常開発でモデル音声を使わない場合、モデルの取得は任意です。
+
+```sh
+npm ci
+npm run check:speech-assets
+npm run validate
+npm run test:e2e
+RUN_SPEECH_SMOKE=1 npm run test:e2e -- tests/speech.spec.ts --project=chromium
+```
+
+すべての検証が成功し、ユーザーからリリースの依頼があることを確認してから公開します。
+
+```sh
+netlify deploy --site="81caffde-d2a6-4ed7-ac00-63fbb6603f13" --prod --dir=dist --no-build
+```
+
+`validate` が本番ビルドまで行うため、CLIでは `--no-build` を指定して再ビルドを避けます。[CLIのオプション](https://cli.netlify.com/commands/deploy/)
+Netlifyでビルドを再開したり、Gitリポジトリを接続し直したりすると、[自動ビルドが再び有効](https://docs.netlify.com/build/configure-builds/stop-or-activate-builds/)になります。
+公開中の閲覧やデータ転送は引き続き利用量に計上されます。
+
 ## アクセス解析
 
 Cloudflare Web Analyticsの標準beaconで、本番の `henteko-news.netlify.app` だけを集計する構成です。

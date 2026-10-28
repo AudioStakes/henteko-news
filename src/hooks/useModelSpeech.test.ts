@@ -35,7 +35,7 @@ describe("useModelSpeech", () => {
     mockPreload.mockReset().mockResolvedValue(undefined);
     mockInvalidate.mockReset();
     mockSynthesize.mockReset();
-    const MockAudio = function MockAudio() {
+    const mockAudio = function mockAudio() {
       const audio = {
         onended: null,
         onerror: null,
@@ -46,7 +46,7 @@ describe("useModelSpeech", () => {
       audioInstances.push(audio);
       return audio;
     };
-    vi.stubGlobal("Audio", MockAudio);
+    vi.stubGlobal("Audio", mockAudio);
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn(() => "blob:mock"),
       revokeObjectURL: vi.fn(),

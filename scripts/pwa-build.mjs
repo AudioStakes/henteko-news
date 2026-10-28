@@ -13,7 +13,9 @@ function listPublicAssets(directory, prefix = "") {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (
       entry.name.startsWith(".") ||
-      ["supertonic", "onnxruntime", "licenses", "sw.js", "_headers"].includes(entry.name)
+      ["supertonic", "onnxruntime", "licenses", "sw.js", "_headers", "_redirects"].includes(
+        entry.name,
+      )
     ) {
       return [];
     }

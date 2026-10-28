@@ -66,7 +66,18 @@ serviceWorker.addEventListener("fetch", (event) => {
     // Keep the installed HTML paired with this worker's precached assets.
     event.respondWith(
       fetch(request).catch(async () => {
-        return (await (await caches.open(HTML_CACHE)).match("/index.html")) || Response.error();
+        if (["/", "/index.html", "/words-audio-check"].includes(url.pathname)) {
+          return (await (await caches.open(HTML_CACHE)).match("/index.html")) || Response.error();
+        }
+        const cache = await caches.open(STATIC_CACHE);
+        const cached = await cache.match(url.pathname);
+        if (cached) {
+          return cached;
+        }
+        const notFound = await cache.match("/404.html");
+        return notFound
+          ? new Response(notFound.body, { status: 404, headers: notFound.headers })
+          : Response.error();
       }),
     );
     return;

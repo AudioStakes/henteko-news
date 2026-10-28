@@ -17,6 +17,8 @@ await test("a build precaches its chunks and updates only its own content-derive
       'const VERSION = "__BUILD_ID__";\nconst PRECACHE_ASSETS = [];',
     );
     await writeFile(join(root, "public/logo.svg"), "original-logo");
+    await writeFile(join(root, "public/404.html"), "not-found");
+    await writeFile(join(root, "public/_redirects"), "/* /404.html 404");
     await writeFile(join(root, "public/supertonic/large.onnx"), "model");
     const plugin = pwaBuildPlugin();
     plugin.configResolved({ root, build: { outDir: "dist" } });
@@ -28,7 +30,8 @@ await test("a build precaches its chunks and updates only its own content-derive
     const first = await readFile(join(root, "dist/sw.js"), "utf8");
     assert.match(first, /\/assets\/app-hash.js/);
     assert.match(first, /\/logo.svg/);
-    assert.doesNotMatch(first, /large.onnx|ort-hash.wasm|__BUILD_ID__/);
+    assert.match(first, /\/404.html/);
+    assert.doesNotMatch(first, /large.onnx|ort-hash.wasm|__BUILD_ID__|_redirects/);
     plugin.writeBundle({}, bundle);
     assert.equal(await readFile(join(root, "dist/sw.js"), "utf8"), first);
     bundle["assets/app-hash.js"].code = "changed-code";

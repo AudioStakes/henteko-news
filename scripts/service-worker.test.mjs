@@ -57,13 +57,16 @@ await test("activating the PWA deletes obsolete app caches and preserves unrelat
   assert.equal(claimed, true);
 });
 
-await test("online navigation preserves install-time HTML for offline fallback", async () => {
+await test("navigation preserves network responses and limits offline app fallback to known paths", async () => {
   /** @type {Map<string, (event: NavigationEvent) => void>} */
   const listeners = new Map();
   const installedHtml = '<script src="/assets/installed-version.js"></script>';
   const onlineHtml = '<script src="/assets/new-version.js"></script>';
+  const notFoundHtml = "<h1>404</h1>";
+  const robots = "User-agent: *";
   let cachedHtml = new Response(installedHtml);
   let offline = false;
+  let onlineStatus = 200;
   const source = await readFile(new URL("../public/sw.js", import.meta.url), "utf8");
   runInNewContext(source, {
     self: {
@@ -76,9 +79,21 @@ await test("online navigation preserves install-time HTML for offline fallback",
     caches: {
       /** @param {string} name */
       open(name) {
-        assert.equal(name, "henteko-html-__BUILD_ID__");
         return Promise.resolve({
-          match: () => Promise.resolve(cachedHtml.clone()),
+          /** @param {string} key */
+          match(key) {
+            if (name === "henteko-html-__BUILD_ID__") {
+              assert.equal(key, "/index.html");
+              return Promise.resolve(cachedHtml.clone());
+            }
+            assert.equal(name, "henteko-static-__BUILD_ID__");
+            if (key === "/404.html") {
+              return Promise.resolve(
+                new Response(notFoundHtml, { headers: { "Content-Type": "text/html" } }),
+              );
+            }
+            return Promise.resolve(key === "/robots.txt" ? new Response(robots) : undefined);
+          },
           /** @param {string} key @param {Response} response */
           put(key, response) {
             assert.equal(key, "/index.html");
@@ -91,20 +106,21 @@ await test("online navigation preserves install-time HTML for offline fallback",
     fetch: () =>
       offline
         ? Promise.reject(new TypeError("Offline"))
-        : Promise.resolve(new Response(onlineHtml)),
+        : Promise.resolve(new Response(onlineHtml, { status: onlineStatus })),
     URL,
     Response,
   });
   const handleFetch = listeners.get("fetch");
 
-  async function navigate() {
+  /** @param {string} path @param {number} status */
+  async function navigate(path = "/", status = 200) {
     /** @type {Promise<Response> | undefined} */
     let response;
     /** @type {Promise<unknown>[]} */
     const pending = [];
     assert.ok(handleFetch);
     handleFetch({
-      request: { method: "GET", mode: "navigate", url: "https://example.test/" },
+      request: { method: "GET", mode: "navigate", url: `https://example.test${path}` },
       respondWith: (promise) => {
         response = promise;
       },
@@ -115,10 +131,22 @@ await test("online navigation preserves install-time HTML for offline fallback",
     assert.ok(response);
     const result = await response;
     await Promise.all(pending);
+    assert.equal(result.status, status);
+    if (offline && status === 404) {
+      assert.equal(result.headers.get("Content-Type"), "text/html");
+    }
     return result.text();
   }
 
   assert.equal(await navigate(), onlineHtml);
+  onlineStatus = 404;
+  assert.equal(await navigate("/does-not-exist", 404), onlineHtml);
   offline = true;
-  assert.equal(await navigate(), installedHtml);
+  for (const path of ["/", "/index.html?debugResult=1", "/words-audio-check?offline=1"]) {
+    assert.equal(await navigate(path), installedHtml);
+  }
+  assert.equal(await navigate("/robots.txt?offline=1"), robots);
+  for (const path of ["/does-not-exist/nested?offline=1", "/assets/does-not-exist.js"]) {
+    assert.equal(await navigate(path, 404), notFoundHtml);
+  }
 });

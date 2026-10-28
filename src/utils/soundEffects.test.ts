@@ -35,7 +35,7 @@ function stubAudioContext(state: AudioContextState = "running") {
     createOscillator: vi.fn(() => oscillator),
     createGain: vi.fn(() => gain),
   };
-  const AudioContextClass = vi.fn(function MockAudioContext() {
+  const AudioContextClass = vi.fn(function mockAudioContext() {
     return context;
   });
   vi.stubGlobal("AudioContext", AudioContextClass);
@@ -119,7 +119,7 @@ describe("playChoiceSoundFromUserGesture", () => {
   test("contains audio context construction failures and reports the cause", async () => {
     const audio = stubAudioContext();
     const failure = new Error("Audio output is unavailable");
-    audio.AudioContextClass.mockImplementation(function MockUnavailableAudioContext() {
+    audio.AudioContextClass.mockImplementation(function mockUnavailableAudioContext() {
       throw failure;
     });
     const { playChoiceSoundFromUserGesture } = await import("./soundEffects");

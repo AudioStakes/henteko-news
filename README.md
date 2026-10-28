@@ -4,8 +4,8 @@
 
 **[ブラウザで遊ぶ](https://henteko-news.netlify.app/)** — スマートフォン・PC対応、登録不要
 
-| スタート | ことばを選ぶ | ニュースの完成 |
-| --- | --- | --- |
+| スタート                               | ことばを選ぶ                                   | ニュースの完成                                |
+| -------------------------------------- | ---------------------------------------------- | --------------------------------------------- |
 | ![スタート画面](docs/images/start.png) | ![ことばの選択画面](docs/images/selection.png) | ![完成したニュース](docs/images/gameplay.png) |
 
 ## 遊び方
@@ -18,11 +18,11 @@
 
 ## 技術構成
 
-| 用途 | 技術 |
-| --- | --- |
-| フロントエンド | React / TypeScript / Vite / CSS |
-| 読み上げ | Web Speech API、任意でSupertonic / ONNX Runtime Web |
-| 配信 | Netlify / PWA（オフライン時は文字で利用） |
+| 用途             | 技術                                                   |
+| ---------------- | ------------------------------------------------------ |
+| フロントエンド   | React / TypeScript / Vite / CSS                        |
+| 読み上げ         | Web Speech API、任意でSupertonic / ONNX Runtime Web    |
+| 配信             | Netlify / PWA（オフライン時は文字で利用）              |
 | テスト・静的解析 | Vitest / Testing Library / Playwright / Biome / ESLint |
 
 ## 開発

@@ -45,7 +45,7 @@ describe("speech provider selection", () => {
     cancelBrowser.mockReset();
     preload.mockReset().mockResolvedValue(undefined);
     synthesize.mockReset().mockReturnValue(new Promise(() => {}));
-    vi.stubGlobal("Audio", function MockAudio() {
+    vi.stubGlobal("Audio", function mockAudio() {
       const audio = {
         onended: null,
         onerror: null,

@@ -143,7 +143,11 @@ Netlifyのビルド設定は、ビルドコマンドを `npm run validate`、公
 現在はドメイン直下への配布をサポートします。
 サブディレクトリへの配布には、画像、音声、Service Worker、manifestの絶対パス対応が必要です。
 独自ドメインやフォークでは `index.html` のcanonical、OGP、JSON-LD、`public/robots.txt`、`public/sitemap.xml` にあるURLも更新してください。
-`/words-audio-check` を直接開けるよう、ホスト側で存在しない画面パスを `index.html` にフォールバックさせます。
+`public/_redirects` を配布に含め、`/words-audio-check` だけを `index.html` へ200で書き換えます。
+実在する静的ファイルを優先し、それ以外のパスは `public/404.html` をHTTP 404で返します。
+404ページはJavaScript、外部CSS、画像、音声モデルを読み込みません。
+すべてのパスを `index.html` に渡すSPAフォールバックは設定しないでください。
+この順序はNetlifyの[rewriteと既存ファイルの優先規則](https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/#shadowing)に従います。
 
 PWAはHTTPSまたはlocalhostで動作します。
 開発サーバーでは登録せず、本番ビルドで登録します。
@@ -155,6 +159,33 @@ Netlify向けの `public/_headers` も配布に含めます。
 **オフラインで保証する対象は文字でのゲームです。**
 大きい音声モデルとWASMランタイムはPWAの事前キャッシュ対象外です。
 更新版は既存のタブやインストールしたアプリを閉じて開き直すと反映されます。
+オフラインでは `/`、`/index.html`、`/words-audio-check` だけに保存済みのアプリを返し、その他の画面パスは保存済みの404ページをHTTP 404で返します。
+
+### 404と正規パスを確認する
+
+`npm run validate` の後、Netlify CLIで静的配信を起動します。
+Vite previewはSPAフォールバックを行うため、Netlify固有のHTTPステータスとrewriteはこの手順で確認します。
+
+```sh
+netlify dev --offline --framework='#static' --dir=dist --port=8888 --no-open
+```
+
+別のターミナルでGETとHEADを確認します。
+
+```sh
+news_origin=http://localhost:8888
+for news_path in / /words-audio-check /icons/icon-192.png /wp-login.php /.git/config /api/does-not-exist /assets/does-not-exist.js; do
+  curl --silent --show-error --output /dev/null \
+    --write-out "GET $news_path status=%{http_code}\n" "$news_origin$news_path"
+  curl --silent --show-error --head --output /dev/null \
+    --write-out "HEAD $news_path status=%{http_code}\n" "$news_origin$news_path"
+done
+```
+
+最初の3パスは200、残りは404が期待値です。
+ブラウザーで未知のパスを開き、「トップへ戻る」からゲームへ戻れることも確認します。
+新しい正規パスを追加するときは `_redirects` とService Workerのオフライン対象も更新してください。
+手動リリース後は `news_origin` を公開URLに変えて再確認します。
 
 ### Netlifyへ手動リリースする
 
